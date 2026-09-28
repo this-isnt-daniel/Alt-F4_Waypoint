@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import VerifyDispatchPlanModal from './VerifyDispatchPlanModal';
+import RecoveryPlanModal from './RecoveryPlanModal';
 import { 
   Moon, 
   ChevronDown, 
@@ -9,6 +10,7 @@ import {
   Bell, 
   Search, 
   ArrowRight,
+  ArrowLeft,
   Check,
   Lock,
   Clock,
@@ -58,8 +60,10 @@ export default function DispatcherRoster({ onLogout }) {
   const [expandedVehicleIds, setExpandedVehicleIds] = useState(new Set(['VEH014'])); // Default expanded for instant stop inspection
   const [expandedStopIds, setExpandedStopIds] = useState(new Set(['VEH014-OUT-4089'])); // Default expanded stop for item manifest inspection
   const [expandedOutletIds, setExpandedOutletIds] = useState(new Set(['OUT-4089'])); // Default expanded for outlet vehicle inspection
-  const [isAllocationConfirmed, setIsAllocationConfirmed] = useState(false);
+  const [isAllocationConfirmed, setIsAllocationConfirmed] = useState(true);
   const [showConfirmToast, setShowConfirmToast] = useState(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryDeployed, setRecoveryDeployed] = useState(false);
 
   // Hover state for unavailable vehicle popover tooltip (Fleet Availability)
   const [hoveredUnavailableVehicle, setHoveredUnavailableVehicle] = useState(null);
@@ -1058,8 +1062,96 @@ export default function DispatcherRoster({ onLogout }) {
   const totalVolumeM3 = (420.5 - dispatcherExcludedVolume).toFixed(1);
   const totalPayloadKg = (98400 - dispatcherExcludedWeight).toLocaleString();
 
+  // Recovery Vehicle Assignments (Added upon confirming Recovery Plan)
+  const recoveryVehicleAssignments = [
+    {
+      id: 'VEH014',
+      isRecovery: true,
+      type: 'Van',
+      refrigeration: 'Reefer',
+      activeLeg: 'Trip 2 of 2',
+      tripLock: 'Fresh - Colombo Central (Recovery)',
+      currentDestination: 'OUT-1029 Liberty Plaza',
+      startTime: '09:30 AM',
+      endTime: '11:45 AM',
+      stopsCount: 2,
+      tripStatus: 'Scheduled',
+      driverName: 'Sunil Bandara',
+      driverPhone: '+94 77 123 4567',
+      departureTime: '09:30 AM',
+      totalCrates: 22,
+      payloadKg: 1100,
+      stops: [
+        {
+          id: 'OUT-1029',
+          name: 'Liberty Plaza Express',
+          eta: '09:45 AM',
+          status: 'Scheduled',
+          crates: 12,
+          weightKg: 680,
+          cargo: 'Chilled Dairy & Yogurts',
+          items: [
+            { sku: 'DAI-204', name: 'Anchor Full Cream Milk 1L', category: 'Dairy', quantity: '4 Crates (48 Units)', weight: '48 kg' },
+            { sku: 'DAI-309', name: 'Highland Set Yogurt 80g', category: 'Dairy', quantity: '5 Crates (120 Units)', weight: '24 kg' },
+            { sku: 'DAI-112', name: 'Pelwatte Salted Butter 200g', category: 'Dairy', quantity: '3 Crates (60 Units)', weight: '12 kg' }
+          ]
+        },
+        {
+          id: 'OUT-4089',
+          name: 'Nugegoda Supermarket',
+          eta: '10:15 AM',
+          status: 'Scheduled',
+          crates: 10,
+          weightKg: 420,
+          cargo: 'Fresh Berries & Cream',
+          items: [
+            { sku: 'FRU-301', name: 'Imported Strawberries Grade A 250g', category: 'Berries', quantity: '6 Crates (120 Punnets)', weight: '30 kg' },
+            { sku: 'DAI-502', name: 'Fresh Whipping Cream 250ml', category: 'Dairy', quantity: '4 Crates (80 Units)', weight: '22 kg' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'VEH016',
+      isRecovery: true,
+      type: 'Truck',
+      refrigeration: 'Reefer',
+      activeLeg: 'Trip 1 of 2',
+      tripLock: 'Fresh - Kollupitiya Central (Recovery)',
+      currentDestination: 'OUT-1044 Kollupitiya',
+      startTime: '09:00 AM',
+      endTime: '10:30 AM',
+      stopsCount: 1,
+      tripStatus: 'Staged at Bay 3',
+      driverName: 'Nimal Jayasuriya',
+      driverPhone: '+94 71 334 5566',
+      departureTime: '09:00 AM',
+      totalCrates: 14,
+      payloadKg: 840,
+      stops: [
+        {
+          id: 'OUT-1044',
+          name: 'Kollupitiya Central',
+          eta: '09:15 AM',
+          status: 'Scheduled',
+          crates: 14,
+          weightKg: 840,
+          cargo: 'Fresh Poultry & Meat',
+          items: [
+            { sku: 'MEA-105', name: 'Bairaha Chilled Chicken Breasts 500g', category: 'Poultry', quantity: '8 Crates (80 Packs)', weight: '56 kg' },
+            { sku: 'MEA-204', name: 'Farm Fresh Chicken Drumsticks', category: 'Poultry', quantity: '6 Crates (60 Packs)', weight: '42 kg' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  const currentVehicleAssignments = recoveryDeployed
+    ? [...recoveryVehicleAssignments, ...initialVehicleAssignments]
+    : initialVehicleAssignments;
+
   // Filtered Vehicle Assignments for Workbench
-  const filteredVehicleAssignments = initialVehicleAssignments.filter((va) => {
+  const filteredVehicleAssignments = currentVehicleAssignments.filter((va) => {
     if (workbenchFilter === 'reefers' && va.refrigeration !== 'Reefer') return false;
     if (workbenchFilter === 'delayed' && !va.tripStatus.includes('Delayed')) return false;
     if (workbenchSearch.trim()) {
@@ -1232,16 +1324,16 @@ export default function DispatcherRoster({ onLogout }) {
                     onClick={() => {
                       setActiveNav(tab.id);
                       if (tab.id === 'Route Allocation & Capacity') {
-                        setActiveSubTab('Fleet Availability');
+                        setActiveSubTab('Allocation Workbench');
                       }
                     }}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                       isActive
                         ? 'bg-[#E8F7F0] text-[#059669]'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    {tab.name}
+                    <span>{tab.name}</span>
                   </button>
                 );
               })}
@@ -1911,32 +2003,6 @@ export default function DispatcherRoster({ onLogout }) {
           </div>
         ) : (
           <>
-            {/* Sub-tabs: Fleet Availability vs Allocation Workbench */}
-            <div className="flex items-center gap-6 border-b border-gray-200/80">
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('Fleet Availability')}
-                className={`pb-2.5 text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
-                  activeSubTab === 'Fleet Availability'
-                    ? 'text-[#059669] border-b-2 border-[#059669]'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <span>Fleet Availability</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('Allocation Workbench')}
-                className={`pb-2.5 text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
-                  activeSubTab === 'Allocation Workbench'
-                    ? 'text-[#059669] border-b-2 border-[#059669]'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <span>Allocation Workbench</span>
-              </button>
-            </div>
-
             {/* ======================================================= */}
             {/* SUB-TAB 2: ALLOCATION WORKBENCH (PROPOSED ASSIGNMENTS)    */}
             {/* ======================================================= */}
@@ -1946,6 +2012,17 @@ export default function DispatcherRoster({ onLogout }) {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
                   {/* Left: Hub Switcher & Segment Bar */}
                   <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                    {/* Back to Fleet Availability */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveSubTab('Fleet Availability')}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                      title="Back to Fleet Availability"
+                    >
+                      <ArrowLeft size={13} />
+                      <span>Fleet Availability</span>
+                    </button>
+
                     {/* Hub Selector */}
                     <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
                       <button
@@ -2177,52 +2254,98 @@ export default function DispatcherRoster({ onLogout }) {
                 {/* 1. VIEW BY VEHICLE (EXACT MATCH TO USER SCREENSHOT) */}
                 {/* =================================================== */}
                 {workbenchView === 'vehicle' && (
-                  <div className="w-full bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="bg-[#F8FAFC] text-slate-500 font-semibold border-b border-gray-200/70 select-none">
-                            <th className="py-3 px-4">VEHICLE ID</th>
-                            <th className="py-3 px-4">ACTIVE LEG</th>
-                            <th className="py-3 px-4">TRIP LOCK</th>
-                            <th className="py-3 px-4">STOPS</th>
-                            <th className="py-3 px-4">CURRENT DESTINATION</th>
-                            <th className="py-3 px-4">TRIP TIME</th>
-                            <th className="py-3 px-4 text-right">ACTIONS</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {filteredVehicleAssignments.map((va) => {
-                            const isExpanded = expandedVehicleIds.has(va.id);
+                  <div className="flex flex-col gap-3">
+                    {/* Disruption Banner on Confirmed Screen (Matching User's Attached Screenshot) */}
+                    {!recoveryDeployed ? (
+                      <div className="w-full bg-[#FFF1F2] border border-[#FECDD3] rounded-2xl p-3 sm:px-5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs animate-in fade-in">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-9 h-9 rounded-xl bg-rose-100/80 border border-rose-200/90 flex items-center justify-center flex-shrink-0 text-[#BE123C]">
+                            <AlertTriangle size={18} strokeWidth={2.2} />
+                          </div>
+                          <div className="text-xs text-[#881337] leading-relaxed">
+                            <span>2 vehicles lost since Plan v1 · </span>
+                            <strong className="font-mono font-bold text-[#4C0519]">VEH011</strong>
+                            <span> (at dock, cargo staged) · </span>
+                            <strong className="font-mono font-bold text-[#4C0519]">VEH006</strong>
+                            <span> (en route, 4 stops undelivered) · </span>
+                            <strong className="font-bold text-[#4C0519]">5 orders · 3,270 kg unassigned</strong>
+                          </div>
+                        </div>
 
-                            return (
-                              <React.Fragment key={va.id}>
-                                <tr
-                                  onClick={() => toggleVehicleExpand(va.id)}
-                                  className={`transition-colors cursor-pointer ${
-                                    isExpanded ? 'bg-slate-50/80' : 'hover:bg-slate-50/60'
-                                  }`}
-                                >
-                                  {/* VEHICLE ID + TYPE + REFRIGERATION */}
-                                  <td className="py-3.5 px-4">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono font-bold text-slate-900 text-xs">
-                                        {va.id}
-                                      </span>
-                                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
-                                        {va.type}
-                                      </span>
-                                      {va.refrigeration === 'Reefer' ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                                          Reefer
+                        <button
+                          type="button"
+                          onClick={() => setShowRecoveryModal(true)}
+                          className="inline-flex items-center justify-center gap-2 bg-[#059669] hover:bg-[#047857] active:bg-[#065F46] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer flex-shrink-0"
+                        >
+                          <span>Start Recovery Plan</span>
+                          <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full bg-[#EAF7EE] border border-[#CDEED6] rounded-2xl p-3 sm:px-5 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#065F46] shadow-2xs animate-in fade-in">
+                        <div className="flex items-center gap-2.5">
+                          <CheckCircle2 size={18} className="text-[#059669] flex-shrink-0" />
+                          <span className="font-semibold">
+                            Recovery Plan v2 active · 3 recovered orders placed in open slots (VEH014 & VEH016) · Loader, Driver and Store Managers notified.
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-[#059669] bg-white px-2.5 py-1 rounded-lg border border-[#CDEED6]">
+                          Recovery Deployed
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="w-full bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="bg-[#F8FAFC] text-slate-500 font-semibold border-b border-gray-200/70 select-none">
+                              <th className="py-3 px-4">VEHICLE ID</th>
+                              <th className="py-3 px-4">ACTIVE LEG</th>
+                              <th className="py-3 px-4">TRIP LOCK</th>
+                              <th className="py-3 px-4">STOPS</th>
+                              <th className="py-3 px-4">CURRENT DESTINATION</th>
+                              <th className="py-3 px-4">TRIP TIME</th>
+                              <th className="py-3 px-4 text-right">ACTIONS</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {filteredVehicleAssignments.map((va) => {
+                              const isExpanded = expandedVehicleIds.has(va.id);
+
+                              return (
+                                <React.Fragment key={`${va.id}-${va.activeLeg}`}>
+                                  <tr
+                                    onClick={() => toggleVehicleExpand(va.id)}
+                                    className={`transition-colors cursor-pointer ${
+                                      isExpanded ? 'bg-slate-50/80' : 'hover:bg-slate-50/60'
+                                    }`}
+                                  >
+                                    {/* VEHICLE ID + TYPE + REFRIGERATION */}
+                                    <td className="py-3.5 px-4">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono font-bold text-slate-900 text-xs">
+                                          {va.id}
                                         </span>
-                                      ) : (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
-                                          Ambient
+                                        {va.isRecovery && (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                            Recovery
+                                          </span>
+                                        )}
+                                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                                          {va.type}
                                         </span>
-                                      )}
-                                    </div>
-                                  </td>
+                                        {va.refrigeration === 'Reefer' ? (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                            Reefer
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
+                                            Ambient
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
 
                                   {/* ACTIVE LEG */}
                                   <td className="py-3.5 px-4 font-bold text-slate-900">
@@ -2472,7 +2595,8 @@ export default function DispatcherRoster({ onLogout }) {
                       </table>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
                 {/* =================================================== */}
                 {/* 2. VIEW BY OUTLET (OUTLET CARDS WITH VEHICLES DROPDOWN) */}
@@ -3181,6 +3305,20 @@ export default function DispatcherRoster({ onLogout }) {
             setShowConfirmToast(false);
           }, 4000);
           setActiveSubTab('Allocation Workbench');
+        }}
+      />
+
+      {/* Recovery Plan Modal */}
+      <RecoveryPlanModal
+        isOpen={showRecoveryModal}
+        onClose={() => setShowRecoveryModal(false)}
+        onConfirmRecovery={() => {
+          setShowRecoveryModal(false);
+          setRecoveryDeployed(true);
+          setShowConfirmToast(true);
+          setTimeout(() => {
+            setShowConfirmToast(false);
+          }, 4000);
         }}
       />
     </div>
