@@ -3,6 +3,8 @@ import DispatcherLogin from './pages/dispatcher/DispatcherLogin';
 import DispatcherRoster from './pages/dispatcher/DispatcherRoster';
 import StoreManagerLogin from './pages/storemanager/StoreManagerLogin';
 import StoreManagerOverview from './pages/storemanager/StoreManagerOverview';
+import LoaderLogin from './pages/loader/LoaderLogin';
+import LoaderOverview from './pages/loader/LoaderOverview';
 
 export default function App() {
   const getInitialPortal = () => {
@@ -23,6 +25,14 @@ export default function App() {
       return <StoreManagerOverview onLogout={() => setCurrentPage('login')} />;
     }
     return <StoreManagerLogin onLogin={() => setCurrentPage('overview')} />;
+  }
+
+  // Loader Portal
+  if (portal === 'loader') {
+    if (currentPage === 'overview') {
+      return <LoaderOverview onLogout={() => setCurrentPage('login')} />;
+    }
+    return <LoaderLogin onLogin={() => setCurrentPage('overview')} />;
   }
 
   // Dispatcher Portal
