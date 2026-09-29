@@ -127,17 +127,24 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
       )}
 
       {/* Progress stepper */}
-      <div className="px-4 py-4">
-        <div className="flex items-center">
+      <div className="px-3 sm:px-4 py-4">
+        <div className="flex items-start w-full">
           {ORDER_STAGES.map((stage, idx) => {
             const isDone   = idx < activeStage;
             const isActive = idx === activeStage;
             const isPending = idx > activeStage;
             return (
-              <React.Fragment key={stage.key}>
-                {/* Node */}
-                <div className="flex flex-col items-center shrink-0">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
+              <div key={stage.key} className="flex-1 flex flex-col items-center min-w-0 relative">
+                {/* Connecting line to next node */}
+                {idx < ORDER_STAGES.length - 1 && (
+                  <div className="absolute top-[14px] left-1/2 w-full h-0.5 -translate-y-1/2 z-0">
+                    <div className={`h-full ${idx < activeStage ? 'bg-brand-600' : 'bg-slate-200'}`} />
+                  </div>
+                )}
+
+                {/* Circle Node */}
+                <div className="relative z-10 flex items-center justify-center h-7">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all shrink-0 ${
                     isDone   ? 'bg-brand-600 border-brand-600 text-white' :
                     isActive ? 'bg-white border-brand-600 ring-2 ring-brand-200' :
                                'bg-white border-slate-300'
@@ -148,19 +155,15 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
                       <span className="w-2.5 h-2.5 rounded-full bg-brand-600" />
                     ) : null}
                   </div>
-                  <p className={`text-[10px] mt-1.5 font-medium text-center w-16 leading-tight ${
-                    isActive ? 'text-brand-700 font-semibold' : isDone ? 'text-slate-600' : 'text-slate-400'
-                  }`}>
-                    {stage.label}
-                  </p>
                 </div>
-                {/* Connector */}
-                {idx < ORDER_STAGES.length - 1 && (
-                  <div className="flex-1 h-0.5 mx-1.5 mb-5 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${idx < activeStage ? 'bg-brand-600' : 'bg-slate-200'}`} />
-                  </div>
-                )}
-              </React.Fragment>
+
+                {/* Label */}
+                <p className={`text-[10px] mt-1.5 font-medium text-center w-full leading-tight px-0.5 break-words ${
+                  isActive ? 'text-brand-700 font-semibold' : isDone ? 'text-slate-600' : 'text-slate-400'
+                }`}>
+                  {stage.label}
+                </p>
+              </div>
             );
           })}
         </div>
