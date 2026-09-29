@@ -1,0 +1,189 @@
+export default function LoaderHome({ user }) {
+  const currentDepot = user?.depot || 'peliyagoda';
+  
+  const [filter, setFilter] = useState('ALL');
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  
+  // Refs for scrolling
+  const listRef = useRef(null);
+  const rowRefs = useRef({});
+
+  // Filter categorization mapping
+  const getFilterCategory = (status) => {
+    if (['Dispatched', 'Ready', 'Loading'].includes(status)) return 'AT HUB';
+    if (['Returning'].includes(status)) return 'RETURNING';
+    return 'OUT FOR DELIVERY';
+  };
+
+  const depotVehicles = useMemo(() => 
+    MOCK_VEHICLES.filter(v => v.depot === currentDepot),
+  [currentDepot]);
+
+  const filteredVehicles = useMemo(() => {
+    if (filter === 'ALL') return depotVehicles;
+    return depotVehicles.filter(v => getFilterCategory(v.status) === filter);
+  }, [depotVehicles, filter]);
+
+  // Handle filter changes
+  useEffect(() => {
+    // If the currently selected vehicle is filtered out, clear selection
+    if (selectedVehicleId && !filteredVehicles.find(v => v.id === selectedVehicleId)) {
+      setSelectedVehicleId(null);
+    }
+  }, [filter, filteredVehicles, selectedVehicleId]);
+
+  const handleSelectVehicle = (id, fromMap = false) => {
+    setSelectedVehicleId(prev => prev === id ? null : id);
+    
+    // Scroll the vehicle list to the row if selected from map
+    if (fromMap && id && listRef.current && rowRefs.current[id]) {
+      const row = rowRefs.current[id];
+      const container = listRef.current;
+      
+      const rowTop = row.offsetTop;
+      const rowHeight = row.offsetHeight;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.offsetHeight;
+
+      // Check if it's out of view
+      if (rowTop < containerScrollTop || (rowTop + rowHeight) > (containerScrollTop + containerHeight)) {
+        // Scroll so it's vertically centered
+        container.scrollTo({
+          top: rowTop - containerHeight / 2 + rowHeight / 2,
+          behavior: 'smooth'
+        });
+      }
+    }
+  };
+
+  const filterTabs = [
+    { id: 'ALL', label: 'ALL' },
+    { id: 'AT HUB', label: 'AT HUB' },
+    { id: 'OUT FOR DELIVERY', label: 'OUT FOR DELIVERY' },
+    { id: 'RETURNING', label: 'RETURNING' }
+  ];
+
+  const getEmptyStateMessage = () => {
+    switch(filter) {
+      case 'AT HUB': return 'No vehicles currently at the hub.';
+      case 'OUT FOR DELIVERY': return 'No vehicles currently out for delivery.';
+      case 'RETURNING': return 'No vehicles currently returning.';
+      default: return 'No active vehicles.';
+    }
+  };
+
+  return (
+    <div className="p-4 sm:p-6 bg-white flex flex-col h-full min-h-0">
+      
+      {/* Shift Card */}
+      <div className="shrink-0 mb-6 border border-slate-200 rounded p-5 shadow-sm">
+        <div className="flex items-start justify-between mb-4">
+          <h2 className="text-xl font-bold text-slate-900">Morning Dispatch & Turnaround</h2>
+          <span className="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded border border-brand-100">
+            Shift Active · 03:00 AM – 11:30 AM
+          </span>
+        </div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-slate-500">Dispatch Progress</span>
+          <span className="text-sm font-bold text-brand-600">8 of 14 Vehicles (57%)</span>
+        </div>
+        <div className="h-2 w-full bg-slate-100 rounded-sm overflow-hidden">
+          <div className="h-full bg-brand-500 rounded-sm" style={{ width: '57%' }}></div>
+        </div>
+      </div>
+
+      {/* Map: Fixed height, above everything */}
+      <div className="shrink-0 h-[360px] lg:h-[400px] mb-6">
+        <LoaderMap 
+          vehicles={filteredVehicles} 
+          selectedVehicleId={selectedVehicleId} 
+          onSelectVehicle={(id) => handleSelectVehicle(id, true)} 
+        />
+      </div>
+
+      {/* Active Vehicles Header & Filters */}
+      <div className="shrink-0 mb-4 space-y-4">
+        {/* Active Vehicles Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-bold text-slate-900">Active Vehicles</h3>
+            <span className="text-sm font-bold text-slate-500">· {filteredVehicles.length}</span>
+          </div>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 border border-slate-200 rounded shrink-0">
+            {filterTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${
+                  filter === tab.id 
+                    ? 'bg-white text-brand-600 shadow-sm border border-slate-200' 
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-transparent'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Vehicle List */}
+      <div 
+        ref={listRef}
+        className="flex-1 overflow-y-auto space-y-3 pr-1 pb-4"
+      >
+        {filteredVehicles.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 font-medium bg-slate-50 rounded border border-slate-100">
+            {getEmptyStateMessage()}
+          </div>
+        ) : (
+          filteredVehicles.map(veh => {
+            const badgeColors = {
+              blue: 'bg-blue-50 text-blue-600',
+              orange: 'bg-orange-50 text-orange-600',
+              red: 'bg-red-50 text-red-600',
+              brand: 'bg-brand-50 text-brand-600'
+            };
+            
+            const isSelected = selectedVehicleId === veh.id;
+
+            return (
+              <div 
+                key={veh.id} 
+                ref={el => rowRefs.current[veh.id] = el}
+                onClick={() => handleSelectVehicle(veh.id, false)}
+                className={`border rounded p-3 flex flex-col sm:flex-row gap-3 sm:items-center justify-between shadow-sm cursor-pointer transition-colors ${
+                  isSelected ? 'border-brand-500 bg-[#F4FAF6]' : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 w-[120px] shrink-0">
+                    <span className="font-bold text-slate-900">{veh.id}</span>
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <div className="text-xs text-slate-400 font-medium mb-0.5">{veh.type}</div>
+                    <div className="text-sm font-semibold text-slate-700 truncate" title={veh.route}>
+                      {veh.route} {veh.stops ? `(${veh.stops} stops)` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center sm:justify-end gap-4 shrink-0 mt-2 sm:mt-0">
+                  <div className="text-right w-[100px]">
+                    {veh.eta && <div className="text-xs font-semibold text-orange-500">{veh.eta}</div>}
+                  </div>
+                  <span className={`px-2 py-0.5 text-[11px] font-bold rounded border ${badgeColors[veh.color] || 'bg-slate-50 text-slate-600'}`}>
+                    {veh.status}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+    </div>
+  );
+}
