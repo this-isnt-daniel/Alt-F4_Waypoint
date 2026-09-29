@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, UserPlus, CheckCircle2, ShieldCheck, KeyRound, Truck, Phone } from 'lucide-react';
+import { LogIn, UserPlus, CheckCircle2, ShieldCheck, KeyRound, Truck } from 'lucide-react';
 import waypointLogo from './assets/icons/waypoint_logo.png';
 
 export default function DriverAuth({ onAuthSuccess }) {
@@ -19,7 +19,7 @@ export default function DriverAuth({ onAuthSuccess }) {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-64px)] overflow-hidden" style={{ background: '#081C17' }}>
+    <div className="flex flex-col lg:flex-row min-h-screen w-full" style={{ background: '#081C17' }}>
 
       {/* ── Left Side: Brand & Hero Artwork ────────────────────────── */}
       <div
@@ -73,8 +73,11 @@ export default function DriverAuth({ onAuthSuccess }) {
       </div>
 
       {/* ── Right Side: Sign-in / Sign-up Card Form ────────────────── */}
-      <div className="w-full lg:w-1/2 p-6 lg:p-14 flex flex-col justify-center items-center overflow-y-auto">
-        <div className="w-full max-w-md">
+      <div
+        className="w-full lg:w-1/2 p-6 lg:p-14 flex flex-col justify-center items-center"
+        style={{ background: '#081C17' }}
+      >
+        <div className="w-full max-w-md my-auto">
 
           {/* Mode Switcher Tabs */}
           <div className="flex rounded-2xl p-1 bg-[#0F2D25] border border-[#10B981]/20 mb-8">

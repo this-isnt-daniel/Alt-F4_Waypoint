@@ -66,12 +66,14 @@ export default function DriverApp({ onBack }) {
   // If driver is not authenticated yet, present the Driver sign-in / sign-up screen
   if (!driverUser) {
     return (
-      <DriverAuth
-        onAuthSuccess={(user) => {
-          setDriverUser(user);
-          setScreen('01-login');
-        }}
-      />
+      <div className="min-h-screen w-full" style={{ background: '#081C17' }}>
+        <DriverAuth
+          onAuthSuccess={(user) => {
+            setDriverUser(user);
+            setScreen('01-login');
+          }}
+        />
+      </div>
     );
   }
 
