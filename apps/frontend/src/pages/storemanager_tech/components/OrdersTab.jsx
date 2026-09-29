@@ -82,19 +82,19 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
   return (
     <div ref={cardRef} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[15px] font-bold text-slate-900">{order.id}</span>
-          <span className="text-[11px] text-slate-400 font-medium">{order.type}</span>
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[15px] font-bold text-slate-900 shrink-0">{order.id}</span>
+          <span className="text-[11px] text-slate-400 font-medium truncate">{order.type}</span>
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${cfg.bg} ${cfg.text} ${cfg.border}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${cfg.animate ? 'animate-pulse' : ''}`} />
           {ORDER_STAGES[activeStage]?.label}
         </span>
       </div>
 
       {/* ETA / Expected */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-slate-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           {order.eta ? (
             <p className="text-[13px] text-slate-700">
@@ -111,7 +111,7 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
           <button
             type="button"
             onClick={onToggleMap}
-            className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-600 hover:text-brand-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-md transition-colors"
+            className="self-start sm:self-auto flex items-center gap-1.5 text-[12px] font-semibold text-slate-600 hover:text-brand-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-md transition-colors"
           >
             <Map size={14} />
             {isMapExpanded ? 'Hide map' : 'Track delivery'}
