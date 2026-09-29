@@ -210,40 +210,46 @@ export default function PlaceOrderTab({
         {/* Not editing -> Persistent Delivery Date and Tabs */}
         {!editingTemplate && (
           <>
-            <div className="px-4 md:px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div className="px-4 md:px-6 py-2.5 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between transition-colors">
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                   Delivery Date
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <CalendarIcon size={14} className="text-brand-600" />
-                  <span className="text-[13px] font-bold text-slate-900">{orderDate || 'Select Date'}</span>
+                  <CalendarIcon size={14} className="text-brand-600 dark:text-emerald-400" />
+                  <span className="text-[13px] font-bold text-slate-900 dark:text-[#F8FAFC]">{orderDate || 'Select Date'}</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDateModal(true)}
-                className="text-[12px] font-semibold text-brand-600 hover:text-brand-800 transition-colors"
+                className="text-[12px] font-semibold text-brand-600 dark:text-emerald-400 hover:text-brand-800 dark:hover:text-emerald-300 transition-colors cursor-pointer"
               >
                 {orderDate ? 'Change' : 'Select'}
               </button>
             </div>
 
             {orderDate?.includes('Tomorrow') && (
-              <div className="px-4 md:px-6 py-1.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">
+              <div className="px-4 md:px-6 py-2 bg-emerald-500/10 dark:bg-emerald-950/30 border-b border-emerald-500/20 dark:border-emerald-800/30 flex items-center gap-2 transition-colors">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 tracking-wide">
                   Order closes 4:00 PM today
+                </span>
+                <span className="text-[10px] font-medium text-emerald-600/80 dark:text-emerald-400/70 ml-auto hidden sm:inline">
+                  Next-day dispatch active
                 </span>
               </div>
             )}
 
-            <div className="px-4 md:px-6 py-3 border-b border-slate-200 shrink-0">
-              <div className="flex p-1 bg-slate-100 rounded-lg">
+            <div className="px-4 md:px-6 py-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg">
                 <button
                   type="button"
                   onClick={() => setActiveTab('catalogue')}
-                  className={`flex-1 text-[13px] font-semibold py-1.5 rounded-md transition-all ${
-                    activeTab === 'catalogue' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  className={`flex-1 text-[13px] font-semibold py-1.5 rounded-md transition-all cursor-pointer ${
+                    activeTab === 'catalogue'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-[#F8FAFC] shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                 >
                   Catalogue
@@ -251,8 +257,10 @@ export default function PlaceOrderTab({
                 <button
                   type="button"
                   onClick={() => setActiveTab('templates')}
-                  className={`flex-1 text-[13px] font-semibold py-1.5 rounded-md transition-all ${
-                    activeTab === 'templates' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  className={`flex-1 text-[13px] font-semibold py-1.5 rounded-md transition-all cursor-pointer ${
+                    activeTab === 'templates'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-[#F8FAFC] shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                 >
                   My Templates
@@ -330,17 +338,17 @@ export default function PlaceOrderTab({
 
       {/* ── Delivery Date Popup Modal ── */}
       {showDateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2 text-slate-800">
-                <CalendarIcon size={18} className="text-brand-600" />
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2 text-slate-800 dark:text-[#F8FAFC]">
+                <CalendarIcon size={18} className="text-brand-600 dark:text-emerald-400" />
                 <h3 className="text-[15px] font-bold">Select Delivery Date</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDateModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>

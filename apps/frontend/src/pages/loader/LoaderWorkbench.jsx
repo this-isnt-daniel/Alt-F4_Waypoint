@@ -87,17 +87,17 @@ export default function LoaderWorkbench() {
 
           <div className="space-y-4">
             {/* Stop 1 */}
-            <div className="border border-[#DCF0E5] bg-[#F4FAF6] rounded-xl p-5 shadow-sm">
+            <div className="border border-[#DCF0E5] dark:border-emerald-900/50 bg-[#F4FAF6] dark:bg-[#111827] rounded-xl p-5 shadow-sm transition-colors">
               <div className="flex justify-between items-start mb-1.5">
-                <h3 className="font-bold text-slate-900 text-[16px]">1. Pack First - Kandana Express (OUT-0122)</h3>
-                <span className="px-3 py-1 bg-brand-50 text-brand-600 text-xs font-bold rounded-full border border-brand-100">Packed</span>
+                <h3 className="font-bold text-slate-900 dark:text-[#F8FAFC] text-[16px]">1. Pack First - Kandana Express (OUT-0122)</h3>
+                <span className="px-3 py-1 bg-brand-50 dark:bg-emerald-950/50 text-brand-600 dark:text-emerald-400 text-xs font-bold rounded-full border border-brand-100 dark:border-emerald-800/40">Packed</span>
               </div>
-              <div className="text-[13px] text-slate-500 mb-3 flex items-center gap-2">
+              <div className="text-[13px] text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
                 Delivers last · Stop 3
               </div>
               <div className="flex items-center gap-2 mb-4">
-                <span className="font-bold text-slate-700 text-[13px]">530 kg · 3.5 m³</span>
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[11px] font-bold rounded border border-blue-100">Chilled</span>
+                <span className="font-bold text-slate-700 dark:text-slate-300 text-[13px]">530 kg · 3.5 m³</span>
+                <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[11px] font-bold rounded border border-blue-100 dark:border-blue-900/40">Chilled</span>
               </div>
 
               {/* Items */}
@@ -108,17 +108,17 @@ export default function LoaderWorkbench() {
             </div>
 
             {/* Stop 2 */}
-            <div className="border-2 border-brand-500 bg-white rounded-xl p-5 shadow-sm">
+            <div className="border-2 border-brand-500 dark:border-emerald-500 bg-white dark:bg-[#111827] rounded-xl p-5 shadow-sm transition-colors">
               <div className="flex justify-between items-start mb-1.5">
-                <h3 className="font-bold text-slate-900 text-[16px]">2. Pack Second - Ja-Ela Central (OUT-0091)</h3>
-                <span className="px-3 py-1 bg-brand-50 text-brand-600 text-xs font-bold rounded-full border border-brand-100">Active</span>
+                <h3 className="font-bold text-slate-900 dark:text-[#F8FAFC] text-[16px]">2. Pack Second - Ja-Ela Central (OUT-0091)</h3>
+                <span className="px-3 py-1 bg-brand-50 dark:bg-emerald-950/50 text-brand-600 dark:text-emerald-400 text-xs font-bold rounded-full border border-brand-100 dark:border-emerald-800/40">Active</span>
               </div>
-              <div className="text-[13px] text-slate-500 mb-3 flex items-center gap-2">
+              <div className="text-[13px] text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
                 Delivers 2nd · Stop 2
               </div>
               <div className="flex items-center gap-2 mb-4">
-                <span className="font-bold text-slate-700 text-[13px]">1,100 kg · 4.5 m³</span>
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[11px] font-bold rounded border border-blue-100">Chilled</span>
+                <span className="font-bold text-slate-700 dark:text-slate-300 text-[13px]">1,100 kg · 4.5 m³</span>
+                <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[11px] font-bold rounded border border-blue-100 dark:border-blue-900/40">Chilled</span>
               </div>
 
               {/* Items */}
@@ -186,32 +186,32 @@ function ItemRow({ item, onFlag }) {
   
   if (isDiscrepancy) {
     return (
-      <div className="bg-[#FFF8E6] border border-[#FDE093] rounded-lg p-3">
+      <div className="bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/20 dark:border-emerald-800/30 rounded-lg p-3">
         <div className="flex items-start justify-between">
           <div className="flex gap-3">
-            <div className="mt-0.5 w-5 h-5 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center shrink-0">
+            <div className="mt-0.5 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Minus className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-bold text-slate-900 text-[14px]">{item.name}</div>
+              <div className="font-bold text-slate-900 dark:text-[#F8FAFC] text-[14px]">{item.name}</div>
               
               {/* DEVIATION: Verification State */}
               <div className="flex items-center gap-3 mt-1.5 text-[12px]">
-                <span className="text-slate-500">Assigned: <span className="font-bold text-slate-700">{item.assigned}</span></span>
-                <span className="text-slate-500">Actual: <span className="font-bold text-orange-600">{item.actual}</span></span>
-                <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 font-bold rounded">Mismatch</span>
+                <span className="text-slate-500 dark:text-slate-400">Assigned: <span className="font-bold text-slate-700 dark:text-slate-200">{item.assigned}</span></span>
+                <span className="text-slate-500 dark:text-slate-400">Actual: <span className="font-bold text-emerald-700 dark:text-emerald-400">{item.actual}</span></span>
+                <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold rounded">Mismatch</span>
               </div>
               
-              <div className="mt-2 text-[13px] font-bold text-orange-600 flex items-center gap-1.5">
+              <div className="mt-2 text-[13px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4" />
                 Shortfall: {item.shortfall} Crates {item.reason} (Logged)
               </div>
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <div className="text-[12px] font-bold text-slate-500">{item.actual} of {item.assigned} Loaded</div>
-            <button onClick={onFlag} className="px-3 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-full flex items-center gap-1.5 hover:bg-slate-50 shadow-sm">
-              <Flag className="w-3.5 h-3.5 text-orange-500" /> Edit
+            <div className="text-[12px] font-bold text-slate-500 dark:text-slate-400">{item.actual} of {item.assigned} Loaded</div>
+            <button onClick={onFlag} className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-full flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm cursor-pointer">
+              <Flag className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Edit
             </button>
           </div>
         </div>
@@ -267,13 +267,13 @@ function DiscrepancyModal({ item, onClose, onConfirm }) {
             <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => setReason('Missing at Dock')}
-                className={`py-2.5 px-3 text-[13px] font-bold rounded-lg border ${reason === 'Missing at Dock' ? 'border-orange-500 bg-orange-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                className={`py-2.5 px-3 text-[13px] font-bold rounded-lg border cursor-pointer ${reason === 'Missing at Dock' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800'}`}
               >
                 Missing at Dock
               </button>
               <button 
                 onClick={() => setReason('Damaged at Staging')}
-                className={`py-2.5 px-3 text-[13px] font-bold rounded-lg border ${reason === 'Damaged at Staging' ? 'border-orange-500 bg-orange-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                className={`py-2.5 px-3 text-[13px] font-bold rounded-lg border cursor-pointer ${reason === 'Damaged at Staging' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800'}`}
               >
                 Damaged at Staging
               </button>
@@ -281,24 +281,24 @@ function DiscrepancyModal({ item, onClose, onConfirm }) {
           </div>
 
           <div className="mb-6">
-            <label className="block text-[13px] font-bold text-slate-700 mb-2">Quantity Affected</label>
+            <label className="block text-[13px] font-bold text-slate-700 dark:text-slate-300 mb-2">Quantity Affected</label>
             <div className="flex items-center justify-center gap-6 py-2">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50">
+              <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
                 <Minus className="w-5 h-5" />
               </button>
-              <span className="text-xl font-bold text-slate-900 w-24 text-center">{qty} Crates</span>
-              <button onClick={() => setQty(Math.min(item.assigned, qty + 1))} className="w-12 h-12 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50">
+              <span className="text-xl font-bold text-slate-900 dark:text-[#F8FAFC] w-24 text-center">{qty} Crates</span>
+              <button onClick={() => setQty(Math.min(item.assigned, qty + 1))} className="w-12 h-12 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
                 <Plus className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div className="border border-slate-200 rounded-xl p-4 mb-4">
-            <div className="flex justify-between text-[13px] font-bold text-slate-600 mb-2">
+          <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 mb-4">
+            <div className="flex justify-between text-[13px] font-bold text-slate-600 dark:text-slate-400 mb-2">
               <span>Manifest Order</span>
-              <span className="text-slate-900">{item.assigned} Crates</span>
+              <span className="text-slate-900 dark:text-[#F8FAFC]">{item.assigned} Crates</span>
             </div>
-            <div className="flex justify-between text-[13px] font-bold text-orange-500 mb-3 pb-3 border-b border-slate-100">
+            <div className="flex justify-between text-[13px] font-bold text-emerald-700 dark:text-emerald-400 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
               <span>Damaged / Shortfall</span>
               <span>- {qty} Crates</span>
             </div>

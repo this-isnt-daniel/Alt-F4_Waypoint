@@ -3,7 +3,7 @@ import waypointLogo from '../../assets/icons/waypoint_logo.png';
 
 export default function LoaderLogin({ onLogin }) {
   return (
-    <main className="min-h-screen w-full bg-white flex flex-col items-center justify-center px-4 select-none">
+    <main className="min-h-screen w-full bg-white dark:bg-[#0B0F17] flex flex-col items-center justify-center px-4 select-none transition-colors duration-200">
       <div className="flex flex-col items-center max-w-sm w-full">
         {/* Logo and Brand Heading */}
         <div className="flex items-center justify-center gap-3.5">
@@ -13,7 +13,7 @@ export default function LoaderLogin({ onLogin }) {
             className="w-12 h-12 object-contain rounded-xl shadow-sm"
           />
           <h1
-            className="text-[48px] font-extrabold text-[#0B2019] tracking-tight leading-none"
+            className="text-[48px] font-extrabold text-[#0B2019] dark:text-[#F8FAFC] tracking-tight leading-none"
             style={{ fontFamily: "'Inter', sans-serif" }}
           >
             Waypoint
@@ -22,7 +22,7 @@ export default function LoaderLogin({ onLogin }) {
 
         {/* Portal Pill Badge */}
         <div className="mt-5">
-          <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.16em] uppercase text-[#256149] bg-[#EBF6F0] border border-[#DCF0E5]">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.16em] uppercase text-[#256149] dark:text-[#34D399] bg-[#EBF6F0] dark:bg-emerald-950/50 border border-[#DCF0E5] dark:border-emerald-800/40">
             Loader Portal
           </span>
         </div>

@@ -27,7 +27,7 @@ export default function LoaderQueue({ onOpenTrip }) {
             <div className="text-[15px] text-slate-500 mb-3">
               Gampaha Fresh Run (Trip 2) · 3 Stops
             </div>
-            <span className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded-full border border-orange-100">Yet to Load</span>
+            <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-full border border-slate-200 dark:border-slate-700">Yet to Load</span>
           </div>
           <button onClick={onOpenTrip} className="h-10 px-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-lg flex items-center gap-2 transition-colors shadow-sm">
             Open <ArrowRight className="w-4 h-4" />
@@ -44,7 +44,7 @@ export default function LoaderQueue({ onOpenTrip }) {
             <div className="text-[15px] text-slate-500 mb-3">
               Gampaha Fresh Run (Trip 2) · 3 Stops
             </div>
-            <span className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded-full border border-orange-100">Yet to Load</span>
+            <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-full border border-slate-200 dark:border-slate-700">Yet to Load</span>
           </div>
           <button onClick={onOpenTrip} className="h-10 px-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-lg flex items-center gap-2 transition-colors shadow-sm">
             Open <ArrowRight className="w-4 h-4" />
@@ -61,7 +61,7 @@ export default function LoaderQueue({ onOpenTrip }) {
             <div className="text-[15px] text-slate-500 mb-3">
               Colombo Central Style (Trip 2) · 4 Stops
             </div>
-            <span className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded-full border border-orange-100">Yet to Load</span>
+            <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-full border border-slate-200 dark:border-slate-700">Yet to Load</span>
           </div>
           <button onClick={onOpenTrip} className="h-10 px-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-lg flex items-center gap-2 transition-colors shadow-sm">
             Open <ArrowRight className="w-4 h-4" />

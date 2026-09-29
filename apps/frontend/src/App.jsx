@@ -10,6 +10,8 @@ import StoreManagerStyleOverview from './pages/storemanager_style/StoreManagerOv
 import LoaderLogin from './pages/loader/LoaderLogin';
 import LoaderOverview from './pages/loader/LoaderOverview';
 import CentralLogin from './pages/CentralLogin';
+import { ThemeProvider } from './theme/ThemeProvider';
+import { ThemeToggle } from './theme/ThemeToggle';
 
 export default function App() {
   const getInitialPortal = () => {
@@ -37,88 +39,101 @@ export default function App() {
   const [currentStyleUser, setCurrentStyleUser] = useState({ name: 'S. Jayawardena', pin: '123456' });
   const [currentStyleOutlet, setCurrentStyleOutlet] = useState({ id: 'STY-001', name: 'Waypoint Style Boutique — Colombo 07' });
 
-  // ── Portal 1: Store Manager (Grocery & Fresh) ──
-  if (portal === 'storemanager' || portal === 'grocery' || portal === 'storemanager-fresh') {
-    if (currentPage === 'overview') {
+  const renderPortal = () => {
+    // ── Portal 1: Store Manager (Grocery & Fresh) ──
+    if (portal === 'storemanager' || portal === 'grocery' || portal === 'storemanager-fresh') {
+      if (currentPage === 'overview') {
+        return (
+          <StoreManagerOverview 
+            user={currentUser} 
+            outlet={currentOutlet}
+            onLogout={() => setCurrentPage('login')} 
+          />
+        );
+      }
       return (
-        <StoreManagerOverview 
-          user={currentUser} 
-          outlet={currentOutlet}
-          onLogout={() => setCurrentPage('login')} 
+        <StoreManagerLogin 
+          onLogin={(manager, outlet) => {
+            setCurrentUser(manager);
+            setCurrentOutlet(outlet);
+            setCurrentPage('overview');
+          }} 
         />
       );
     }
-    return (
-      <StoreManagerLogin 
-        onLogin={(manager, outlet) => {
-          setCurrentUser(manager);
-          setCurrentOutlet(outlet);
-          setCurrentPage('overview');
-        }} 
-      />
-    );
-  }
 
-  // ── Portal 2: Store Manager Tech ──
-  if (portal === 'storemanager-tech' || portal === 'storemanager_tech' || portal === 'tech') {
-    if (currentPage === 'overview') {
+    // ── Portal 2: Store Manager Tech ──
+    if (portal === 'storemanager-tech' || portal === 'storemanager_tech' || portal === 'tech') {
+      if (currentPage === 'overview') {
+        return (
+          <StoreManagerTechOverview 
+            user={currentTechUser} 
+            outlet={currentTechOutlet}
+            onLogout={() => setCurrentPage('login')} 
+          />
+        );
+      }
       return (
-        <StoreManagerTechOverview 
-          user={currentTechUser} 
-          outlet={currentTechOutlet}
-          onLogout={() => setCurrentPage('login')} 
+        <StoreManagerTechLogin 
+          onLogin={(manager, outlet) => {
+            setCurrentTechUser(manager);
+            setCurrentTechOutlet(outlet);
+            setCurrentPage('overview');
+          }} 
         />
       );
     }
-    return (
-      <StoreManagerTechLogin 
-        onLogin={(manager, outlet) => {
-          setCurrentTechUser(manager);
-          setCurrentTechOutlet(outlet);
-          setCurrentPage('overview');
-        }} 
-      />
-    );
-  }
 
-  // ── Portal 3: Waypoint Style (Store Manager Style) ──
-  if (portal === 'storemanager-style' || portal === 'storemanager_style' || portal === 'style') {
-    if (currentPage === 'overview') {
+    // ── Portal 3: Waypoint Style (Store Manager Style) ──
+    if (portal === 'storemanager-style' || portal === 'storemanager_style' || portal === 'style') {
+      if (currentPage === 'overview') {
+        return (
+          <StoreManagerStyleOverview 
+            user={currentStyleUser} 
+            outlet={currentStyleOutlet}
+            onLogout={() => setCurrentPage('login')} 
+          />
+        );
+      }
       return (
-        <StoreManagerStyleOverview 
-          user={currentStyleUser} 
-          outlet={currentStyleOutlet}
-          onLogout={() => setCurrentPage('login')} 
+        <StoreManagerStyleLogin 
+          onLogin={(manager, outlet) => {
+            setCurrentStyleUser(manager);
+            setCurrentStyleOutlet(outlet);
+            setCurrentPage('overview');
+          }} 
         />
       );
     }
-    return (
-      <StoreManagerStyleLogin 
-        onLogin={(manager, outlet) => {
-          setCurrentStyleUser(manager);
-          setCurrentStyleOutlet(outlet);
-          setCurrentPage('overview');
-        }} 
-      />
-    );
-  }
 
-  // ── Portal 4: Loader Portal ──
-  if (portal === 'loader') {
-    if (currentPage === 'overview') {
-      return <LoaderOverview onLogout={() => setCurrentPage('login')} />;
+    // ── Portal 4: Loader Portal ──
+    if (portal === 'loader') {
+      if (currentPage === 'overview') {
+        return <LoaderOverview onLogout={() => setCurrentPage('login')} />;
+      }
+      return <LoaderLogin onLogin={() => setCurrentPage('overview')} />;
     }
-    return <LoaderLogin onLogin={() => setCurrentPage('overview')} />;
-  }
 
-  // ── Portal 5: Dispatcher Portal ──
-  if (portal === 'dispatcher') {
-    if (currentPage === 'overview') {
-      return <DispatcherRoster onLogout={() => setCurrentPage('login')} />;
+    // ── Portal 5: Dispatcher Portal ──
+    if (portal === 'dispatcher') {
+      if (currentPage === 'overview') {
+        return <DispatcherRoster onLogout={() => setCurrentPage('login')} />;
+      }
+      return <DispatcherLogin onLogin={() => setCurrentPage('overview')} />;
     }
-    return <DispatcherLogin onLogin={() => setCurrentPage('overview')} />;
-  }
 
-  // ── Default / Central ──
-  return <CentralLogin />;
+    // ── Default / Central ──
+    return <CentralLogin />;
+  };
+
+  return (
+    <ThemeProvider>
+      <div className="relative min-h-screen bg-canvas text-ink transition-colors duration-200">
+        {renderPortal()}
+        <aside className="fixed bottom-4 right-4 z-50">
+          <ThemeToggle />
+        </aside>
+      </div>
+    </ThemeProvider>
+  );
 }

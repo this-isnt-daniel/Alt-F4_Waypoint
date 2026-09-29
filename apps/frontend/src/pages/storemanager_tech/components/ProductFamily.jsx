@@ -25,15 +25,15 @@ export default function ProductFamily({ category, initialSubcat, basket, onBack,
         <button
           type="button"
           onClick={onBack}
-          className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors shrink-0"
+          className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-[#111827] transition-colors shrink-0 cursor-pointer"
           aria-label="Back to categories"
         >
           <ArrowLeft size={16} strokeWidth={2} />
         </button>
         <div>
-          <h2 className="text-[17px] font-bold text-slate-900 leading-tight">{category.name}</h2>
+          <h2 className="text-[17px] font-bold text-slate-900 dark:text-[#F8FAFC] leading-tight">{category.name}</h2>
           {category.tempRequired && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 mt-0.5">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400 mt-0.5">
               <Snowflake size={11} /> Temperature controlled
             </span>
           )}
@@ -54,15 +54,15 @@ export default function ProductFamily({ category, initialSubcat, basket, onBack,
                   key={sub.id}
                   type="button"
                   onClick={() => setActiveSubcat(sub.id)}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                     isActive
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700'
+                      ? 'bg-brand-600 dark:bg-emerald-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-300 dark:hover:border-emerald-500/50 hover:text-brand-700 dark:hover:text-emerald-400'
                   }`}
                 >
                   {sub.name}
                   {itemsInBasket > 0 && (
-                    <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-700'}`}>
+                    <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-brand-100 dark:bg-emerald-950/60 text-brand-700 dark:text-emerald-300'}`}>
                       {itemsInBasket}
                     </span>
                   )}
@@ -82,7 +82,7 @@ export default function ProductFamily({ category, initialSubcat, basket, onBack,
             onSetQty={onSetQty}
           />
         ) : (
-          <p className="text-slate-400 text-[14px] py-12 text-center">No subcategory selected</p>
+          <p className="text-slate-400 dark:text-slate-500 text-[14px] py-12 text-center">No subcategory selected</p>
         )}
       </div>
     </div>
@@ -91,18 +91,18 @@ export default function ProductFamily({ category, initialSubcat, basket, onBack,
 
 function ProductList({ subcategory, basket, onSetQty }) {
   if (!subcategory.products.length) {
-    return <p className="text-slate-400 text-[14px] py-12 text-center">No products in this category yet.</p>;
+    return <p className="text-slate-400 dark:text-slate-500 text-[14px] py-12 text-center">No products in this category yet.</p>;
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
       {/* Table header */}
-      <div className="grid grid-cols-[1fr_auto] items-center px-4 py-2.5 border-b border-slate-100 bg-slate-50/60">
-        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Product</span>
-        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-right">Quantity</span>
+      <div className="grid grid-cols-[1fr_auto] items-center px-4 py-2.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-800/40">
+        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Product</span>
+        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right">Quantity</span>
       </div>
 
-      <div className="divide-y divide-slate-100">
+      <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
         {subcategory.products.map((product) => (
           <ProductRow
             key={product.id}
@@ -124,9 +124,9 @@ function ProductRow({ product, basket, onSetQty }) {
     return (
       <div className="px-4 py-3">
         {/* Product name header row */}
-        <p className="text-[13px] font-semibold text-slate-700 mb-2.5">{product.name}</p>
+        <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 mb-2.5">{product.name}</p>
         {/* One row per variant */}
-        <div className="space-y-2 pl-2 border-l-2 border-slate-100">
+        <div className="space-y-2 pl-2 border-l-2 border-slate-100 dark:border-slate-800">
           {product.variants.map((variant) => {
             const key = `${product.id}-${variant}`;
             const basketItem = basket.find((b) => b.key === key);
@@ -134,7 +134,7 @@ function ProductRow({ product, basket, onSetQty }) {
             return (
               <div key={variant} className="flex items-center justify-between">
                 <div>
-                  <p className="text-[14px] font-medium text-slate-900">{variant}</p>
+                  <p className="text-[14px] font-medium text-slate-900 dark:text-[#F8FAFC]">{variant}</p>
                 </div>
                 <QuantityStepper
                   qty={qty}
@@ -159,9 +159,9 @@ function ProductRow({ product, basket, onSetQty }) {
   const qty = basketItem?.qty ?? 0;
 
   return (
-    <div className="px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
+    <div className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors">
       <div>
-        <p className="text-[14px] font-medium text-slate-900">{product.name}</p>
+        <p className="text-[14px] font-medium text-slate-900 dark:text-[#F8FAFC]">{product.name}</p>
       </div>
       <QuantityStepper
         qty={qty}

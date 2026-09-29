@@ -53,10 +53,10 @@ export default function LoaderHome() {
             <div className="text-sm text-slate-600 mb-1">
               Route: <span className="font-semibold text-slate-800">Gampaha Fresh</span> (3 stops)
             </div>
-            <div className="text-xs font-semibold text-orange-500 mb-1">ETA: 08:45 AM (In 15 mins)</div>
-            <div className="text-xs font-semibold text-brand-600">Pre-stage next trip cargo</div>
+            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1">ETA: 08:45 AM (In 15 mins)</div>
+            <div className="text-xs font-semibold text-brand-600 dark:text-emerald-400">Pre-stage next trip cargo</div>
           </div>
-          <span className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded-full">Returning</span>
+          <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-full border border-emerald-200 dark:border-emerald-800">Returning</span>
         </div>
 
         {/* VEH019 */}

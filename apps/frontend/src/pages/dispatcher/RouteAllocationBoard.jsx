@@ -252,16 +252,16 @@ function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocati
             {/* Warning header */}
             <div className="p-7 pb-4">
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center">
-                  <AlertTriangle size={18} className="text-amber-500" />
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center">
+                  <AlertTriangle size={18} className="text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-base font-bold text-slate-900 tracking-tight">You have changed the allocations</h2>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">You have changed the allocations</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                     The manual allocation differs from the CP-SAT solver plan. Proceeding will override the optimised plan and lock the manual allocation as the active dispatch.
                   </p>
                 </div>
-                <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 cursor-pointer transition-colors flex-shrink-0">
+                <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors flex-shrink-0">
                   <X size={16} />
                 </button>
               </div>
@@ -269,9 +269,9 @@ function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocati
 
             {/* Warning body */}
             <div className="px-7 pb-4">
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                <p className="text-xs text-amber-800 font-semibold mb-1">Before you proceed, confirm:</p>
-                <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-500/10 dark:bg-emerald-950/30 px-4 py-3">
+                <p className="text-xs text-emerald-800 dark:text-emerald-200 font-semibold mb-1">Before you proceed, confirm:</p>
+                <ul className="text-xs text-emerald-700 dark:text-emerald-300 space-y-1 list-disc list-inside">
                   <li>Temperature compatibility has been manually verified</li>
                   <li>Vehicle capacities are not exceeded</li>
                   <li>Delivery time windows remain achievable</li>

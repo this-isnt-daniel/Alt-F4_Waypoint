@@ -4,11 +4,90 @@
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  /* Light Mode Palette */
+  --c-canvas: #F2F6F3;
+  --c-surface: #FFFFFF;
+  --c-raised: #ECF1ED;
+  --c-line: #DCE5DF;
+
+  --c-hero: #14532D;
+  --c-hero-label: #86D3A6;
+  --c-hero-ink: #FFFFFF;
+
+  --c-ink: #14201A;
+  --c-ink-muted: #5E6F66;
+
+  --c-green: #3FB27F;
+  --c-green-ink: #0E3A26;
+  --c-green-fill: #E4F4EC;
+
+  --c-success: #2F9E63;
+  --c-success-fill: #E2F3E9;
+
+  --c-warning: #C77D0A;
+  --c-warning-fill: #FBEEDA;
+
+  --c-danger: #B3261E;
+  --c-danger-fill: #FBE9E7;
+
+  --c-offline: #5B6B72;
+  --c-offline-fill: #E7ECEF;
+
+  --c-restriction: #3A4A42;
+  --c-restriction-fill: #EEF3EF;
+  --c-restriction-line: #CFDBD2;
+
+  --shadow-1: 0 1px 2px rgba(20, 32, 26, 0.06), 0 8px 24px rgba(20, 32, 26, 0.08);
+  --shadow-2: 0 2px 4px rgba(20, 32, 26, 0.08), 0 16px 40px rgba(20, 32, 26, 0.14);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   OPTION 1: EMERALD SLATE (Modern Enterprise / Linear Style)
+   Layered slate surfaces with ice-white text & vibrant emerald
+   ───────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --c-canvas: #0B0F17;           /* Slate 950 base */
+  --c-surface: #111827;          /* Slate 900 card surface */
+  --c-raised: #1E293B;           /* Slate 800 hover/input/header */
+  --c-line: #2D3748;             /* Slate 700 divider/border */
+
+  --c-hero: #0F172A;             /* Slate 900 hero container */
+  --c-hero-label: #34D399;       /* Emerald 400 badge text */
+  --c-hero-ink: #F8FAFC;         /* Ice white */
+
+  --c-ink: #F8FAFC;              /* Ice white primary text (WCAG AAA) */
+  --c-ink-muted: #94A3B8;        /* Slate 400 secondary text */
+
+  --c-green: #10B981;            /* Vibrant Emerald */
+  --c-green-ink: #022C22;        /* Dark emerald text for green buttons */
+  --c-green-fill: rgba(16, 185, 129, 0.14); /* Subtle emerald glow/fill */
+
+  --c-success: #34D399;
+  --c-success-fill: rgba(52, 211, 153, 0.14);
+
+  --c-warning: #FBBF24;
+  --c-warning-fill: rgba(251, 191, 36, 0.14);
+
+  --c-danger: #F87171;
+  --c-danger-fill: rgba(248, 113, 113, 0.14);
+
+  --c-offline: #94A3B8;
+  --c-offline-fill: rgba(148, 163, 184, 0.12);
+
+  --c-restriction: #94A3B8;
+  --c-restriction-fill: #1E293B;
+  --c-restriction-line: #334155;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
 body {
   margin: 0;
   padding: 0;
+  background-color: var(--c-canvas);
+  color: var(--c-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -25,4 +104,126 @@ body {
 .animate-flow-beam {
   animation: flowBeam 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   PORTAL-WIDE DARK MODE STYLING: EMERALD SLATE
+   Applies high-legibility dark theme to Dispatcher, Loader,
+   and Store Manager portals without simple color inversion.
+   ───────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] body {
+  background-color: var(--c-canvas);
+  color: var(--c-ink);
+}
+
+/* Canvas / Page Backgrounds */
+[data-theme="dark"] .bg-\[\#FAFBFA\],
+[data-theme="dark"] .bg-\[\#F8FAF9\],
+[data-theme="dark"] .bg-\[\#f0f9f6\],
+[data-theme="dark"] .bg-\[\#f8fbf9\],
+[data-theme="dark"] .bg-gray-50,
+[data-theme="dark"] .bg-slate-50 {
+  background-color: #0B0F17 !important;
+}
+
+/* Elevated Card Surfaces */
+[data-theme="dark"] .bg-white {
+  background-color: #111827 !important;
+  color: #F8FAFC;
+}
+
+/* Secondary / Hover / Raised Surfaces */
+[data-theme="dark"] .hover\:bg-gray-50:hover,
+[data-theme="dark"] .hover\:bg-slate-50:hover,
+[data-theme="dark"] .hover\:bg-gray-100:hover,
+[data-theme="dark"] .hover\:bg-slate-100:hover {
+  background-color: #1E293B !important;
+}
+
+/* Borders & Dividers */
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-slate-100,
+[data-theme="dark"] .border-slate-200,
+[data-theme="dark"] .divide-gray-100 > * + *,
+[data-theme="dark"] .divide-gray-200 > * + *,
+[data-theme="dark"] .divide-slate-100 > * + *,
+[data-theme="dark"] .divide-slate-200 > * + * {
+  border-color: #2D3748 !important;
+}
+
+/* Primary text headings & labels (High contrast off-white, anti-glare) */
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-\[\#0B2019\] {
+  color: #F8FAFC !important;
+}
+
+/* Secondary muted text (Slate 400 for optimal readability) */
+[data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-slate-600 {
+  color: #94A3B8 !important;
+}
+
+/* Inputs, Textareas, and Selects */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #64748B !important;
+}
+
+/* Pill badges & soft tints (Preserve green brand without blinding contrast) */
+[data-theme="dark"] .bg-brand-50,
+[data-theme="dark"] .bg-emerald-50,
+[data-theme="dark"] .bg-green-50,
+[data-theme="dark"] .bg-\[\#EBF6F0\],
+[data-theme="dark"] .bg-\[\#E0F2E9\] {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
+[data-theme="dark"] .text-brand-700,
+[data-theme="dark"] .text-brand-800,
+[data-theme="dark"] .text-emerald-700,
+[data-theme="dark"] .text-green-700,
+[data-theme="dark"] .text-\[\#256149\],
+[data-theme="dark"] .text-\[\#047857\] {
+  color: #34D399 !important;
+}
+
+[data-theme="dark"] .border-brand-100,
+[data-theme="dark"] .border-brand-200,
+[data-theme="dark"] .border-emerald-100,
+[data-theme="dark"] .border-\[\#DCF0E5\],
+[data-theme="dark"] .border-\[\#C6E7D5\] {
+  border-color: rgba(52, 211, 153, 0.25) !important;
+}
+
+/* Soft red/amber alert tints */
+[data-theme="dark"] .bg-red-50,
+[data-theme="dark"] .bg-amber-50,
+[data-theme="dark"] .bg-yellow-50 {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+/* Dropdown menus & Modals */
+[data-theme="dark"] .shadow-lg,
+[data-theme="dark"] .shadow-xl,
+[data-theme="dark"] .shadow-2xl {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+}
+
 
