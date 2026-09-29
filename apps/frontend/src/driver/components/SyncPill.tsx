@@ -1,32 +1,41 @@
 import { type SyncState } from "@/driver/state/connection";
-import { Chip } from "./Chip";
-import { useNavigator } from "@/router/navigator";
+import { AppIcon, type AppIconName } from "./AppIcon";
+import { cn } from "@/lib/cn";
 
-export function SyncPill({ tone = "success" }: { tone?: SyncState }) {
-  const { push } = useNavigator();
+export function SyncPill({ tone }: { tone: SyncState }) {
+  if (tone === "idle" || tone === "success") {
+    return null;
+  }
 
-  const labels: Record<SyncState, string> = {
-    idle: "SYNCED",
-    saving: "SAVING",
-    pending: "QUEUED",
-    syncing: "SYNCING",
-    success: "SYNCED",
-    failed: "SYNC ERROR",
-    inReview: "IN REVIEW",
-    routeUpdated: "ROUTE UPDATE",
-    forwarded: "FORWARDED",
+  const labels: Record<string, string> = {
+    saving: "Saving", pending: "Pending", syncing: "Syncing",
+    failed: "Sync failed", inReview: "In review", routeUpdated: "Route updated",
+    forwarded: "Sent",
   };
 
-  const chipTone = tone === "idle" ? "success" : tone;
+  const styles: Record<string, string> = {
+    saving: "bg-raised text-ink-muted border-line",
+    pending: "bg-raised text-ink-muted border-line",
+    syncing: "bg-raised text-ink-muted border-line animate-pulse",
+    failed: "bg-danger-fill text-danger border-danger/30",
+    inReview: "bg-warning-fill text-warning border-warning/30",
+    routeUpdated: "bg-raised text-ink-muted border-line",
+    forwarded: "bg-raised text-ink-muted border-line",
+  };
+
+  const icons: Record<string, AppIconName> = {
+    saving: "refresh", pending: "clock", syncing: "refresh",
+    failed: "alert", inReview: "eye", routeUpdated: "route",
+    forwarded: "send",
+  };
 
   return (
-    <button
-      type="button"
-      onClick={() => push("sync-centre")}
-      aria-label={`Sync status: ${labels[tone]}. Tap for Sync Centre.`}
-      title="Open Sync Centre"
-    >
-      <Chip kind="sync" tone={chipTone} label={labels[tone]} />
-    </button>
+    <span className={cn(
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border",
+      styles[tone] ?? "bg-raised text-ink-muted border-line",
+    )}>
+      <AppIcon name={icons[tone] ?? "dot"} size={12} />
+      {labels[tone] ?? tone}
+    </span>
   );
 }

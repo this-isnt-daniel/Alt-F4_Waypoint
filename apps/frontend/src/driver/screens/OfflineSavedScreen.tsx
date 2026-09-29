@@ -1,40 +1,27 @@
 import { useNavigator } from "@/router/navigator";
 import { Button } from "@/driver/components/Button";
 import { Card } from "@/driver/components/Card";
-import { KeyValueRow } from "@/driver/components/KeyValueRow";
+import { AppIcon } from "@/driver/components/AppIcon";
 
 export function OfflineSavedScreen() {
   const { push } = useNavigator();
 
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8 pt-6">
-      <div className="text-center space-y-1">
-        <div className="grid h-16 w-16 place-items-center rounded-circle bg-offline-fill text-offline text-3xl mx-auto mb-2">
-          💾
+    <div className="p-4 space-y-4 max-w-[430px] mx-auto text-center">
+      <div className="pt-6">
+        <div className="w-16 h-16 rounded-full bg-slate-100 mx-auto flex items-center justify-center mb-3">
+          <AppIcon name="save" size={32} className="text-slate-600" />
         </div>
-        <span className="text-2xs font-extrabold text-offline tracking-wider uppercase">
-          Offline Buffer Safe
-        </span>
-        <h1 className="text-xl font-extrabold text-ink">Delivery saved</h1>
-        <p className="text-xs font-semibold text-ink-muted">
-          OUT047 · 06:34 · Saved safely on this phone
-        </p>
+        <h1 className="text-lg font-bold text-slate-900">Delivery saved</h1>
+        <p className="text-[13px] text-slate-500">OUT047 · 06:34</p>
       </div>
 
-      <Card variant="surface" className="space-y-3">
-        <p className="text-xs text-ink leading-relaxed">
-          You can continue the route. The photo and PIN will sync automatically when connection returns.
+      <p className="text-[13px] text-slate-500 font-medium">Saved safely on this phone</p>
+      
+      <Card variant="surface" className="text-left">
+        <p className="text-[13px] text-slate-500">
+          You can continue the route. The photo and PIN will sync automatically when connection returns. No work will be lost.
         </p>
-
-        <KeyValueRow label="Delivery Record" value="OUT047 · complete" />
-        <KeyValueRow label="Photo Evidence" value="Saved locally" />
-        <KeyValueRow label="Manager PIN" value="Confirmed" />
-        <KeyValueRow label="Queue Position" value="1 of 3" emphasis="strong" />
-      </Card>
-
-      <Card variant="raised" className="text-xs text-ink-muted leading-relaxed">
-        <span className="font-bold text-ink block mb-0.5">Reassurance:</span>
-        No work will be lost. Keep Waypoint Driver open. Records remain encrypted and available after a restart.
       </Card>
 
       <div className="space-y-2 pt-2">

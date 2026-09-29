@@ -1,74 +1,34 @@
 import { useNavigator } from "@/router/navigator";
 import { Button } from "@/driver/components/Button";
 import { Card } from "@/driver/components/Card";
-import { ListRow } from "@/driver/components/ListRow";
-import { OUT058_PARTIAL, VEHICLE } from "@/driver/data/driverContent";
-import { useDriverState } from "@/driver/state/useDriverState";
+import { AppIcon } from "@/driver/components/AppIcon";
+import { OUT058_PARTIAL } from "@/driver/data/driverContent";
 
 export function PartialSummaryScreen() {
   const { push } = useNavigator();
-  const { addSyncRecord, connection } = useDriverState();
-
-  const handleContinue = () => {
-    addSyncRecord({
-      type: "partial",
-      outletId: OUT058_PARTIAL.outletId,
-      state: connection === "online" ? "synced" : "pending",
-      hasPhoto: true,
-      pinVerified: true,
-    });
-    push("return-depot");
-  };
-
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8">
-      <div className="space-y-1">
-        <span className="text-2xs font-extrabold text-warning tracking-wider uppercase">
-          Handover Summary
-        </span>
-        <h1 className="text-xl font-extrabold text-ink">Partial delivery</h1>
-        <p className="text-xs font-semibold text-ink-muted">
-          {OUT058_PARTIAL.outletId} · {OUT058_PARTIAL.outletName}
-        </p>
+    <div className="p-4 space-y-4 max-w-[430px] mx-auto">
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">Partial delivery</h1>
+        <p className="text-[13px] text-slate-500">{OUT058_PARTIAL.outletId} · {OUT058_PARTIAL.outletName}</p>
       </div>
-
-      <Card variant="surface" className="space-y-3">
-        <p className="text-xs text-ink leading-relaxed">
-          {OUT058_PARTIAL.handedOver} of {OUT058_PARTIAL.manifest} handed over. Two frozen items were marked damaged and will return to {VEHICLE.depot} depot.
-        </p>
-
-        <div className="space-y-2">
-          <ListRow
-            title={`${OUT058_PARTIAL.handedOver} items delivered`}
-            subtitle="Delivered · Receiver confirmed"
-            status="delivered"
-            statusLabel="Handed over"
-          />
-
-          {OUT058_PARTIAL.returnItems.map((item, idx) => (
-            <ListRow
-              key={idx}
-              title={`${item.name} ×${item.quantity}`}
-              subtitle={`${item.reason} · return required · Crate ${item.returnCrate}`}
-              status="partial"
-              statusLabel="Return req."
-            />
-          ))}
-        </div>
+      <div className="text-[14px] font-medium text-slate-900">
+        {OUT058_PARTIAL.handedOver} of {OUT058_PARTIAL.manifest} handed over
+      </div>
+      <p className="text-[13px] text-slate-500">
+        {OUT058_PARTIAL.manifest - OUT058_PARTIAL.handedOver} frozen items return to Kandy hub
+      </p>
+      <Card variant="surface" className="space-y-2">
+        {OUT058_PARTIAL.returnItems.map((item, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <span className="text-[13px] text-slate-900">{item.name} ×{item.quantity}</span>
+            <span className="text-[12px] text-amber-600">{item.reason} · {item.returnCrate}</span>
+          </div>
+        ))}
       </Card>
-
-      <div className="space-y-2 pt-2">
-        <Button variant="primary" size="lg" onClick={handleContinue}>
-          Continue to return custody
-        </Button>
-        <Button
-          variant="secondary"
-          size="md"
-          onClick={() => push("checklist", { outletId: OUT058_PARTIAL.outletId })}
-        >
-          Review items
-        </Button>
-      </div>
+      <Button variant="primary" size="lg" onClick={() => push("return-depot")}>
+        Continue
+      </Button>
     </div>
   );
 }

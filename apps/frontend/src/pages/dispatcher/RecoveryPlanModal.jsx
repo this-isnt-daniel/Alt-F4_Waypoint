@@ -173,9 +173,9 @@ export default function RecoveryPlanModal({
                       </p>
                     </div>
                     <div className="text-left sm:text-right flex-shrink-0">
-                      <span className="text-xs text-slate-500 block">Cold-chain breach en-route; quarantined</span>
+                      <span className="text-xs text-slate-500 block">Delivery attempted but shop closed</span>
                       <div className="sm:text-right mt-0.5">
-                        <span className="text-xs font-bold text-slate-700">Quarantined</span>
+                        <span className="text-xs font-bold text-slate-700">Shop Closed</span>
                       </div>
                     </div>
                   </div>

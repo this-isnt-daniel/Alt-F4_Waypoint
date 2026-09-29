@@ -1,5 +1,5 @@
 export const DRIVER = {
-  name: "Nimal Perera",
+  name: "Daniru Dinsara",
   date: "Saturday · 26 September",
   shift: "05:10–14:22",
 } as const;
@@ -22,7 +22,7 @@ export const REASSIGN_VEHICLE = {
 } as const;
 
 export const LOADER = {
-  name: "S. Fernando",
+  name: "Kasun Kalhara",
   depot: "Kandy hub",
 } as const;
 
@@ -93,11 +93,11 @@ export const TRIP_1_STOPS: DriverStop[] = [
     units: 25,
     deliverableUnits: 25,
     returnUnits: 0,
-    manager: "Anjali Silva",
+    manager: "Joseph Vijay",
     phoneMasked: "+94 7• ••• ••42",
     serviceMin: 15,
     instructions:
-      "Use service lane. Ask for manager Anjali Silva. Keep chilled crates sealed until handover.",
+      "Use service lane. Ask for manager Joseph Vijay. Keep chilled crates sealed until handover.",
     outcome: "delivered",
     brand: "Fresh",
     district: "Kandy",
@@ -550,7 +550,7 @@ export const SYNC_REVIEW = {
   outletId: "OUT058",
   outletName: "Waypoint Fresh Kandy Hills",
   status: "in review" as const,
-  banner: "NON-DESTRUCTIVE · Your field record is preserved.",
+  banner: "Your field record is preserved.",
   yourRecord: {
     label: "YOUR RECORD",
     sublabel: "Confirmed in the field",
@@ -562,7 +562,7 @@ export const SYNC_REVIEW = {
     label: "DISPATCHER / STORE VIEW",
     sublabel: "For your context — not your decision",
     assignment: `Reassigned to ${REASSIGN_VEHICLE.id}`,
-    storeReport: "Reported not received",
+    storeReport: "Store reported not received",
   },
   body:
     "Your field evidence is preserved. We detected a difference between your delivery record and dispatch’s update. Send your record so dispatch can compare both versions.",
@@ -622,7 +622,7 @@ export const RETURN_DEPOT = {
 
 export const DEPOT_RETURN = {
   location: "Kandy hub · bay 3",
-  officer: "S. Fernando",
+  officer: "Kasun Kalhara",
   confirmedAt: "09:51",
   items: [
     {
@@ -707,4 +707,50 @@ export const CONTACT_DISPATCH_PRESETS = [
   "Load discrepancy",
   "Outlet inaccessible",
   "Vehicle issue",
+] as const;
+
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+}
+
+export const KANDY_HUB_COORDS: GeoPoint = { lat: 7.2906, lng: 80.6337 };
+
+export const STOP_COORDS: Record<string, GeoPoint> = {
+  OUT042: { lat: 7.1666, lng: 80.5666 },
+  OUT047: { lat: 7.2931, lng: 80.6350 },
+  OUT049: { lat: 7.2936, lng: 80.6360 },
+  OUT052: { lat: 7.2941, lng: 80.6380 },
+  OUT055: { lat: 7.2880, lng: 80.6200 },
+  OUT058: { lat: 7.2850, lng: 80.6250 },
+  OUT061: { lat: 7.2667, lng: 80.6000 },
+  OUT064: { lat: 7.0500, lng: 80.5333 },
+  OUT070: { lat: 7.2941, lng: 80.6380 },
+  OUT071: { lat: 7.1666, lng: 80.5666 },
+  OUT072: { lat: 7.2936, lng: 80.6360 },
+  OUT073: { lat: 7.2667, lng: 80.6000 },
+  OUT074: { lat: 7.0500, lng: 80.5333 },
+};
+
+export function getStopCoords(outletId: string): GeoPoint {
+  return STOP_COORDS[outletId] || KANDY_HUB_COORDS;
+}
+
+export const ROUTE_UPDATED_SEQUENCE = [
+  "OUT042",
+  "OUT047",
+  "OUT061",
+  "OUT049",
+  "OUT055",
+  "OUT052",
+  "OUT058",
+  "OUT064",
+];
+
+export const ISSUE_WIZARD_CATEGORIES = [
+  { id: "delay", label: "Delay", icon: "clock" },
+  { id: "load", label: "Load issue", icon: "package" },
+  { id: "access", label: "Access", icon: "lock" },
+  { id: "vehicle", label: "Vehicle", icon: "truck" },
+  { id: "other", label: "Other", icon: "more" },
 ] as const;

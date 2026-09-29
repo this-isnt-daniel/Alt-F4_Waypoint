@@ -1,68 +1,106 @@
 import { useNavigator } from "@/router/navigator";
 import { Button } from "@/driver/components/Button";
 import { Card } from "@/driver/components/Card";
-import { KeyValueRow } from "@/driver/components/KeyValueRow";
-import { ListRow } from "@/driver/components/ListRow";
-import { OUTLET_CLOSED, VEHICLE } from "@/driver/data/driverContent";
+import { AppIcon } from "@/driver/components/AppIcon";
+import { OUTLET_CLOSED, TRIP_1_STOPS, type DriverStop } from "@/driver/data/driverContent";
 import { useDriverState } from "@/driver/state/useDriverState";
 
 export function OutletClosedScreen() {
-  const { push } = useNavigator();
-  const { addSyncRecord, connection } = useDriverState();
+  const { push, route } = useNavigator();
+  const {
+    completeStop,
+    currentStopIndex,
+    currentTripSequence,
+    currentTripStops,
+  } = useDriverState();
 
-  const handleReturnToDepot = () => {
-    addSyncRecord({
-      type: "failed",
-      outletId: OUTLET_CLOSED.outletId,
-      state: connection === "online" ? "synced" : "pending",
-      hasPhoto: true,
-      pinVerified: false,
-    });
-    push("return-depot");
+  const outletId =
+    route.params.outletId ??
+    currentTripSequence[currentStopIndex] ??
+    OUTLET_CLOSED.outletId;
+
+  const fallbackStop: DriverStop = TRIP_1_STOPS[0]!;
+  const stop: DriverStop =
+    currentTripStops.find((s) => s.outletId === outletId) ??
+    currentTripStops[currentStopIndex] ??
+    fallbackStop;
+
+  const reason = route.params.reason ?? OUTLET_CLOSED.reason;
+  const isLastStop = currentStopIndex >= currentTripSequence.length - 1;
+  const nextOutletId = !isLastStop
+    ? currentTripSequence[currentStopIndex + 1]
+    : null;
+  const nextStop = nextOutletId
+    ? currentTripStops.find((s) => s.outletId === nextOutletId)
+    : null;
+
+  const handleContinue = () => {
+    completeStop(outletId, "failed");
+    if (isLastStop) {
+      push("return-depot", { outletId });
+    } else {
+      // Driver continues route to next outlet, NOT back to depot!
+      push("active-trip");
+    }
   };
 
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8">
-      <div className="space-y-1">
-        <span className="text-2xs font-extrabold text-danger tracking-wider uppercase">
-          Outlet Closed Degradation
-        </span>
-        <h1 className="text-xl font-extrabold text-ink">Outlet unavailable</h1>
-        <p className="text-xs font-semibold text-ink-muted">
-          {OUTLET_CLOSED.outletId} · {OUTLET_CLOSED.outletName}
+    <div className="p-4 space-y-4 max-w-[430px] mx-auto">
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">Stop unavailable</h1>
+        <p className="text-[13px] text-slate-500">
+          {stop.outletId} · {stop.name}
         </p>
       </div>
 
-      <Card variant="surface" className="space-y-3">
-        <div className="p-3 bg-danger-fill text-danger rounded-btn text-xs font-medium">
-          Reason: {OUTLET_CLOSED.reason} — {OUTLET_CLOSED.body}
-        </div>
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[13px] font-medium text-amber-900">
+        Reason: {reason}
+      </div>
 
-        <div className="space-y-2 pt-1">
-          <div className="text-xs font-bold text-ink-muted uppercase">Affected Return Items</div>
-          {OUTLET_CLOSED.affectedItems.map((item, idx) => (
-            <ListRow
-              key={idx}
-              title={`${item.name} ×${item.quantity}`}
-              subtitle={item.action}
-              status="returned"
-              statusLabel="Return req."
-            />
-          ))}
+      <Card variant="surface" className="space-y-2">
+        <div className="text-[13px] font-semibold text-slate-800">
+          Cargo retained for depot return
         </div>
-
-        <KeyValueRow label="Return Crate" value={OUTLET_CLOSED.returnCrate} />
-        <KeyValueRow label="Depot Destination" value={VEHICLE.depot} />
-        <KeyValueRow label="Handover Desk" value={OUTLET_CLOSED.handover} />
-        <KeyValueRow label="Sync Status" value={connection === "online" ? "Ready" : "Pending offline"} />
+        <div className="flex justify-between text-[13px] py-1 border-t border-slate-100">
+          <span className="text-slate-900">Undelivered items ×{stop.units} units</span>
+          <span className="text-amber-700 font-medium">Keep on vehicle</span>
+        </div>
+        <div className="text-[12px] text-slate-500 pt-1">
+          Return crate: {stop.returnCrate ?? "R-07 (Sealed)"}
+        </div>
+        <div className="text-[12px] text-slate-500">
+          Custody: Return to Kandy hub depot at end of trip
+        </div>
       </Card>
 
+      {!isLastStop ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-900 space-y-1">
+          <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+            <AppIcon name="check-circle" size={15} className="text-emerald-600" />
+            <span>Route continues to next outlet</span>
+          </div>
+          <p className="text-emerald-700">
+            Cargo remains secured on vehicle. You do not return to the depot now — you will proceed directly to Stop {currentStopIndex + 2}:{" "}
+            <span className="font-semibold">{nextStop?.outletId} ({nextStop?.name})</span>.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+          <span className="font-bold block">Final Stop of Trip</span>
+          <p>
+            All stops on this route are now concluded. Proceed back to Kandy hub depot to return secured crates.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-2 pt-2">
-        <Button variant="primary" size="lg" onClick={handleReturnToDepot}>
-          Return {OUTLET_CLOSED.affectedItems.reduce((acc, i) => acc + i.quantity, 0)} items to depot
+        <Button variant="primary" size="lg" onClick={handleContinue}>
+          {!isLastStop
+            ? `Proceed to next outlet (${nextStop?.outletId ?? "Next"})`
+            : "Conclude route & return to depot"}
         </Button>
-        <Button variant="secondary" size="md" onClick={() => push("active-trip")}>
-          Back to route
+        <Button variant="ghost" size="md" onClick={() => push("active-trip")}>
+          <AppIcon name="arrow-left" size={16} className="mr-2" /> Back to route overview
         </Button>
       </div>
     </div>

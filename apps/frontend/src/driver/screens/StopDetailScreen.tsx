@@ -2,74 +2,185 @@ import { useNavigator } from "@/router/navigator";
 import { Button } from "@/driver/components/Button";
 import { Card } from "@/driver/components/Card";
 import { Chip } from "@/driver/components/Chip";
-import { KeyValueRow } from "@/driver/components/KeyValueRow";
-import { TRIP_1_STOPS } from "@/driver/data/driverContent";
+import { AppIcon, type AppIconName } from "@/driver/components/AppIcon";
+import { useDriverState } from "@/driver/state/useDriverState";
+import { TRIP_1_STOPS, type DriverStop } from "@/driver/data/driverContent";
+import { Lock, AlertCircle, CheckCircle } from "lucide-react";
 
 export function StopDetailScreen() {
-  const { route, push } = useNavigator();
-  const seqParam = Number(route.params.seq ?? "2");
-  const stop = TRIP_1_STOPS.find((s) => s.seq === seqParam) ?? TRIP_1_STOPS[1]!;
+  const { push, route } = useNavigator();
+  const {
+    currentStopIndex,
+    currentTripStops,
+    currentTripSequence,
+    completedStopIds,
+    failedStopIds,
+  } = useDriverState();
+
+  const seq = Number(route.params.seq) || currentStopIndex + 1;
+  const fallbackStop: DriverStop = TRIP_1_STOPS[0]!;
+  const stop: DriverStop =
+    currentTripStops.find((s) => s.seq === seq) ??
+    currentTripStops[currentStopIndex] ??
+    fallbackStop;
+
+  const stopIdx = currentTripSequence.indexOf(stop.outletId);
+  const isCurrent = stopIdx === currentStopIndex;
+  const isPast = stopIdx >= 0 && stopIdx < currentStopIndex;
+  const isUpcoming = stopIdx > currentStopIndex;
+
+  const isDelivered = completedStopIds.includes(stop.outletId);
+  const isFailed = failedStopIds.includes(stop.outletId);
+
+  const tempIcon: AppIconName = stop.temp.includes("Chilled") ? "snowflake" : "package";
+  const dockIcon: AppIconName = stop.dock === "Mall bay" ? "building" : "package";
 
   return (
     <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8">
-      <div className="flex items-center justify-between">
-        <span className="text-2xs font-extrabold text-green tracking-wider uppercase">
-          Stop {stop.seq} of 8
-        </span>
-        <Chip kind="status" tone="onTime" label="ETA 12 min · on time" />
-      </div>
-
-      <div className="space-y-1">
-        <span className="text-xs font-bold text-ink-muted">{stop.outletId}</span>
-        <h1 className="text-xl font-extrabold text-ink">{stop.name}</h1>
-        <p className="text-xs text-ink-muted">{stop.address}</p>
-      </div>
-
-      <Card variant="surface" className="space-y-2">
-        <div className="flex justify-between items-center text-xs pb-2 border-b border-line">
-          <span className="text-ink-muted">Delivery Window:</span>
-          <span className="font-bold text-ink">{stop.window}</span>
+      {/* Sequential status notice banner */}
+      {isUpcoming && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex items-start gap-2.5 text-xs text-amber-900">
+          <Lock size={16} className="text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold block">Upcoming Stop (Locked)</span>
+            <span>
+              Route stops must be completed sequentially. Complete Stop {currentStopIndex + 1} before arriving at {stop.outletId}.
+            </span>
+          </div>
         </div>
+      )}
 
-        <KeyValueRow label="Dock Access" value={`${stop.dock}${stop.dockDetail ? ` · ${stop.dockDetail}` : ""}`} />
-        <KeyValueRow label="Parking Constraint" value={stop.parking} />
-        <KeyValueRow label="Temperature" value={stop.temp} />
-        <KeyValueRow label="Service Time" value={`${stop.serviceMin} min`} />
+      {isPast && (
+        <div className="rounded-xl border border-slate-200 bg-slate-100 p-3 flex items-start gap-2.5 text-xs text-slate-700">
+          {isFailed ? (
+            <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+          ) : (
+            <CheckCircle size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+          )}
+          <div>
+            <span className="font-bold block">
+              {isFailed ? "Stop Marked as Failed / Returned" : "Stop Already Delivered"}
+            </span>
+            <span>This stop has already been processed for this trip.</span>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-bold text-slate-900">{stop.outletId}</h1>
+          {isCurrent && (
+            <span className="text-[11px] font-bold text-green bg-green-fill px-2 py-0.5 rounded-full border border-green/20">
+              Current Stop
+            </span>
+          )}
+        </div>
+        <p className="text-[14px] font-medium text-slate-700">{stop.name}</p>
+        <p className="text-[13px] text-slate-500 mt-0.5">{stop.address}</p>
+      </div>
+
+      <Card variant="surface" className="space-y-3">
+        <div className="flex items-center justify-between text-[13px]">
+          <span className="text-slate-500">Window</span>
+          <span className="font-semibold text-slate-900">{stop.window}</span>
+        </div>
+        {stop.dockDetail && (
+          <div className="flex items-center justify-between text-[13px]">
+            <span className="text-slate-500">Dock</span>
+            <span className="font-medium text-slate-900">{stop.dock} · {stop.dockDetail}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between text-[13px]">
+          <span className="text-slate-500">Units</span>
+          <span className="font-medium text-slate-900">{stop.units}</span>
+        </div>
+        <div className="flex items-center justify-between text-[13px]">
+          <span className="text-slate-500">Service time</span>
+          <span className="font-medium text-slate-900">{stop.serviceMin} min</span>
+        </div>
       </Card>
 
+      {/* Chips */}
+      <div className="flex flex-wrap gap-1.5">
+        <Chip kind="restriction" category="temperature" label={stop.temp} icon={tempIcon} />
+        <Chip kind="restriction" category="dock" label={stop.dock} icon={dockIcon} />
+        {stop.parking !== "Normal" && (
+          <Chip kind="restriction" category="access" label={stop.parking} icon="truck" />
+        )}
+      </div>
+
       {stop.instructions && (
-        <Card variant="raised" className="text-xs text-ink leading-relaxed">
-          <span className="font-bold text-ink-muted block mb-1">Special Instructions:</span>
-          {stop.instructions}
+        <Card variant="raised">
+          <p className="text-[13px] text-slate-600">{stop.instructions}</p>
         </Card>
       )}
 
-      <Card variant="surface" className="grid grid-cols-3 gap-2 text-center p-3 text-xs">
-        <div>
-          <span className="text-ink-muted block">Stops left</span>
-          <span className="font-extrabold text-ink text-sm">6</span>
-        </div>
-        <div>
-          <span className="text-ink-muted block">Remaining</span>
-          <span className="font-extrabold text-ink text-sm">96 km</span>
-        </div>
-        <div>
-          <span className="text-ink-muted block">Fuel quota</span>
-          <span className="font-extrabold text-ink text-sm">39 L</span>
-        </div>
-      </Card>
-
       <div className="space-y-2 pt-2">
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={() => push("mark-arrived", { seq: String(stop.seq) })}
-        >
-          Mark arrived
-        </Button>
-        <Button variant="secondary" size="md" onClick={() => push("active-trip")}>
-          Back to map
-        </Button>
+        {isCurrent ? (
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => push("mark-arrived", { seq: String(seq) })}
+          >
+            Mark arrived
+          </Button>
+        ) : isUpcoming ? (
+          <Button variant="secondary" size="lg" disabled className="opacity-60 cursor-not-allowed">
+            <Lock size={15} className="mr-1.5" /> Locked · Complete Stop {currentStopIndex + 1} first
+          </Button>
+        ) : (
+          <Button variant="secondary" size="lg" disabled className="opacity-60">
+            {isFailed ? "Delivery Failed / In Return Crate" : "Delivered"}
+          </Button>
+        )}
+
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth={false}
+            className="flex-1"
+            onClick={() => push("chat", { outletId: stop.outletId })}
+          >
+            <AppIcon name="message" size={16} className="mr-1" /> Store Chat
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth={false}
+            className="flex-1"
+            onClick={() => push("call-overlay", { outletId: stop.outletId })}
+          >
+            <AppIcon name="phone" size={16} className="mr-1" /> Store Call
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth={false}
+            className="flex-1 text-green border-green/30"
+            onClick={() => push("contact-dispatch")}
+          >
+            <AppIcon name="phone" size={16} className="mr-1 text-green" /> Dispatch
+          </Button>
+        </div>
+
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => push("active-trip")}>
+            <AppIcon name="arrow-left" size={16} className="mr-2" /> Back to route
+          </Button>
+
+          {isCurrent && (
+            <button
+              type="button"
+              onClick={() =>
+                push("failed-reason", { outletId: stop.outletId, seq: String(stop.seq) })
+              }
+              className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline py-1.5 px-2 cursor-pointer"
+            >
+              Report stop failure
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
