@@ -75,7 +75,10 @@ export default function App() {
         <StoreManagerLogin onLogin={() => switchPortal('storemanager-overview')} />
       )}
       {currentPortal === 'storemanager-overview' && (
-        <StoreManagerOverview onLogout={() => switchPortal('storemanager-login')} />
+        <StoreManagerOverview
+          onLogout={() => switchPortal('storemanager-login')}
+          onSwitchToDriver={() => switchPortal('driver')}
+        />
       )}
     </div>
   );

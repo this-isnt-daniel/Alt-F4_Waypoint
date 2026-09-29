@@ -19,7 +19,7 @@ import {
   X
 } from 'lucide-react';
 
-export default function StoreManagerOverview({ onLogout }) {
+export default function StoreManagerOverview({ onLogout, onSwitchToDriver }) {
   const [activeTab, setActiveTab] = useState('Overview');
   const [ordersTab, setOrdersTab] = useState('progress'); // 'progress' | 'deferred'
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -436,6 +436,20 @@ export default function StoreManagerOverview({ onLogout }) {
               </button>
             </div>
 
+            {/* Driver Portal Direct Switch Button */}
+            {onSwitchToDriver && (
+              <button
+                type="button"
+                onClick={onSwitchToDriver}
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#0F9D6C] bg-[#E8F5EF] border border-[#C6E8D9] hover:bg-[#d8efe4] rounded-full transition-colors cursor-pointer"
+                title="Open Driver Portal"
+              >
+                <Truck size={13} />
+                <span className="hidden sm:inline">Driver Portal</span>
+                <span className="sm:hidden">Driver</span>
+              </button>
+            )}
+
             {/* Notifications Button */}
             <button
               type="button"
@@ -462,17 +476,28 @@ export default function StoreManagerOverview({ onLogout }) {
 
               {/* Simple Profile Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
                   <div className="px-3 py-2 border-b border-gray-100">
                     <p className="text-xs font-medium text-gray-900">Store Manager</p>
                     <p className="text-[11px] text-gray-500">outlet/OUT0043</p>
                   </div>
+                  {onSwitchToDriver && (
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onSwitchToDriver();
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors flex items-center gap-2 cursor-pointer border-b border-gray-100"
+                    >
+                      <Truck size={13} /> Switch to Driver Portal
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
                       if (onLogout) onLogout();
                     }}
-                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                   >
                     Sign out
                   </button>

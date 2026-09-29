@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, ChevronDown } from 'lucide-react';
+import { Wifi, WifiOff, ChevronDown, ArrowRightLeft, Store, Truck } from 'lucide-react';
 import waypointLogo from './assets/icons/waypoint_logo.png';
 
-export default function DriverHeader({ isOnline = true, onBackToPortals }) {
+export default function DriverHeader({ isOnline = true, onSwitchToStoreManager }) {
   const [time, setTime] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const tick = () => {
@@ -24,15 +25,12 @@ export default function DriverHeader({ isOnline = true, onBackToPortals }) {
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
-        {/* Left: Logo + Portal name */}
+        {/* Left: Logo + Portal badge */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={onBackToPortals}
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity cursor-pointer"
-          >
-            <img src={waypointLogo} alt="Waypoint" className="w-7 h-7 object-contain rounded-lg" />
+          <div className="flex items-center gap-2.5">
+            <img src={waypointLogo} alt="Waypoint" className="w-7 h-7 object-contain rounded-lg shadow-2xs" />
             <span className="text-lg font-bold tracking-tight" style={{ color: '#0E1A17' }}>Waypoint</span>
-          </button>
+          </div>
           <span
             className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide uppercase"
             style={{ background: '#E8F5EF', color: '#0F9D6C', border: '1px solid #C6E8D9' }}
@@ -70,18 +68,60 @@ export default function DriverHeader({ isOnline = true, onBackToPortals }) {
           </span>
         </div>
 
-        {/* Right: Driver avatar */}
-        <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background: '#E8F5EF', color: '#0F9D6C', border: '1px solid #C6E8D9' }}
+        {/* Right: Direct Portal Switcher + Driver Avatar */}
+        <div className="flex items-center gap-3">
+          {/* Direct Switch to Store Manager button */}
+          <button
+            type="button"
+            onClick={onSwitchToStoreManager}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-2xs hover:bg-gray-50"
+            style={{ background: '#FFFFFF', borderColor: '#C6E8D9', color: '#059669' }}
+            title="Switch to Store Manager Portal"
           >
-            KP
+            <Store size={13} />
+            <span className="hidden sm:inline">Store Manager</span>
+            <span className="sm:hidden">Store</span>
+          </button>
+
+          {/* User profile */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowMenu(!showMenu)}
+              className="flex items-center gap-1.5 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: '#E8F5EF', color: '#0F9D6C', border: '1px solid #C6E8D9' }}
+              >
+                KP
+              </div>
+              <span className="hidden sm:block text-sm font-medium" style={{ color: '#0E1A17' }}>
+                Kasun
+              </span>
+              <ChevronDown size={14} style={{ color: '#5B6B66' }} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-50">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-xs font-semibold text-gray-900">Kasun Perera</p>
+                  <p className="text-[11px] text-gray-500">Driver · VEH-014</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    if (onSwitchToStoreManager) onSwitchToStoreManager();
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  <Store size={13} /> Switch to Store Manager
+                </button>
+              </div>
+            )}
           </div>
-          <span className="hidden sm:block text-sm font-medium" style={{ color: '#0E1A17' }}>
-            Kasun Perera
-          </span>
-          <ChevronDown size={14} style={{ color: '#5B6B66' }} />
         </div>
       </div>
     </header>
