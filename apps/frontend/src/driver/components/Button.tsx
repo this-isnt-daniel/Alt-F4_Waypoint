@@ -4,7 +4,7 @@ import { AppIcon } from "./AppIcon";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "locked";
-  size?: "md" | "lg";
+  size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   children: ReactNode;
 }
@@ -23,6 +23,7 @@ export function Button({
     "inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-green focus-visible:outline-offset-2";
 
   const sizeStyles = {
+    sm: "min-h-[40px] px-3 text-[12px]",
     md: "min-h-[48px] px-4 text-[13px]",
     lg: "min-h-[56px] px-6 text-[13px]",
   };
