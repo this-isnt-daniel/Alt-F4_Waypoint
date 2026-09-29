@@ -140,8 +140,49 @@ export function NavigatorProvider({ children }: { children: ReactNode }) {
     window.location.replace(serializeRoute({ id, params }));
   }, []);
 
+const PREVIOUS_SCREEN: Partial<Record<ScreenId, ScreenId>> = {
+  "start-day": "signin",
+  "today-trips": "start-day",
+  "trip-briefing": "today-trips",
+  "load-confirm": "trip-briefing",
+  "active-trip": "today-trips",
+  "stop-detail": "active-trip",
+  "mark-arrived": "stop-detail",
+  "checklist": "mark-arrived",
+  "pod-pin": "checklist",
+  "pod-photo": "pod-pin",
+  "delivery-complete": "active-trip",
+  "partial-summary": "checklist",
+  "failed-reason": "stop-detail",
+  "not-handed-over": "checklist",
+  "outlet-closed": "stop-detail",
+  "sync-centre": "active-trip",
+  "sync-review": "sync-centre",
+  "record-sent": "sync-centre",
+  "route-changed": "active-trip",
+  "chat": "active-trip",
+  "call-overlay": "active-trip",
+  "issue-wizard": "active-trip",
+  "contact-dispatch": "active-trip",
+  "return-depot": "active-trip",
+  "depot-return": "return-depot",
+  "trip-complete": "depot-return",
+  "day-summary": "trip-complete",
+  "no-trips": "today-trips",
+  "camera-denied": "pod-photo",
+  "location-denied": "mark-arrived",
+  "sync-failed": "sync-centre",
+  "offline-saved": "active-trip",
+};
+
   const back = useCallback(() => {
-    window.history.back();
+    if (window.history.length > 2) {
+      window.history.back();
+    } else {
+      const currentId = parseHash().id;
+      const fallback = PREVIOUS_SCREEN[currentId] || "signin";
+      window.location.hash = serializeRoute({ id: fallback, params: {} });
+    }
   }, []);
 
   const value = useMemo(

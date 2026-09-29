@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useNavigator } from "@/router/navigator";
 import { ThemeToggle } from "@/theme/ThemeToggle";
 import { ConnectionPill } from "./ConnectionPill";
 import { SyncPill } from "./SyncPill";
@@ -33,16 +35,29 @@ function useClock() {
 export function PreTripBar({ clock }: { clock?: string }) {
   const time = useClock();
   const displayClock = clock ?? time;
+  const { route, back } = useNavigator();
+  const showBack = route.id !== "signin";
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-surface border-b border-line">
-      <div className="flex items-center gap-2">
+    <header className="flex items-center justify-between px-3 py-2.5 bg-surface border-b border-line gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        {showBack && (
+          <button
+            type="button"
+            onClick={back}
+            className="p-1 -ml-1 rounded-lg text-ink hover:bg-raised active:scale-95 transition cursor-pointer shrink-0"
+            aria-label="Back"
+            title="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 text-ink" />
+          </button>
+        )}
         <ConnectionPill />
-        <span className="text-xs font-bold text-ink-muted bg-raised px-2 py-1 rounded-pill">
+        <span className="text-xs font-bold text-ink-muted bg-raised px-2 py-1 rounded-pill shrink-0">
           {VEHICLE.id}
         </span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 shrink-0">
         <span className="text-xs font-mono font-medium text-ink-muted">{displayClock}</span>
         <ThemeToggle />
       </div>
@@ -63,12 +78,24 @@ export function ActiveTripBar({
 }) {
   const time = useClock();
   const displayClock = clock ?? time;
+  const { back } = useNavigator();
 
   return (
     <header className="flex items-center justify-between px-3 py-2.5 bg-surface border-b border-line gap-2">
-      <div className="flex flex-col min-w-0">
-        <span className="text-xs font-bold text-ink truncate">{tripLabel}</span>
-        <span className="text-2xs text-ink-muted truncate">{stopLabel}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          onClick={back}
+          className="p-1 -ml-1 rounded-lg text-ink hover:bg-raised active:scale-95 transition cursor-pointer shrink-0"
+          aria-label="Back"
+          title="Go back"
+        >
+          <ArrowLeft className="w-5 h-5 text-ink" />
+        </button>
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs font-bold text-ink truncate">{tripLabel}</span>
+          <span className="text-2xs text-ink-muted truncate">{stopLabel}</span>
+        </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <ConnectionPill />
@@ -79,4 +106,5 @@ export function ActiveTripBar({
     </header>
   );
 }
+
 
