@@ -1,5 +1,5 @@
 export const DRIVER = {
-  name: "Nimal Perera",
+  name: "Daniru Dinsara",
   date: "Saturday · 26 September",
   shift: "05:10–14:22",
 } as const;
@@ -22,7 +22,7 @@ export const REASSIGN_VEHICLE = {
 } as const;
 
 export const LOADER = {
-  name: "S. Fernando",
+  name: "Kasun Kalhara",
   depot: "Kandy hub",
 } as const;
 
@@ -93,11 +93,11 @@ export const TRIP_1_STOPS: DriverStop[] = [
     units: 25,
     deliverableUnits: 25,
     returnUnits: 0,
-    manager: "Anjali Silva",
+    manager: "Joseph Vijay",
     phoneMasked: "+94 7• ••• ••42",
     serviceMin: 15,
     instructions:
-      "Use service lane. Ask for manager Anjali Silva. Keep chilled crates sealed until handover.",
+      "Use service lane. Ask for manager Joseph Vijay. Keep chilled crates sealed until handover.",
     outcome: "delivered",
     brand: "Fresh",
     district: "Kandy",
@@ -622,7 +622,7 @@ export const RETURN_DEPOT = {
 
 export const DEPOT_RETURN = {
   location: "Kandy hub · bay 3",
-  officer: "S. Fernando",
+  officer: "Kasun Kalhara",
   confirmedAt: "09:51",
   items: [
     {

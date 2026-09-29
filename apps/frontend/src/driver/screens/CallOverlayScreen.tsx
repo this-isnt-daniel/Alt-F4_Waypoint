@@ -16,10 +16,10 @@ export function CallOverlayScreen() {
         </div>
         <div>
           <h1 className="text-lg font-bold text-slate-900">
-            {isDispatch ? "Call Central Dispatch?" : "Call Anjali Silva?"}
+            {isDispatch ? "Call Central Dispatch?" : "Call Joseph Vijay?"}
           </h1>
           <p className="text-[13px] text-slate-500">
-            {isDispatch ? "Kavinda Perera · Kandy Hub" : `Store manager · ${outletId}`}
+            {isDispatch ? "Stephan Anthony · Kandy Hub" : `Store manager · ${outletId}`}
           </p>
         </div>
         <div className="text-[15px] font-mono text-slate-900 bg-slate-50 py-2 rounded-lg border border-slate-100 tracking-wider">

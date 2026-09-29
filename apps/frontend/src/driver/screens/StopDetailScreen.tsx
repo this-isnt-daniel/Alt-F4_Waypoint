@@ -69,9 +69,18 @@ export function StopDetailScreen() {
             <AppIcon name="phone" size={16} className="mr-1" /> Call
           </Button>
         </div>
-        <Button variant="ghost" size="md" onClick={() => push("active-trip")}>
-          <AppIcon name="arrow-left" size={16} className="mr-2" /> Back to map
-        </Button>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => push("active-trip")}>
+            <AppIcon name="arrow-left" size={16} className="mr-2" /> Back to map
+          </Button>
+          <button
+            type="button"
+            onClick={() => push("failed-reason", { outletId: stop.outletId })}
+            className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline py-1.5 px-2"
+          >
+            Report stop failure
+          </button>
+        </div>
       </div>
     </div>
   );

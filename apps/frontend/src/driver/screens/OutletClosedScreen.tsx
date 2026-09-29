@@ -3,14 +3,18 @@ import { Button } from "@/driver/components/Button";
 import { Card } from "@/driver/components/Card";
 import { AppIcon } from "@/driver/components/AppIcon";
 import { OUTLET_CLOSED } from "@/driver/data/driverContent";
+import { useDriverState } from "@/driver/state/useDriverState";
 
 export function OutletClosedScreen() {
-  const { push } = useNavigator();
+  const { push, route } = useNavigator();
+  const { completeStop } = useDriverState();
+  const outletId = route.params.outletId ?? OUTLET_CLOSED.outletId;
+
   return (
     <div className="p-4 space-y-4 max-w-[430px] mx-auto">
       <div>
         <h1 className="text-lg font-bold text-slate-900">Outlet unavailable</h1>
-        <p className="text-[13px] text-slate-500">{OUTLET_CLOSED.outletId} · {OUTLET_CLOSED.outletName}</p>
+        <p className="text-[13px] text-slate-500">{outletId} · {OUTLET_CLOSED.outletName}</p>
       </div>
       <div className="text-[13px] font-medium text-amber-600">{OUTLET_CLOSED.reason}</div>
       <Card variant="surface" className="space-y-2">
@@ -24,7 +28,14 @@ export function OutletClosedScreen() {
         <div className="text-[12px] text-slate-500">Destination: {OUTLET_CLOSED.destination}</div>
       </Card>
       <div className="space-y-2 pt-2">
-        <Button variant="primary" size="lg" onClick={() => push("return-depot")}>
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() => {
+            completeStop(outletId, "failed");
+            push("return-depot", { outletId });
+          }}
+        >
           {OUTLET_CLOSED.result}
         </Button>
         <Button variant="ghost" size="md" onClick={() => push("active-trip")}>

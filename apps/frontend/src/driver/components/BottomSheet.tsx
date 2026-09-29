@@ -13,6 +13,7 @@ export interface StopBottomSheetProps {
   onChat?: () => void;
   onCall?: () => void;
   onDetails?: () => void;
+  onFailed?: () => void;
   open?: never;
   onClose?: never;
   title?: never;
@@ -89,6 +90,7 @@ export function BottomSheet(props: BottomSheetProps) {
     onChat,
     onCall,
     onDetails,
+    onFailed,
   } = props as StopBottomSheetProps;
 
   const tempIcon: AppIconName = stop.temp.includes("Chilled")
@@ -174,6 +176,17 @@ export function BottomSheet(props: BottomSheetProps) {
             <div className="text-[12px] text-slate-500">
               Window: {stop.window}
             </div>
+            {onFailed && (
+              <div className="pt-2 border-t border-slate-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={onFailed}
+                  className="text-[12px] font-semibold text-rose-600 hover:text-rose-700 hover:underline"
+                >
+                  Report stop failure / outlet closed
+                </button>
+              </div>
+            )}
           </div>
         )}
 

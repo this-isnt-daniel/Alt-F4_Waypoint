@@ -29,14 +29,14 @@ export function ChatScreen() {
         },
         {
           id: 2,
-          text: "Received Nimal. Fleet maintenance has logged the report for VEH014. If safe to proceed, continue your run; otherwise stand by.",
+          text: "Received Daniru. Fleet maintenance has logged the report for VEH014. If safe to proceed, continue your run; otherwise stand by.",
           sender: "dispatch",
           time: "06:11",
         },
       ];
     }
     return [
-      { id: 1, text: "Morning Nimal. Use the rear bay—main street access is blocked.", sender: "store", time: "06:05" },
+      { id: 1, text: "Morning Daniru. Use the rear bay—main street access is blocked.", sender: "store", time: "06:05" },
       { id: 2, text: "On my way. ETA 12 minutes.", sender: "driver", time: "06:06" },
       { id: 3, text: "I'll meet you at bay B.", sender: "store", time: "06:07" }
     ];
@@ -67,11 +67,11 @@ export function ChatScreen() {
         </button>
         <div className="flex-1">
           <h1 className="text-[15px] font-bold text-slate-900">
-            {isDispatch ? "Central Dispatch" : "Anjali Silva"}
+            {isDispatch ? "Central Dispatch" : "Joseph Vijay"}
           </h1>
           <p className="text-[12px] text-slate-500">
             {isDispatch
-              ? "Kavinda Perera · Kandy Hub Dispatcher"
+              ? "Stephan Anthony · Kandy Hub Dispatcher"
               : `${outletId} · Store manager`}
           </p>
         </div>

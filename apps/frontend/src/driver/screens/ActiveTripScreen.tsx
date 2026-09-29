@@ -137,6 +137,7 @@ export function ActiveTripScreen() {
           onChat={() => push("chat", { outletId: stop.outletId })}
           onCall={() => push("call-overlay", { outletId: stop.outletId })}
           onDetails={() => push("stop-detail", { seq: String(stop.seq) })}
+          onFailed={() => push("failed-reason", { outletId: stop.outletId })}
         />
       </div>
     </div>

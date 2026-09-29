@@ -53,6 +53,10 @@ export function ChecklistScreen() {
     () => lines.filter((l) => l.state === "pending").length,
     [lines],
   );
+  const hasFlagged = useMemo(
+    () => lines.some((l) => l.state === "flagged"),
+    [lines],
+  );
   const allResolved = pending === 0;
 
   const toggleDelivered = (id: string) =>
@@ -134,28 +138,53 @@ export function ChecklistScreen() {
       )}
 
       <div className="mt-auto pt-4 space-y-2">
-        {/* SINGLE route to POD; disabled + explained until every line is delivered-or-flagged */}
+        {/* Photo ONLY when items flagged / damaged; otherwise directly PIN */}
         <Button
           variant="primary"
           size="lg"
           fullWidth
           disabled={!allResolved}
-          onClick={() => push("pod-photo", { outletId: currentOutletId })}
+          onClick={() => {
+            if (hasFlagged) {
+              push("pod-photo", { outletId: currentOutletId, photoRequired: "true" });
+            } else {
+              push("pod-pin", { outletId: currentOutletId, cleanHandover: "true" });
+            }
+          }}
         >
-          Continue to proof
+          {hasFlagged ? "Continue to photo (items flagged)" : "Continue to PIN"}
         </Button>
         {!allResolved && (
           <p className="text-center text-xs text-ink-muted">
             Resolve all {pending} item(s) to continue.
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => push("active-trip")}
-          className="mx-auto mt-2 block text-sm font-medium text-green hover:underline"
-        >
-          ← Back to map
-        </button>
+        {allResolved && !hasFlagged && (
+          <p className="text-center text-xs text-ink-muted">
+            Clean handover · No photograph required.
+          </p>
+        )}
+        {allResolved && hasFlagged && (
+          <p className="text-center text-xs text-amber-600 font-medium">
+            Photograph required: 1+ item damaged / returned.
+          </p>
+        )}
+        <div className="flex items-center justify-between pt-2">
+          <button
+            type="button"
+            onClick={() => push("active-trip")}
+            className="text-sm font-medium text-green hover:underline"
+          >
+            ← Back to map
+          </button>
+          <button
+            type="button"
+            onClick={() => push("failed-reason", { outletId: currentOutletId })}
+            className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline"
+          >
+            Report stop failure
+          </button>
+        </div>
       </div>
 
       {/* in-place reason capture */}

@@ -1,4 +1,4 @@
-import { CloudOff, RefreshCw } from "lucide-react";
+import { CloudOff, RefreshCw, WifiOff } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export type ConnectionTone =
@@ -22,8 +22,8 @@ const ATTENTION: ConnectionTone[] = [
 ];
 
 const LABEL: Record<ConnectionTone, string> = {
-  online: "Online",
-  offline: "Offline",
+  online: "Signal good",
+  offline: "No signal",
   pending: "Saved",
   syncing: "Syncing",
   success: "Synced",
@@ -35,7 +35,7 @@ const LABEL: Record<ConnectionTone, string> = {
 
 const CLASS: Record<ConnectionTone, string> = {
   online: "",
-  offline: "text-offline bg-offline-fill",
+  offline: "text-amber-800 bg-amber-50 border border-amber-300 shadow-sm",
   pending: "text-offline bg-offline-fill",
   syncing: "text-offline bg-offline-fill",
   success: "",
@@ -60,8 +60,8 @@ export function ConnectionIndicator({
         <span
           aria-hidden="true"
           className={cn(
-            "h-2 w-2 rounded-full",
-            tone === "success" || tone === "online" ? "bg-success" : "bg-offline",
+            "h-2.5 w-2.5 rounded-full",
+            tone === "success" || tone === "online" ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-offline",
             tone === "syncing" && "animate-pulse",
           )}
         />
@@ -79,7 +79,7 @@ export function ConnectionIndicator({
         CLASS[tone],
       )}
     >
-      {tone === "offline" && <CloudOff size={14} aria-hidden="true" />}
+      {tone === "offline" && <WifiOff size={13} aria-hidden="true" />}
       {tone === "syncing" && (
         <RefreshCw size={14} className="animate-spin" aria-hidden="true" />
       )}

@@ -4,8 +4,9 @@ import { Button } from "@/driver/components/Button";
 import { AppIcon } from "@/driver/components/AppIcon";
 
 export function PodPinScreen() {
-  const { push } = useNavigator();
+  const { push, route } = useNavigator();
   const [pin, setPin] = useState("");
+  const isCleanHandover = route.params.cleanHandover === "true";
 
   const addDigit = (d: string) => {
     if (pin.length < 4) setPin(pin + d);
@@ -21,11 +22,13 @@ export function PodPinScreen() {
     <div className="p-4 space-y-4 max-w-[430px] mx-auto">
       <div>
         <h1 className="text-lg font-bold text-slate-900">Manager PIN</h1>
-        <p className="text-[13px] text-slate-500">Step 2 of 2</p>
+        <p className="text-[13px] text-slate-500">
+          {isCleanHandover ? "Clean handover · No photo required" : "Step 2 of 2 · Confirmation"}
+        </p>
       </div>
 
       <p className="text-[13px] text-slate-500">
-        Enter the 4-digit PIN. Ask Anjali Silva for the PIN.
+        Enter the 4-digit PIN. Ask Joseph Vijay for the PIN.
       </p>
 
       {/* PIN display */}

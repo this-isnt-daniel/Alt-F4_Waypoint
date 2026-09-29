@@ -6,7 +6,7 @@ export function StartDayScreen() {
   return (
     <div className="px-4 pb-6 pt-2">
       <p className="text-2xs font-semibold uppercase tracking-wide text-ink-muted">Saturday · 26 September</p>
-      <h1 className="mt-1 text-2xl font-bold text-ink">Good morning, Nimal</h1>
+      <h1 className="mt-1 text-2xl font-bold text-ink">Good morning, Daniru</h1>
 
       {/* Vehicle facts: read-only orientation, NOT a task */}
       <section className="mt-4 rounded-card border border-line bg-surface p-4">

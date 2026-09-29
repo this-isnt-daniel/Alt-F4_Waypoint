@@ -31,7 +31,7 @@ function useClock() {
 
 export function PreTripBar({ clock }: { clock?: string }) {
   const time = useClock();
-  const { connection, syncRecords } = useDriverState();
+  const { connection, setConnection, syncRecords } = useDriverState();
   const displayClock = clock ?? time;
   const tone: ConnectionTone = connection === "offline" ? "offline" : "online";
 
@@ -43,7 +43,15 @@ export function PreTripBar({ clock }: { clock?: string }) {
         </span>
       </div>
       <div className="flex items-center gap-2.5">
-        <ConnectionIndicator tone={tone} count={syncRecords.length} />
+        <button
+          type="button"
+          onClick={() => setConnection(connection === "offline" ? "online" : "offline")}
+          title={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
+          aria-label={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
+          className="rounded-full focus:outline-none focus:ring-2 focus:ring-green/50 transition-transform active:scale-95 cursor-pointer"
+        >
+          <ConnectionIndicator tone={tone} count={syncRecords.length} />
+        </button>
         <span className="text-[11px] font-mono font-medium text-slate-400">
           {displayClock}
         </span>
@@ -65,7 +73,7 @@ export function ActiveTripBar({
   clock?: string;
 }) {
   const time = useClock();
-  const { connection, syncRecords } = useDriverState();
+  const { connection, setConnection, syncRecords } = useDriverState();
   const displayClock = clock ?? time;
 
   const resolvedTone: ConnectionTone =
@@ -80,7 +88,15 @@ export function ActiveTripBar({
         <span className="text-[11px] text-slate-500">{stopLabel}</span>
       </div>
       <div className="flex items-center gap-2.5">
-        <ConnectionIndicator tone={resolvedTone} count={syncRecords.length} />
+        <button
+          type="button"
+          onClick={() => setConnection(connection === "offline" ? "online" : "offline")}
+          title={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
+          aria-label={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
+          className="rounded-full focus:outline-none focus:ring-2 focus:ring-green/50 transition-transform active:scale-95 cursor-pointer"
+        >
+          <ConnectionIndicator tone={resolvedTone} count={syncRecords.length} />
+        </button>
         <span className="text-[11px] font-mono font-medium text-slate-400">
           {displayClock}
         </span>

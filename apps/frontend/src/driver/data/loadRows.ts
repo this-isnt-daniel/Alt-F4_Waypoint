@@ -31,7 +31,7 @@ export const LOADER_PRE_FLAGS: Record<
     returnUnits: 2,
     reason: "Damaged in staging",
     crate: "R-04",
-    note: "S. Fernando: 2 damaged in staging. Sealed in return crate R-04.",
+    note: "Kasun Kalhara: 2 damaged in staging. Sealed in return crate R-04.",
   },
 };
 
