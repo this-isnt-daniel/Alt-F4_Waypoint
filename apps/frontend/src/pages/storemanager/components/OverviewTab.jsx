@@ -28,33 +28,32 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
 
         {/* ── Order Arrived Alert Banner ── */}
         {deliveryArrived && (
-          <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl p-4 md:p-5 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="bg-[#FFFFFF] border border-[#DCEEE1] rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-300" style={{ fontFamily: 'Inter, sans-serif' }}>
             <div className="flex items-start sm:items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/20">
-                <Truck size={22} className="text-white animate-bounce" />
+              <div className="w-[38px] h-[38px] rounded-[9px] bg-[#2EA85C] text-white flex items-center justify-center shrink-0">
+                <Truck size={20} strokeWidth={2.5} />
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-white/25 px-2 py-0.5 rounded-full text-white">
-                    Delivery Arrived
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E7F6EC] text-[#2EA85C] border border-[#BFE6CC]">
+                    Arrived
                   </span>
-                  <span className="text-[11px] font-medium text-emerald-200">Loading Bay</span>
+                  <span className="text-[14px] font-semibold text-[#152B1E]">
+                    Order ORD-10492
+                  </span>
                 </div>
-                <h2 className="text-[16px] font-bold text-white tracking-tight">
-                  Order #ORD-2026-0929 has arrived!
-                </h2>
-                <p className="text-[13px] text-emerald-100 mt-0.5">
-                  Vehicle WP-CAD-8921 is at the loading dock. Provide the OTP to the driver to complete handover.
+                <p className="text-[13px] font-medium text-[#5E7365] leading-snug">
+                  Vehicle VEH402 is at the loading dock. Provide the OTP to the driver to complete handover.
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={onOpenOtpModal}
-              className="px-4 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 text-[13px] font-bold rounded-lg transition-all shrink-0 shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              className="px-5 py-2 bg-white text-[#2EA85C] border border-[#2EA85C] hover:bg-[#E7F6EC] text-[13px] font-semibold rounded-full transition-colors shrink-0 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <KeyRound size={16} className="text-emerald-700" />
-              <span>Provide OTP to Driver</span>
+              <KeyRound size={16} />
+              <span>Provide OTP</span>
             </button>
           </div>
         )}

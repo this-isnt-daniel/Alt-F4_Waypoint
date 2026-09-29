@@ -125,30 +125,37 @@ export default function SMLayout({
 
                   <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
                     {deliveryArrived ? (
-                      <div className="p-3.5 bg-emerald-50/40 hover:bg-emerald-50/70 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                            <Truck size={16} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="text-[12px] font-bold text-emerald-950 truncate">Delivery Arrived!</span>
-                              <span className="text-[10px] font-medium text-emerald-700 shrink-0">Just now</span>
+                      <div className="p-3">
+                        <div className="bg-[#FFFFFF] border border-[#DCEEE1] rounded-2xl p-3.5" style={{ fontFamily: 'Inter, sans-serif' }}>
+                          <div className="flex items-start gap-3">
+                            <div className="w-[34px] h-[34px] rounded-[9px] bg-[#2EA85C] text-white flex items-center justify-center shrink-0">
+                              <Truck size={18} strokeWidth={2.5} />
                             </div>
-                            <p className="text-[12px] text-slate-600 leading-snug mb-2.5">
-                              Order <span className="font-semibold text-slate-800">#ORD-2026-0929</span> is at the loading bay. Driver Kamal Perera is waiting for confirmation OTP.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowNotifications(false);
-                                setShowOtpModal?.(true);
-                              }}
-                              className="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                            >
-                              <KeyRound size={13} />
-                              <span>View OTP &amp; Confirm Handover</span>
-                            </button>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E7F6EC] text-[#2EA85C] border border-[#BFE6CC]">
+                                  Arrived
+                                </span>
+                                <span className="text-[13px] font-semibold text-[#152B1E] truncate">
+                                  Order ORD-10492
+                                </span>
+                              </div>
+                              <p className="text-[12px] font-medium text-[#5E7365] leading-snug mb-3">
+                                Vehicle VEH402 is at the loading bay. Driver Kamal Perera is waiting for confirmation OTP.
+                              </p>
+                              <div className="flex justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowNotifications(false);
+                                    setShowOtpModal?.(true);
+                                  }}
+                                  className="px-4 py-1.5 bg-white text-[#2EA85C] text-[12px] font-semibold rounded-full border border-[#2EA85C] hover:bg-[#E7F6EC] transition-colors cursor-pointer"
+                                >
+                                  Provide OTP
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -164,7 +171,7 @@ export default function SMLayout({
                           <Check size={16} />
                         </div>
                         <div>
-                          <p className="text-[12px] font-semibold text-slate-800">Order #ORD-2026-0928 Verified</p>
+                          <p className="text-[12px] font-semibold text-slate-800">Order ORD-10491 Verified</p>
                           <p className="text-[11px] text-slate-500 mt-0.5">All items received in good condition · Yesterday</p>
                         </div>
                       </div>
@@ -247,22 +254,37 @@ export default function SMLayout({
                   </div>
                   <div className="p-3">
                     {deliveryArrived ? (
-                      <div className="p-2.5 bg-emerald-50/70 rounded-xl">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Truck size={15} className="text-emerald-700" />
-                          <span className="text-[12px] font-bold text-emerald-950">Delivery Arrived!</span>
+                      <div className="bg-[#FFFFFF] border border-[#DCEEE1] rounded-2xl p-3" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-[32px] h-[32px] rounded-[8px] bg-[#2EA85C] text-white flex items-center justify-center shrink-0">
+                            <Truck size={16} strokeWidth={2.5} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#E7F6EC] text-[#2EA85C] border border-[#BFE6CC]">
+                                Arrived
+                              </span>
+                              <span className="text-[12px] font-semibold text-[#152B1E] truncate">
+                                Order ORD-10492
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-medium text-[#5E7365] leading-snug mb-2.5">
+                              Vehicle VEH402 is at the loading bay. Driver waiting for OTP.
+                            </p>
+                            <div className="flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowNotifications(false);
+                                  setShowOtpModal?.(true);
+                                }}
+                                className="px-3.5 py-1.5 bg-white text-[#2EA85C] text-[11px] font-semibold rounded-full border border-[#2EA85C] hover:bg-[#E7F6EC] transition-colors cursor-pointer"
+                              >
+                                Provide OTP
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-[11px] text-slate-600 mb-2">Order #ORD-2026-0929 arrived at loading bay.</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowNotifications(false);
-                            setShowOtpModal?.(true);
-                          }}
-                          className="w-full py-1.5 px-3 bg-emerald-600 text-white text-[11px] font-bold rounded-lg shadow-xs cursor-pointer"
-                        >
-                          Provide OTP to Driver
-                        </button>
                       </div>
                     ) : (
                       <p className="text-center text-[12px] text-slate-400 py-2">No active notifications</p>

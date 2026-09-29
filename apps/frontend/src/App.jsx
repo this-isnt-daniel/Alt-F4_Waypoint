@@ -9,6 +9,7 @@ import StoreManagerStyleLogin from './pages/storemanager_style/StoreManagerLogin
 import StoreManagerStyleOverview from './pages/storemanager_style/StoreManagerOverview';
 import LoaderLogin from './pages/loader/LoaderLogin';
 import LoaderOverview from './pages/loader/LoaderOverview';
+import CentralLogin from './pages/CentralLogin';
 
 export default function App() {
   const getInitialPortal = () => {
@@ -18,7 +19,7 @@ export default function App() {
         return params.get('portal').toLowerCase();
       }
     }
-    return 'dispatcher';
+    return 'central';
   };
 
   const [portal, setPortal] = useState(getInitialPortal);
@@ -111,11 +112,13 @@ export default function App() {
   }
 
   // ── Portal 5: Dispatcher Portal ──
-  if (currentPage === 'overview') {
-    return <DispatcherRoster onLogout={() => setCurrentPage('login')} />;
+  if (portal === 'dispatcher') {
+    if (currentPage === 'overview') {
+      return <DispatcherRoster onLogout={() => setCurrentPage('login')} />;
+    }
+    return <DispatcherLogin onLogin={() => setCurrentPage('overview')} />;
   }
 
-  return (
-    <DispatcherLogin onLogin={() => setCurrentPage('overview')} />
-  );
+  // ── Default / Central ──
+  return <CentralLogin />;
 }

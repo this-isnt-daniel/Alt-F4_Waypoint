@@ -35,7 +35,7 @@ import {
 
 export default function DispatcherRoster({ onLogout }) {
   // Navigation & Sub-tabs (Reset for Fleet Allocation Demo Video)
-  const [activeNav, setActiveNav] = useState('Route Allocation & Capacity');
+  const [activeNav, setActiveNav] = useState('Overview');
   const [activeSubTab, setActiveSubTab] = useState('Fleet Availability');
   const [selectedHub, setSelectedHub] = useState('Peliyagoda');
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'reefer' | 'van'
@@ -1601,34 +1601,6 @@ export default function DispatcherRoster({ onLogout }) {
                     <span className="text-slate-500 font-medium">Fleet Utilization</span>
                     <span className="font-bold text-[#059669]">34 / 60 Active</span>
                   </div>
-
-                  <span className="text-slate-300 font-light">+</span>
-
-                  {/* Reefer Cold Chain Chip */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
-                    <span className="text-slate-500 font-medium">Reefer Cold Chain</span>
-                    <span className="font-bold">
-                      <span className="text-slate-800">15 Normal</span>
-                      <span className="text-slate-400 font-normal"> - </span>
-                      <span className="text-amber-600">1 Warning</span>
-                    </span>
-                  </div>
-
-                  <span className="text-slate-300 font-light">+</span>
-
-                  {/* Fleet Quota Chip */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
-                    <span className="text-slate-500 font-medium">Fleet Quota</span>
-                    <span className="font-bold text-slate-800">68% Burn</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Attention Warning Pill */}
-              <div className="flex items-center">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] shadow-2xs">
-                  <span className="w-2 h-2 rounded-full bg-[#D97706] animate-pulse" />
-                  <span>3 runs need attention</span>
                 </div>
               </div>
             </div>
@@ -1653,106 +1625,22 @@ export default function DispatcherRoster({ onLogout }) {
 
               {/* Schematic Visual Canvas */}
               <div className="relative h-[340px] sm:h-[380px] w-full bg-[#F4F6F4] overflow-hidden select-none">
-                {/* SVG Background Grid & Corridors */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <pattern id="schematic-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E2E8F0" strokeWidth="0.8" opacity="0.6" />
-                    </pattern>
-                  </defs>
-                  
-                  {/* Background Grid */}
-                  <rect width="100%" height="100%" fill="url(#schematic-grid)" />
-
-                  {/* Main Expressway Corridor */}
-                  <path
-                    d="M -20 120 C 140 120, 220 180, 480 180 S 800 240, 1100 240"
-                    fill="none"
-                    stroke="#CBD5E1"
-                    strokeWidth="14"
-                    strokeLinecap="round"
-                    opacity="0.85"
-                  />
-                  <path
-                    d="M -20 120 C 140 120, 220 180, 480 180 S 800 240, 1100 240"
-                    fill="none"
-                    stroke="#FFFFFF"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Secondary Expressway Connector */}
-                  <path
-                    d="M 180 0 L 180 380"
-                    fill="none"
-                    stroke="#CBD5E1"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                    opacity="0.75"
-                  />
-                  <path
-                    d="M 180 0 L 180 380"
-                    fill="none"
-                    stroke="#FFFFFF"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Nugegoda / South Artery */}
-                  <path
-                    d="M 380 160 L 380 380"
-                    fill="none"
-                    stroke="#CBD5E1"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    opacity="0.7"
-                  />
-                  <path
-                    d="M 380 160 L 380 380"
-                    fill="none"
-                    stroke="#FFFFFF"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Kandy Corridor Radial Curves */}
-                  <g opacity="0.4" stroke="#94A3B8" strokeWidth="1.5" fill="none">
-                    <rect x="360" y="20" width="120" height="90" rx="16" />
-                    <rect x="375" y="32" width="90" height="66" rx="12" />
-                    <rect x="390" y="44" width="60" height="42" rx="8" />
-                  </g>
-
-                  {/* Cross city streets */}
-                  <line x1="0" y1="280" x2="1200" y2="280" stroke="#CBD5E1" strokeWidth="3" opacity="0.5" />
-                  <line x1="0" y1="210" x2="1200" y2="210" stroke="#CBD5E1" strokeWidth="3" opacity="0.4" />
-                  <line x1="560" y1="0" x2="560" y2="380" stroke="#CBD5E1" strokeWidth="4" opacity="0.5" />
-                </svg>
-
-                {/* Corridor & Landmark Text Labels */}
-                <div className="absolute top-8 left-12 text-[10px] font-semibold text-slate-400 uppercase tracking-widest pointer-events-none">
-                  Peliyagoda
-                </div>
-                <div className="absolute top-8 left-52 text-[10px] font-semibold text-slate-400 uppercase tracking-widest pointer-events-none">
-                  Depot Hub
-                </div>
-                <div className="absolute top-36 left-12 text-[9px] font-bold text-slate-500 tracking-wider pointer-events-none">
-                  COLOMBO EXPRESSWAY
-                </div>
-                <div className="absolute top-10 left-[41%] text-[10px] font-bold text-slate-600 tracking-wider pointer-events-none">
-                  KANDY CORRIDOR
-                </div>
-                <div className="absolute bottom-16 left-[20%] text-[9px] font-bold text-slate-500 tracking-wider pointer-events-none">
-                  NUGEGODA ROAD
-                </div>
-                <div className="absolute bottom-8 left-12 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pointer-events-none">
-                  Nugegoda
-                </div>
-                <div className="absolute bottom-8 left-48 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pointer-events-none">
-                  Liberty Plaza
-                </div>
-                <div className="absolute bottom-8 left-[42%] text-[10px] font-semibold text-slate-400 uppercase tracking-wider pointer-events-none">
-                  Colombo
-                </div>
+                {/* OpenStreetMap Embed */}
+                <iframe
+                  title="OpenStreetMap - Colombo Region"
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  scrolling="no"
+                  marginHeight="0"
+                  marginWidth="0"
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=79.8200%2C6.8800%2C79.9400%2C6.9700&amp;layer=mapnik"
+                  className="absolute inset-0 z-0"
+                  style={{ border: 0, opacity: 0.9 }}
+                />
+                
+                {/* Overlay to dim map slightly and prevent scroll hijacking */}
+                <div className="absolute inset-0 bg-white/20 pointer-events-none z-0" />
 
                 {/* Vehicle Pins */}
                 {/* VEH009 (On Time - Green) */}

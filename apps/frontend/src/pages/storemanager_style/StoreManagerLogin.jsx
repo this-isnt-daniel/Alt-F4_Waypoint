@@ -56,7 +56,7 @@ export default function StoreManagerLogin({ onLogin }) {
 
         {/* Portal Pill Badge */}
         <div className="mb-6">
-          <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.16em] uppercase text-purple-700 bg-purple-50 border border-purple-200">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.16em] uppercase text-[#256149] bg-[#EBF6F0] border border-[#DCF0E5]">
             Waypoint Style
           </span>
         </div>
@@ -67,7 +67,7 @@ export default function StoreManagerLogin({ onLogin }) {
             type="button"
             onClick={() => setIsExpanded(true)}
             aria-label="Log in to Waypoint Style"
-            className="mt-2 w-[230px] h-11 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-sm font-medium rounded-lg transition-all duration-150 ease-in-out shadow-sm hover:shadow flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2"
+            className="mt-2 w-[230px] h-11 bg-[#059669] hover:bg-[#047857] active:bg-[#065f46] text-white text-sm font-medium rounded-lg transition-all duration-150 ease-in-out shadow-sm hover:shadow flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#059669] focus-visible:ring-offset-2"
           >
             Log in
           </button>
@@ -91,7 +91,7 @@ export default function StoreManagerLogin({ onLogin }) {
                   value={username}
                   onChange={(e) => { setUsername(e.target.value); setError(null); }}
                   placeholder="e.g. style_manager"
-                  className="w-full h-11 pl-9 pr-3 border border-slate-300 rounded-lg text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all"
+                  className="w-full h-11 pl-9 pr-3 border border-slate-300 rounded-lg text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all"
                   autoFocus
                 />
               </div>
@@ -111,7 +111,7 @@ export default function StoreManagerLogin({ onLogin }) {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(null); }}
                   placeholder="Enter password"
-                  className="w-full h-11 pl-9 pr-10 border border-slate-300 rounded-lg text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all"
+                  className="w-full h-11 pl-9 pr-10 border border-slate-300 rounded-lg text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all"
                 />
                 <button
                   type="button"
@@ -140,7 +140,7 @@ export default function StoreManagerLogin({ onLogin }) {
               </button>
               <button
                 type="submit"
-                className="flex-1 h-11 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-sm font-semibold rounded-lg transition-all shadow-sm hover:shadow flex items-center justify-center cursor-pointer"
+                className="flex-1 h-11 bg-[#059669] hover:bg-[#047857] active:bg-[#065f46] text-white text-sm font-semibold rounded-lg transition-all shadow-sm hover:shadow flex items-center justify-center cursor-pointer"
               >
                 Sign in to Waypoint Style
               </button>

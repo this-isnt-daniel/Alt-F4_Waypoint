@@ -11,6 +11,7 @@ import {
   Wind,
   X,
   AlertTriangle,
+  Wand2,
 } from 'lucide-react';
 
 // ─── Colour tokens ────────────────────────────────────────────────────────────
@@ -102,30 +103,36 @@ const canAccept    = (row, card) => row.refrigeration === card.refrigeration;
 const barColour    = (pct) => pct < 75 ? C.primary : pct < 90 ? '#F59E0B' : '#EF4444';
 
 // ─── OrderTag ─────────────────────────────────────────────────────────────────
-function OrderTag({ orderId, isSplit, onClick }) {
+function OrderTag({ orderId, isSplit, isDraggingSameOrder, onClick }) {
   const col = orderColour(orderId);
   return (
     <button
       type="button"
       onClick={onClick}
       style={{ background: col.bg, color: col.text, border: `1px solid ${col.border}` }}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
+      className="group inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
     >
       {orderId}
-      {isSplit && <span style={{ color: C.dark }}>· split</span>}
+      {isSplit && (
+        <span style={{ color: C.dark }} className={`${isDraggingSameOrder ? 'inline' : 'hidden group-hover:inline'}`}>
+          · split
+        </span>
+      )}
     </button>
   );
 }
 
 // ─── ProductCard ─────────────────────────────────────────────────────────────
-function ProductCard({ card, isDragging, isSplit, onOrderTagClick }) {
+function ProductCard({ card, isDragging, isSplit, isDraggingSameOrder, onOrderTagClick }) {
   return (
     <div
-      className="relative flex-shrink-0 w-36 bg-white border border-gray-200 rounded-lg shadow-sm p-2.5 select-none"
-      style={{ opacity: isDragging ? 0.35 : 1, transition: 'opacity 0.15s' }}
+      className={`relative flex-shrink-0 w-36 rounded-xl px-[12px] py-[10px] select-none transition-all ${
+        isDragging ? 'bg-white shadow-sm border border-[#DCEEE1]' : 'bg-[#FAFBFA] border border-transparent'
+      }`}
+      style={{ opacity: isDragging ? 0.4 : 1 }}
     >
       <div className="mb-1.5">
-        <OrderTag orderId={card.orderId} isSplit={isSplit} onClick={() => onOrderTagClick(card.orderId)} />
+        <OrderTag orderId={card.orderId} isSplit={isSplit} isDraggingSameOrder={isDraggingSameOrder} onClick={() => onOrderTagClick(card.orderId)} />
       </div>
       <p className="text-[10px] text-gray-400 mb-0.5 truncate">Stop {card.stop} - {card.stopName}</p>
       <p className="text-[11px] font-semibold text-[#0B2019] leading-tight line-clamp-2">{card.product}</p>
@@ -134,24 +141,40 @@ function ProductCard({ card, isDragging, isSplit, onOrderTagClick }) {
   );
 }
 
-// ─── DropZone ─────────────────────────────────────────────────────────────────
-function DropZone({ vehicleId, onDrop, isCompatible }) {
+// ─── RowDropArea ──────────────────────────────────────────────────────────────
+function RowDropArea({ vehicleId, onDrop, isCompatible, isDraggingAny, children }) {
   const [over, setOver] = useState(false);
   const active = over && isCompatible;
+
+  let outline = '1px solid #F3F4F6';
+  let bg = '#FFFFFF';
+
+  if (isDraggingAny && isCompatible) {
+    outline = '2px dashed #A7D7C5';
+  }
+  if (active) {
+    outline = `2px dashed ${C.primary}`;
+    bg = '#F2FDF5';
+  }
+
   return (
     <div
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => { e.preventDefault(); setOver(false); onDrop(vehicleId); }}
-      className="flex-shrink-0 w-28 min-h-[80px] rounded-lg flex items-center justify-center transition-all duration-150"
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setOver(false);
+        }
+      }}
+      onDrop={(e) => { e.preventDefault(); setOver(false); if (isCompatible) onDrop(vehicleId); }}
+      className="flex-1 rounded-2xl overflow-x-auto transition-all duration-150"
       style={{
-        border: `2px dashed ${active ? C.primary : C.border}`,
-        background: active ? C.surface : 'transparent',
+        outline: outline,
+        outlineOffset: '-2px',
+        boxShadow: active ? `0 0 0 4px ${C.primary}10` : '0 1px 3px rgba(0,0,0,0.04)',
+        background: bg,
       }}
     >
-      <span className="text-[10px] font-medium" style={{ color: active ? C.primary : '#9CA3AF' }}>
-        Drop here
-      </span>
+      {children}
     </div>
   );
 }
@@ -161,11 +184,11 @@ function CapacityBar({ label, value, max }) {
   const pct = Math.min((value / max) * 100, 100);
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-0.5">
-        <span className="text-[10px] text-gray-500">{label}</span>
-        <span className="text-[10px] font-mono text-gray-600">{value.toLocaleString()} / {max.toLocaleString()}</span>
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-[10px] text-gray-400 font-medium">{label}</span>
+        <span className="text-[10px] text-gray-400 font-normal">{value.toLocaleString()} / {max.toLocaleString()}</span>
       </div>
-      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, background: barColour(pct) }} />
       </div>
     </div>
@@ -221,7 +244,7 @@ function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocati
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-[520px] overflow-hidden flex flex-col"
+        className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-[640px] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {step === 1 ? (
@@ -379,6 +402,29 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   const [confirmed, setConfirmed]         = useState(false);
   const [showToast, setShowToast]         = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [trayHeight, setTrayHeight]       = useState(180);
+
+  const startResize = useCallback((e) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = trayHeight;
+
+    const onMouseMove = (moveEvent) => {
+      const deltaY = startY - moveEvent.clientY;
+      const newHeight = Math.max(120, Math.min(window.innerHeight * 0.8, startHeight + deltaY));
+      setTrayHeight(newHeight);
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = 'default';
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'row-resize';
+  }, [trayHeight]);
 
   // Detect split orders (same orderId on 2+ vehicles)
   const splitOrderIds = (() => {
@@ -427,6 +473,32 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   });
 
   const filteredTray = tray.filter(c => trayFilter === 'all' || c.brand === trayFilter);
+
+  const handleAutoAllocate = useCallback(() => {
+    setRows(prevRows => {
+      let newRows = [...prevRows].map(r => ({ ...r, cards: [...r.cards] }));
+      let unplacedTray = [];
+      
+      tray.forEach(card => {
+        let targetRow = newRows.find(r => 
+          r.refrigeration === card.refrigeration && 
+          (rowWeightKg(r) + card.weightKg) <= r.capacityKg
+        );
+        if (!targetRow) {
+          targetRow = newRows.find(r => r.refrigeration === card.refrigeration);
+        }
+        
+        if (targetRow) {
+          targetRow.cards.push(card);
+        } else {
+          unplacedTray.push(card);
+        }
+      });
+      
+      setTray(unplacedTray);
+      return newRows;
+    });
+  }, [tray]);
 
   const handleConfirm = () => {
     if (!allPlaced) return;
@@ -515,6 +587,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
                 </div>
               )}
             </div>
+
             <button
               type="button"
               onClick={handleConfirm}
@@ -545,21 +618,32 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
       </header>
 
       {/* Sort pills */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-6 py-2.5 bg-white border-b" style={{ borderColor: C.border }}>
-        <span className="text-[11px] text-gray-500 mr-1 font-medium">Sort by:</span>
-        {SORT_OPTIONS.map(opt => (
-          <button key={opt.key} type="button" onClick={() => setSortBy(opt.key)}
-            className="px-3 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer"
-            style={sortBy === opt.key
-              ? { background: C.primary, color: '#fff', border: `1px solid ${C.primary}` }
-              : { background: C.surface, color: C.dark, border: `1px solid ${C.border}` }
-            }
-          >{opt.label}</button>
-        ))}
+      <div className="flex-shrink-0 flex items-center px-6 py-2.5 bg-white border-b" style={{ borderColor: C.border }}>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-gray-500 mr-1 font-medium">Sort by:</span>
+          {SORT_OPTIONS.map(opt => (
+            <button key={opt.key} type="button" onClick={() => setSortBy(opt.key)}
+              className="px-3 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer"
+              style={sortBy === opt.key
+                ? { background: C.primary, color: '#fff', border: `1px solid ${C.primary}` }
+                : { background: C.surface, color: C.dark, border: `1px solid ${C.border}` }
+              }
+            >{opt.label}</button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleAutoAllocate}
+          disabled={tray.length === 0}
+          className="ml-auto inline-flex items-center gap-1.5 text-gray-700 hover:text-gray-900 bg-white border border-gray-200 text-[11px] font-semibold px-3 py-1 rounded-full transition-all cursor-pointer hover:bg-gray-50 shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Wand2 size={12} className="text-gray-500" /> Auto Allocate
+        </button>
       </div>
 
       {/* Scrollable vehicle rows */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" style={{ paddingBottom: '230px' }}>
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" style={{ paddingBottom: `${trayHeight + 20}px` }}>
         {sortedRows.map(row => {
           const weightKg     = rowWeightKg(row);
           const volumeEst    = Math.round((weightKg / row.capacityKg) * row.capacityM3 * 10) / 10;
@@ -574,16 +658,16 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
           }, {});
 
           return (
-            <div key={row.vehicleId} className="flex gap-3 items-stretch"
+            <div key={row.vehicleId} className="flex gap-4 items-stretch"
               style={{ opacity: isDimmed ? 0.35 : 1, transition: 'opacity 0.15s ease' }}>
               {/* Vehicle card */}
-              <div className="flex-shrink-0 w-52 bg-white border rounded-xl p-3.5 flex flex-col gap-2"
+              <div className="flex-shrink-0 w-52 bg-white rounded-2xl p-4 flex flex-col"
                 style={{
-                  borderColor: isCompatible && dragCard ? C.primary : '#E5E7EB',
-                  boxShadow: isCompatible && dragCard ? `0 0 0 2px ${C.primary}40` : '0 1px 3px rgba(0,0,0,0.06)',
-                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                  border: '1px solid transparent',
+                  boxShadow: isCompatible && dragCard ? `0 0 0 2px ${C.primary}40` : '0 2px 8px rgba(0,0,0,0.04)',
+                  transition: 'box-shadow 0.15s',
                 }}>
-                <div className="flex items-start justify-between gap-1">
+                <div className="flex items-start justify-between gap-1 mb-1">
                   <span className="text-sm font-bold tracking-tight" style={{ color: C.darkest }}>{row.vehicleId}</span>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold flex-shrink-0"
                     style={{ background: C.surface, color: C.dark, border: `1px solid ${C.border}` }}>
@@ -591,59 +675,72 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
                     {row.refrigeration}
                   </span>
                 </div>
-                <p className="text-[10px] text-gray-400 -mt-1">{row.tripLabel}</p>
-                <CapacityBar label="Weight (kg)" value={weightKg} max={row.capacityKg} />
-                <CapacityBar label="Volume (m3)" value={volumeEst} max={row.capacityM3} />
-                <p className="text-[10px] font-mono text-gray-500 mt-0.5">Fuel {row.fuelPct}%</p>
+                <p className="text-[10px] text-gray-400 mb-3">{row.tripLabel}</p>
+                <div className="flex flex-col gap-1 mb-2">
+                  <CapacityBar label="Weight (kg)" value={weightKg} max={row.capacityKg} />
+                  <CapacityBar label="Volume (m3)" value={volumeEst} max={row.capacityM3} />
+                </div>
+                <p className="text-[10px] font-mono text-gray-400 mt-auto pt-1">Fuel {row.fuelPct}%</p>
               </div>
 
               {/* Product cards area */}
-              <div className="flex-1 bg-white border border-gray-100 rounded-xl overflow-x-auto"
-                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                <div className="flex items-stretch gap-0 h-full p-3" style={{ minHeight: '108px' }}>
-                  {Object.values(stopGroups).map((group, gi) => (
-                    <React.Fragment key={`${group.stop}-${group.stopName}`}>
-                      {gi > 0 && <div className="flex-shrink-0 w-px bg-gray-200 mx-3 self-stretch" />}
-                      <div className="flex flex-col gap-1.5 flex-shrink-0">
-                        <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide px-0.5">
-                          Stop {group.stop} · {group.stopName}
-                        </p>
-                        <div className="flex gap-2">
-                          {group.cards.map(card => (
-                            <div key={card.id} draggable
-                              onDragStart={() => handleDragStart(card, 'row', row.vehicleId)}
-                              onDragEnd={() => setDragCard(null)}
-                              className="cursor-grab active:cursor-grabbing">
-                              <ProductCard
-                                card={card}
-                                isDragging={dragCard?.card?.id === card.id}
-                                isSplit={splitOrderIds.has(card.orderId)}
-                                onOrderTagClick={id => setSplitPopover(splitOrderIds.has(id) ? id : null)}
-                              />
-                            </div>
-                          ))}
+              <RowDropArea vehicleId={row.vehicleId} onDrop={handleDropOnRow} isCompatible={isCompatible} isDraggingAny={!!dragCard}>
+                <div className="flex items-stretch gap-0 h-full p-4" style={{ minHeight: '108px', minWidth: '100%', width: 'fit-content' }}>
+                  {row.cards.length === 0 ? (
+                    <div className="flex items-center justify-center w-full h-full text-gray-400 text-[11px] font-medium min-h-[80px]">
+                      {isDraggingAny && isCompatible ? 'Drop items here' : 'Empty'}
+                    </div>
+                  ) : (
+                    Object.values(stopGroups).map((group, gi) => (
+                      <React.Fragment key={`${group.stop}-${group.stopName}`}>
+                        {gi > 0 && <div className="flex-shrink-0 w-px bg-gray-100 mx-4 self-stretch" />}
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide px-0.5">
+                            Stop {group.stop} · {group.stopName}
+                          </p>
+                          <div className="flex gap-3">
+                            {group.cards.map(card => (
+                              <div key={card.id} draggable
+                                onDragStart={() => handleDragStart(card, 'row', row.vehicleId)}
+                                onDragEnd={() => setDragCard(null)}
+                                className="cursor-grab active:cursor-grabbing">
+                                <ProductCard
+                                  card={card}
+                                  isDragging={dragCard?.card?.id === card.id}
+                                  isSplit={splitOrderIds.has(card.orderId)}
+                                  isDraggingSameOrder={dragCard?.card?.orderId === card.orderId}
+                                  onOrderTagClick={id => setSplitPopover(splitOrderIds.has(id) ? id : null)}
+                                />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </React.Fragment>
-                  ))}
-                  {row.cards.length > 0 && <div className="flex-shrink-0 w-px bg-gray-200 mx-3 self-stretch" />}
-                  <div className="flex items-center flex-shrink-0">
-                    <DropZone vehicleId={row.vehicleId} onDrop={handleDropOnRow} isCompatible={isCompatible} />
-                  </div>
+                      </React.Fragment>
+                    ))
+                  )}
                 </div>
-              </div>
+              </RowDropArea>
             </div>
           );
         })}
       </div>
 
       {/* Bottom tray */}
-      <div className="fixed bottom-0 left-0 right-0 z-20"
-        style={{ background: C.surface, borderTop: `1px solid ${C.border}` }}
+      <div className="fixed bottom-0 left-0 right-0 z-20 flex flex-col"
+        style={{ background: '#FFFFFF', borderTop: '1px solid #F3F4F6', height: `${trayHeight}px` }}
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); handleDropOnTray(); }}>
-        <div className="max-w-[1600px] mx-auto px-6 pt-3 pb-4">
-          <div className="flex items-center gap-3 mb-2.5 flex-wrap">
+        
+        {/* Resizer Handle */}
+        <div 
+          className="w-full h-3 flex items-center justify-center cursor-row-resize absolute top-0 left-0 -mt-1.5 z-30 group"
+          onMouseDown={startResize}
+        >
+          <div className="w-12 h-1 bg-gray-200 rounded-full group-hover:bg-gray-400 transition-colors" />
+        </div>
+
+        <div className="max-w-[1600px] w-full mx-auto px-6 pt-3 pb-4 flex flex-col h-full overflow-hidden">
+          <div className="flex items-center gap-3 mb-3 flex-wrap flex-shrink-0">
             <p className="text-xs font-bold" style={{ color: C.darkest }}>
               Unassigned line items ({filteredTray.length})
             </p>
@@ -663,13 +760,13 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
                 <Check size={10} /> All items placed
               </span>
             )}
-            <p className="ml-auto text-[10px] text-gray-400 hidden sm:block">
+            <p className="ml-auto text-[10px] text-gray-400 hidden lg:block">
               Same order tag = same order · Drag to assign · Drag back to unassign
             </p>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-3 overflow-y-auto overflow-x-hidden pb-2 flex-1 content-start flex-wrap">
             {filteredTray.length === 0 ? (
-              <p className="text-[11px] text-gray-400 py-2 italic">
+              <p className="text-[11px] text-gray-400 py-2 italic w-full">
                 {trayFilter === 'all' ? 'All items assigned - ready to confirm.' : 'No unassigned items in this category.'}
               </p>
             ) : (
@@ -682,6 +779,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
                     card={card}
                     isDragging={dragCard?.card?.id === card.id}
                     isSplit={splitOrderIds.has(card.orderId)}
+                    isDraggingSameOrder={dragCard?.card?.orderId === card.orderId}
                     onOrderTagClick={id => setSplitPopover(splitOrderIds.has(id) ? id : null)}
                   />
                 </div>
