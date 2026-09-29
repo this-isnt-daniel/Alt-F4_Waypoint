@@ -58,6 +58,9 @@ export default function App() {
   const [currentStyleUser, setCurrentStyleUser] = useState({ name: 'S. Jayawardena', pin: '123456' });
   const [currentStyleOutlet, setCurrentStyleOutlet] = useState({ id: 'STY-001', name: 'Waypoint Style Boutique — Colombo 07' });
 
+  // Loader mock state
+  const [currentLoader, setCurrentLoader] = useState({ name: 'J. Silva', depot: 'peliyagoda', bay: 'Bay Lead A' });
+
   // ── Driver Portal ──
   if (portal === 'driver') {
     return <DriverApp />;
@@ -67,20 +70,20 @@ export default function App() {
   if (portal === 'storemanager' || portal === 'grocery' || portal === 'storemanager-fresh' || portal === 'store-manager') {
     if (currentPage === 'overview') {
       return (
-        <StoreManagerOverview 
-          user={currentUser} 
+        <StoreManagerOverview
+          user={currentUser}
           outlet={currentOutlet}
-          onLogout={() => setCurrentPage('login')} 
+          onLogout={() => setCurrentPage('login')}
         />
       );
     }
     return (
-      <StoreManagerLogin 
+      <StoreManagerLogin
         onLogin={(manager, outlet) => {
           setCurrentUser(manager);
           setCurrentOutlet(outlet);
           setCurrentPage('overview');
-        }} 
+        }}
       />
     );
   }
@@ -132,9 +135,16 @@ export default function App() {
   // ── Portal 4: Loader Portal ──
   if (portal === 'loader') {
     if (currentPage === 'overview') {
-      return <LoaderOverview onLogout={() => setCurrentPage('login')} />;
+      return <LoaderOverview user={currentLoader} onLogout={() => setCurrentPage('login')} />;
     }
-    return <LoaderLogin onLogin={() => setCurrentPage('overview')} />;
+    return (
+      <LoaderLogin 
+        onLogin={(loader) => {
+          setCurrentLoader(loader);
+          setCurrentPage('overview');
+        }} 
+      />
+    );
   }
 
   // ── Portal 5: Dispatcher Portal ──

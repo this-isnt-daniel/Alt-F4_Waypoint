@@ -14,6 +14,7 @@ export interface StopBottomSheetProps {
   onCall?: () => void;
   onDetails?: () => void;
   onFailed?: () => void;
+  onContactDispatch?: () => void;
   open?: never;
   onClose?: never;
   title?: never;
@@ -91,6 +92,7 @@ export function BottomSheet(props: BottomSheetProps) {
     onCall,
     onDetails,
     onFailed,
+    onContactDispatch,
   } = props as StopBottomSheetProps;
 
   const tempIcon: AppIconName = stop.temp.includes("Chilled")
@@ -195,33 +197,72 @@ export function BottomSheet(props: BottomSheetProps) {
           Mark arrived
         </Button>
 
+        {/* Visible Quick Failure & Dispatch Trigger Row */}
+        {(onFailed || onContactDispatch) && (
+          <div className="flex items-center justify-between pt-2 px-1 text-xs">
+            {onFailed ? (
+              <button
+                type="button"
+                onClick={onFailed}
+                className="font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 py-1"
+                aria-label="Report stop failure or outlet closed"
+              >
+                <AppIcon name="alert" size={14} className="text-rose-600" />
+                <span>Report Stop Failure / Closed</span>
+              </button>
+            ) : <span />}
+
+            {onContactDispatch ? (
+              <button
+                type="button"
+                onClick={onContactDispatch}
+                className="font-medium text-slate-600 hover:text-green hover:underline flex items-center gap-1 py-1"
+                aria-label="Contact central dispatch for vehicle breakdown or issues"
+              >
+                <AppIcon name="truck" size={14} className="text-slate-500" />
+                <span>Vehicle Issue</span>
+              </button>
+            ) : <span />}
+          </div>
+        )}
+
         {/* Secondary action row */}
-        <div className="flex items-center justify-center gap-6 mt-3">
+        <div className="flex items-center justify-center gap-5 mt-3 pt-2 border-t border-slate-100">
           {onChat && (
             <button
               type="button"
               onClick={onChat}
-              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green"
+              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green transition-colors"
             >
               <AppIcon name="message" size={20} />
-              <span className="text-[10px]">Chat</span>
+              <span className="text-[10px]">Chat Store</span>
             </button>
           )}
           {onCall && (
             <button
               type="button"
               onClick={onCall}
-              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green"
+              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green transition-colors"
             >
               <AppIcon name="phone" size={20} />
-              <span className="text-[10px]">Call</span>
+              <span className="text-[10px]">Call Store</span>
+            </button>
+          )}
+          {onContactDispatch && (
+            <button
+              type="button"
+              onClick={onContactDispatch}
+              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green transition-colors"
+            >
+              <AppIcon name="phone" size={20} className="text-green" />
+              <span className="text-[10px] font-semibold text-green">Dispatch</span>
             </button>
           )}
           {onDetails && (
             <button
               type="button"
               onClick={onDetails}
-              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green"
+              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green transition-colors"
             >
               <AppIcon name="list" size={20} />
               <span className="text-[10px]">Details</span>

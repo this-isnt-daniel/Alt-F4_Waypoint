@@ -47,22 +47,21 @@ export default function ReceiptsTab() {
             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Deferrals</p>
             {DEFERRED_ORDERS.map((d) => (
               <div key={d.id} className="bg-white border border-amber-200 rounded-xl overflow-hidden mb-2">
-                <div className="px-4 py-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[14px] font-bold text-slate-900">{d.id}</span>
-                        <span className="text-[11px] text-slate-400">{d.type}</span>
-                      </div>
-                      <p className="text-[12px] text-slate-500 space-y-0.5">
-                        <span className="block">Original: <span className="font-semibold text-slate-700">{d.originalDate}</span></span>
-                        <span className="block">New delivery: <span className="font-bold text-slate-900">{d.newDate}</span></span>
-                      </p>
+                <div className="px-4 sm:px-5 py-4">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[14px] font-bold text-slate-900 leading-none">{d.id}</span>
+                      <span className="text-[11px] text-slate-300 leading-none">·</span>
+                      <span className="text-[12px] text-slate-500 font-medium truncate leading-none">{d.type}</span>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0 leading-normal inline-flex items-center">
                       Deferred
                     </span>
                   </div>
+                  <p className="text-[12px] text-slate-500 space-y-0.5">
+                    <span className="block">Original: <span className="font-semibold text-slate-700">{d.originalDate}</span></span>
+                    <span className="block">New delivery: <span className="font-bold text-slate-900">{d.newDate}</span></span>
+                  </p>
                   <p className="mt-2.5 text-[12px] text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 leading-relaxed">
                     {d.reasonDetail}
                   </p>
@@ -90,7 +89,7 @@ export default function ReceiptsTab() {
                   <button
                     type="button"
                     onClick={() => toggle(order.id)}
-                    className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 transition-colors"
+                    className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-[12px] text-slate-400 font-medium w-14 shrink-0">{order.date}</span>
@@ -120,7 +119,7 @@ export default function ReceiptsTab() {
 
                   {/* Expanded detail */}
                   {isExpanded && (
-                    <div className="px-4 pb-4 border-t border-slate-100 bg-slate-50/30">
+                    <div className="px-4 sm:px-5 pb-4 pt-1 border-t border-slate-100 bg-slate-50/30">
                       {order.issues.length === 0 ? (
                         <div className="flex items-center gap-2 py-3 text-[13px] text-brand-700">
                           <Check size={15} className="text-brand-600" />
@@ -174,13 +173,13 @@ export default function ReceiptsTab() {
 
 function PendingIssueCard({ order, onReport }) {
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-4 mb-2">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2.5">
-          <AlertTriangle size={15} className="text-amber-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-[13px] font-semibold text-slate-900">{order.id} — Partial delivery</p>
-            <p className="text-[12px] text-slate-500 mt-0.5">
+    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 sm:px-5 py-4 mb-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <AlertTriangle size={16} className="text-amber-500 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-slate-900 leading-snug">{order.id} — Partial delivery</p>
+            <p className="text-[12px] text-slate-500 mt-0.5 leading-tight">
               {order.totalReceived}/{order.totalOrdered} received · {order.issues.length} item{order.issues.length !== 1 ? 's' : ''} affected
             </p>
           </div>
@@ -188,7 +187,7 @@ function PendingIssueCard({ order, onReport }) {
         <button
           type="button"
           onClick={onReport}
-          className="shrink-0 h-8 px-3 bg-amber-600 hover:bg-amber-700 text-white text-[12px] font-semibold rounded-lg transition-colors"
+          className="shrink-0 h-8 px-3.5 flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white text-[12px] font-semibold rounded-lg transition-colors"
         >
           Report
         </button>

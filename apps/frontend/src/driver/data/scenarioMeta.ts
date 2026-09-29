@@ -44,6 +44,14 @@ export const SCENARIO_META: ScenarioMeta[] = [
     params: { outletId: "OUT052" },
   },
   {
+    id: "vehicle-breakdown",
+    title: "Degradation · vehicle breakdown",
+    blurb: "Vehicle engine / mechanical fault on route → contact dispatch & roadside assistance.",
+    tags: ["DEG", "FID"],
+    entry: "contact-dispatch",
+    params: { topic: "Vehicle issue" },
+  },
+  {
     id: "offline-sync-conflict",
     title: "Degradation · sync conflict",
     blurb: "Deliver offline → reconnect → preserve & forward (no keep/erase).",

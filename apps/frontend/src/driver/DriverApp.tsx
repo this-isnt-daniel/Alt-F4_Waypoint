@@ -94,15 +94,23 @@ const PRE_TRIP_SCREENS: ScreenId[] = [
 
 function DriverContent() {
   const { route } = useNavigator();
-  const { trip1Started, currentStopIndex, trip1Sequence } = useDriverState();
-  const demo = useDemoMode();
+  const {
+    activeTripId,
+    trip1Started,
+    trip2Started,
+    currentStopIndex,
+    currentTripSequence,
+    vehicleBreakdown,
+  } = useDriverState();
   const [scenOpen, setScenOpen] = useState(false);
 
   const Screen = SCREEN_MAP[route.id] ?? SignInScreen;
   const hideTopBar = route.id === "chat" || route.id === "call-overlay";
-  const isPreTrip = !trip1Started || PRE_TRIP_SCREENS.includes(route.id);
+  const isTripActive = trip1Started || trip2Started;
+  const isPreTrip = !isTripActive || PRE_TRIP_SCREENS.includes(route.id);
   const currentStopNum = currentStopIndex + 1;
-  const totalStops = trip1Sequence.length || 8;
+  const totalStops = currentTripSequence.length || 8;
+  const tripLabel = activeTripId === 2 ? "Trip 2 · Style" : "Trip 1 · Fresh";
 
   return (
     <div className="min-h-screen bg-canvas text-ink selection:bg-green-fill selection:text-green-ink">
@@ -115,27 +123,33 @@ function DriverContent() {
 
       {/* Container wrapper */}
       <div className="max-w-[430px] mx-auto min-h-screen bg-canvas flex flex-col shadow-2 relative">
-        {/* Demo mode quick button if ?demo=1 */}
-        {demo && (
-          <div className="bg-slate-900 text-white px-4 py-1.5 flex items-center justify-between text-xs">
-            <span className="font-semibold text-emerald-400">Judge / Demo Mode</span>
-            <button
-              type="button"
-              onClick={() => setScenOpen(true)}
-              className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-medium"
-            >
-              <ListChecks size={13} />
-              <span>Scenarios</span>
-            </button>
+        {/* Scenario Controls Bar - accessible so user can trigger failure scenarios */}
+        <div className="bg-slate-900 text-white px-4 py-1.5 flex items-center justify-between text-xs z-30 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-emerald-400">Scenarios & Controls</span>
+            {vehicleBreakdown && (
+              <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold px-1.5 py-0.2 rounded">
+                Breakdown Active
+              </span>
+            )}
           </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setScenOpen(true)}
+            className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-medium transition-colors cursor-pointer"
+            aria-label="Open Scenario Explorer to trigger failure scenarios"
+          >
+            <ListChecks size={13} />
+            <span>Trigger Scenario</span>
+          </button>
+        </div>
 
         {!hideTopBar && (
           isPreTrip ? (
             <PreTripBar />
           ) : (
             <ActiveTripBar
-              tripLabel="Trip 1 · Fresh"
+              tripLabel={tripLabel}
               stopLabel={`Stop ${currentStopNum} of ${totalStops}`}
             />
           )
@@ -145,9 +159,7 @@ function DriverContent() {
           <Screen />
         </main>
 
-        {demo && (
-          <ScenarioPanel open={scenOpen} onClose={() => setScenOpen(false)} />
-        )}
+        <ScenarioPanel open={scenOpen} onClose={() => setScenOpen(false)} />
       </div>
     </div>
   );

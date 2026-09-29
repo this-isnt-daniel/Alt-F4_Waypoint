@@ -98,12 +98,21 @@ export function DriverMap({
     stopIds.forEach((stopId, index) => {
       try {
         const coords = getStopCoords(stopId);
+        const currentIdx = stopIds.indexOf(currentStopId ?? "");
         let state: MapStopState = 'upcoming';
         
-        if (failedStopIds.includes(stopId)) state = 'failed';
-        else if (flaggedStopIds.includes(stopId)) state = 'flagged';
-        else if (completedStopIds.includes(stopId)) state = 'completed';
-        else if (currentStopId === stopId) state = 'current';
+        if (index > currentIdx && currentIdx >= 0) {
+          // Strictly upcoming stop - temporal logic: cannot be failed or completed before visit!
+          state = 'upcoming';
+        } else if (currentStopId === stopId) {
+          state = 'current';
+        } else if (failedStopIds.includes(stopId)) {
+          state = 'failed';
+        } else if (flaggedStopIds.includes(stopId)) {
+          state = 'flagged';
+        } else if (completedStopIds.includes(stopId)) {
+          state = 'completed';
+        }
 
         const stopIcon = L.divIcon({
           className: 'driver-map-div-icon',
@@ -116,7 +125,12 @@ export function DriverMap({
           .addTo(map);
         
         if (onStopClick) {
-          stopMarker.on('click', () => onStopClick(stopId));
+          // Allow clicks on current and past stops; upcoming stops are sequential
+          stopMarker.on('click', () => {
+            if (index <= currentIdx || currentIdx < 0) {
+              onStopClick(stopId);
+            }
+          });
         }
         
         markersRef.current.push(stopMarker);
