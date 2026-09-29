@@ -28,13 +28,13 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
 
         {/* ── Order Arrived Alert Banner ── */}
         {deliveryArrived && (
-          <div className="bg-[#FFFFFF] border border-[#DCEEE1] rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-300" style={{ fontFamily: 'Inter, sans-serif' }}>
-            <div className="flex items-start sm:items-center gap-3.5">
+          <div className="bg-[#FFFFFF] border border-[#DCEEE1] rounded-2xl p-5 flex flex-col gap-4 animate-in fade-in slide-in-from-top-3 duration-300" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <div className="flex items-start gap-3.5">
               <div className="w-[38px] h-[38px] rounded-[9px] bg-[#2EA85C] text-white flex items-center justify-center shrink-0">
                 <Truck size={20} strokeWidth={2.5} />
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1.5">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E7F6EC] text-[#2EA85C] border border-[#BFE6CC]">
                     Arrived
                   </span>
@@ -42,7 +42,7 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
                     Order ORD-10492
                   </span>
                 </div>
-                <p className="text-[13px] font-medium text-[#5E7365] leading-snug">
+                <p className="text-[13px] font-medium text-[#5E7365] leading-relaxed">
                   Vehicle VEH402 is at the loading dock. Provide the OTP to the driver to complete handover.
                 </p>
               </div>
@@ -50,7 +50,7 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
             <button
               type="button"
               onClick={onOpenOtpModal}
-              className="px-5 py-2 bg-white text-[#2EA85C] border border-[#2EA85C] hover:bg-[#E7F6EC] text-[13px] font-semibold rounded-full transition-colors shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full px-5 py-2.5 bg-white text-[#2EA85C] border border-[#2EA85C] hover:bg-[#E7F6EC] text-[13px] font-semibold rounded-full transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <KeyRound size={16} />
               <span>Provide OTP</span>
@@ -122,15 +122,15 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
                               <button
                                 type="button"
                                 onClick={onOpenOtpModal}
-                                className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                                className="flex-1 min-w-0 h-10 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-bold transition-colors shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                               >
-                                <KeyRound size={15} />
-                                <span>Provide OTP to Driver</span>
+                                <KeyRound size={15} className="shrink-0" />
+                                <span className="leading-tight text-center">Provide OTP to Driver</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => onNavigate('progress', order.id)}
-                                className="h-9 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-semibold transition-colors"
+                                className="flex-1 min-w-0 h-10 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-semibold transition-colors flex items-center justify-center"
                               >
                                 Track delivery
                               </button>

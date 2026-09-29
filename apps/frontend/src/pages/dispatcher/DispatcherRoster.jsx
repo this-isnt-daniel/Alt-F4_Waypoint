@@ -1317,7 +1317,7 @@ export default function DispatcherRoster({ onLogout }) {
   });
 
   // Overview Dataset (Matching Screenshot)
-  const overviewRuns = [
+  const peliyagodaOverviewRuns = [
     {
       id: 'ORD-30301',
       vehicle: 'VEH014',
@@ -1381,6 +1381,42 @@ export default function DispatcherRoster({ onLogout }) {
       category: 'completed'
     }
   ];
+
+  const kandyOverviewRuns = [
+    {
+      id: 'ORD-40112',
+      vehicle: 'VEH102',
+      destination: 'OUT0150 Kandy City Center',
+      eta: '9:00 AM',
+      status: 'In Transit',
+      riskNote: '—',
+      riskLevel: 'normal',
+      category: 'active'
+    },
+    {
+      id: 'ORD-40115',
+      vehicle: 'VEH105',
+      destination: 'OUT0155 Peradeniya',
+      eta: '9:30 AM',
+      status: 'Delayed',
+      riskNote: 'Traffic near bridge',
+      riskLevel: 'warning',
+      category: 'delayed'
+    },
+    {
+       id: 'ORD-40220',
+       vehicle: 'VEH108',
+       destination: 'OUT0160 Katugastota',
+       eta: '8:15 AM',
+       status: 'Completed',
+       badge: 'Signed Off',
+       riskNote: '',
+       riskLevel: 'success',
+       category: 'completed'
+    }
+  ];
+
+  const overviewRuns = overviewDepot === 'Peliyagoda Depot' ? peliyagodaOverviewRuns : kandyOverviewRuns;
 
   const filteredOverviewRuns = overviewRuns.filter((run) => {
     if (overviewFilterTab === 'outlet' && run.category !== 'outlet') return false;
@@ -1520,14 +1556,14 @@ export default function DispatcherRoster({ onLogout }) {
                 title="Dispatcher Profile"
                 className="w-8 h-8 rounded-full bg-[#E0F2E9] border border-[#C6E7D5] text-[#059669] text-xs font-bold flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
               >
-                RM
+                SA
               </button>
 
               {/* Profile Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
                   <div className="px-3 py-2 border-b border-gray-100">
-                    <p className="text-xs font-medium text-gray-900">Lead Dispatcher</p>
+                    <p className="text-xs font-medium text-gray-900">Stephan Anthony - Dispatcher</p>
                     <p className="text-[11px] text-gray-500">hub/Peliyagoda</p>
                   </div>
                   <button
@@ -1597,7 +1633,9 @@ export default function DispatcherRoster({ onLogout }) {
               {/* Fleet Utilization Chip */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
                 <span className="text-slate-500 font-medium">Fleet Utilization</span>
-                <span className="font-bold text-[#059669]">34 / 60 Active</span>
+                <span className="font-bold text-[#059669]">
+                  {overviewDepot === 'Peliyagoda Depot' ? '34 / 60 Active' : '12 / 20 Active'}
+                </span>
               </div>
             </div>
           </div>
@@ -1634,7 +1672,7 @@ export default function DispatcherRoster({ onLogout }) {
                   scrolling="no"
                   marginHeight="0"
                   marginWidth="0"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=79.8200%2C6.8800%2C79.9400%2C6.9700&amp;layer=mapnik"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${overviewDepot === 'Peliyagoda Depot' ? '79.8200%2C6.8800%2C79.9400%2C6.9700' : '80.5900%2C7.2600%2C80.6600%2C7.3200'}&layer=mapnik`}
                   className="absolute inset-0 z-0"
                   style={{ border: 0, opacity: 0.9 }}
                 />
@@ -2421,7 +2459,7 @@ export default function DispatcherRoster({ onLogout }) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setActiveNav('Deferral Log')}
+                        onClick={() => setWorkbenchView('deferrals')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                           workbenchView === 'deferrals'
                             ? 'bg-[#059669] text-white shadow-2xs'
@@ -2453,8 +2491,8 @@ export default function DispatcherRoster({ onLogout }) {
                       />
                     </div>
 
-                    {/* Filter Chips for Vehicle & Outlet Views */}
-                    {workbenchView !== 'deferrals' ? (
+                    {/* Filter Chips for Vehicle View */}
+                    {workbenchView === 'vehicle' ? (
                       <div className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
@@ -2490,7 +2528,7 @@ export default function DispatcherRoster({ onLogout }) {
                           Delayed Only
                         </button>
                       </div>
-                    ) : (
+                    ) : workbenchView === 'deferrals' ? (
                       /* Filter Chips for Deferrals */
                       <div className="inline-flex items-center gap-1.5">
                         <button
@@ -2527,7 +2565,7 @@ export default function DispatcherRoster({ onLogout }) {
                           Unavailable Goods (2)
                         </button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 

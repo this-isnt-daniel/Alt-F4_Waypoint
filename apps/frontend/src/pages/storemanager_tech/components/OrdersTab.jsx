@@ -82,19 +82,19 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
   return (
     <div ref={cardRef} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[15px] font-bold text-slate-900">{order.id}</span>
-          <span className="text-[11px] text-slate-400 font-medium">{order.type}</span>
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[15px] font-bold text-slate-900 shrink-0">{order.id}</span>
+          <span className="text-[11px] text-slate-400 font-medium truncate">{order.type}</span>
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${cfg.bg} ${cfg.text} ${cfg.border}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${cfg.animate ? 'animate-pulse' : ''}`} />
           {ORDER_STAGES[activeStage]?.label}
         </span>
       </div>
 
       {/* ETA / Expected */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-slate-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           {order.eta ? (
             <p className="text-[13px] text-slate-700">
@@ -111,7 +111,7 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
           <button
             type="button"
             onClick={onToggleMap}
-            className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-600 hover:text-brand-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-md transition-colors"
+            className="self-start sm:self-auto flex items-center gap-1.5 text-[12px] font-semibold text-slate-600 hover:text-brand-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-md transition-colors"
           >
             <Map size={14} />
             {isMapExpanded ? 'Hide map' : 'Track delivery'}
@@ -127,17 +127,24 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
       )}
 
       {/* Progress stepper */}
-      <div className="px-4 py-4">
-        <div className="flex items-center">
+      <div className="px-3 sm:px-4 py-4">
+        <div className="flex items-start w-full">
           {ORDER_STAGES.map((stage, idx) => {
             const isDone   = idx < activeStage;
             const isActive = idx === activeStage;
             const isPending = idx > activeStage;
             return (
-              <React.Fragment key={stage.key}>
-                {/* Node */}
-                <div className="flex flex-col items-center shrink-0">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
+              <div key={stage.key} className="flex-1 flex flex-col items-center min-w-0 relative">
+                {/* Connecting line to next node */}
+                {idx < ORDER_STAGES.length - 1 && (
+                  <div className="absolute top-[14px] left-1/2 w-full h-0.5 -translate-y-1/2 z-0">
+                    <div className={`h-full ${idx < activeStage ? 'bg-brand-600' : 'bg-slate-200'}`} />
+                  </div>
+                )}
+
+                {/* Circle Node */}
+                <div className="relative z-10 flex items-center justify-center h-7">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all shrink-0 ${
                     isDone   ? 'bg-brand-600 border-brand-600 text-white' :
                     isActive ? 'bg-white border-brand-600 ring-2 ring-brand-200' :
                                'bg-white border-slate-300'
@@ -148,19 +155,15 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
                       <span className="w-2.5 h-2.5 rounded-full bg-brand-600" />
                     ) : null}
                   </div>
-                  <p className={`text-[10px] mt-1.5 font-medium text-center w-16 leading-tight ${
-                    isActive ? 'text-brand-700 font-semibold' : isDone ? 'text-slate-600' : 'text-slate-400'
-                  }`}>
-                    {stage.label}
-                  </p>
                 </div>
-                {/* Connector */}
-                {idx < ORDER_STAGES.length - 1 && (
-                  <div className="flex-1 h-0.5 mx-1.5 mb-5 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${idx < activeStage ? 'bg-brand-600' : 'bg-slate-200'}`} />
-                  </div>
-                )}
-              </React.Fragment>
+
+                {/* Label */}
+                <p className={`text-[10px] mt-1.5 font-medium text-center w-full leading-tight px-0.5 break-words ${
+                  isActive ? 'text-brand-700 font-semibold' : isDone ? 'text-slate-600' : 'text-slate-400'
+                }`}>
+                  {stage.label}
+                </p>
+              </div>
             );
           })}
         </div>
