@@ -101,13 +101,17 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed })
 
                 // Compact secondary orders
                 return (
-                  <div key={order.id} className="bg-white border border-slate-200 rounded-xl px-5 py-4 flex items-center justify-between hover:border-slate-300 transition-colors cursor-pointer" onClick={() => onNavigate('progress', order.id)}>
-                    <div className="flex items-center gap-4">
-                      <p className="text-[14px] font-bold text-slate-900 w-20">{order.id}</p>
-                      <p className="text-[13px] font-medium text-slate-500 w-20">{order.type}</p>
-                      <p className="text-[13px] font-semibold text-slate-700">{STATUS_CONFIG[order.status]?.label || order.status}</p>
+                  <div key={order.id} className="bg-white border border-slate-200 rounded-xl px-4 py-3.5 flex items-center justify-between gap-2 hover:border-slate-300 transition-colors cursor-pointer" onClick={() => onNavigate('progress', order.id)}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <p className="text-[14px] font-bold text-slate-900 shrink-0">{order.id}</p>
+                      <p className="text-[12px] font-medium text-slate-400 truncate hidden xs:block">{order.type}</p>
                     </div>
-                    <p className="text-[13px] font-semibold text-slate-800">{order.expectedArrival}</p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${STATUS_CONFIG[order.status]?.bg} ${STATUS_CONFIG[order.status]?.text} ${STATUS_CONFIG[order.status]?.border}`}>
+                        {STATUS_CONFIG[order.status]?.label || order.status}
+                      </span>
+                      <p className="text-[13px] font-semibold text-slate-800 shrink-0">{order.expectedArrival}</p>
+                    </div>
                   </div>
                 );
               })}
