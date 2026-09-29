@@ -1556,14 +1556,14 @@ export default function DispatcherRoster({ onLogout }) {
                 title="Dispatcher Profile"
                 className="w-8 h-8 rounded-full bg-[#E0F2E9] border border-[#C6E7D5] text-[#059669] text-xs font-bold flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
               >
-                RM
+                SA
               </button>
 
               {/* Profile Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
                   <div className="px-3 py-2 border-b border-gray-100">
-                    <p className="text-xs font-medium text-gray-900">Lead Dispatcher</p>
+                    <p className="text-xs font-medium text-gray-900">Stephan Anthony - Dispatcher</p>
                     <p className="text-[11px] text-gray-500">hub/Peliyagoda</p>
                   </div>
                   <button
