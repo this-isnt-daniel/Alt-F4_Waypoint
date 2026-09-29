@@ -10,6 +10,7 @@ import StoreManagerStyleOverview from './pages/storemanager_style/StoreManagerOv
 import LoaderLogin from './pages/loader/LoaderLogin';
 import LoaderOverview from './pages/loader/LoaderOverview';
 import CentralLogin from './pages/CentralLogin';
+import { DriverApp } from './driver/DriverApp';
 
 const PORTAL_TITLES = {
   dispatcher: 'Waypoint - Dispatcher Portal',
@@ -57,8 +58,13 @@ export default function App() {
   const [currentStyleUser, setCurrentStyleUser] = useState({ name: 'S. Jayawardena', pin: '123456' });
   const [currentStyleOutlet, setCurrentStyleOutlet] = useState({ id: 'STY-001', name: 'Waypoint Style Boutique — Colombo 07' });
 
+  // ── Driver Portal ──
+  if (portal === 'driver') {
+    return <DriverApp />;
+  }
+
   // ── Portal 1: Store Manager (Grocery & Fresh) ──
-  if (portal === 'storemanager' || portal === 'grocery' || portal === 'storemanager-fresh') {
+  if (portal === 'storemanager' || portal === 'grocery' || portal === 'storemanager-fresh' || portal === 'store-manager') {
     if (currentPage === 'overview') {
       return (
         <StoreManagerOverview 

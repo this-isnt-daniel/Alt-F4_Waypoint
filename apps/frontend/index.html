@@ -1,9 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/src/assets/icons/waypoint_logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="referrer" content="origin-when-cross-origin" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self' 'unsafe-inline';
+               style-src 'self' 'unsafe-inline';
+               img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.osm.org https://*.tile.openstreetmap.fr https://*.openstreetmap.org;
+               font-src 'self' data: https://fonts.gstatic.com;
+               connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* https://*.tile.openstreetmap.org https://*.tile.openstreetmap.fr https://*.openstreetmap.org;
+               frame-ancestors 'none';
+               base-uri 'self';
+               form-action 'self';"
+    />
     <title>Waypoint</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,9 +24,20 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem("waypoint.driver.theme");
+          if (theme !== "light" && theme !== "dark") theme = "dark";
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (_error) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
   </head>
-  <body class="bg-white text-gray-900 antialiased font-sans">
+  <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
