@@ -128,7 +128,7 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
 
       {/* Progress stepper */}
       <div className="px-4 py-4">
-        <div className="flex items-center">
+        <div className="flex items-start">
           {ORDER_STAGES.map((stage, idx) => {
             const isDone   = idx < activeStage;
             const isActive = idx === activeStage;
@@ -148,15 +148,15 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
                       <span className="w-2.5 h-2.5 rounded-full bg-brand-600" />
                     ) : null}
                   </div>
-                  <p className={`text-[10px] mt-1.5 font-medium text-center w-16 leading-tight ${
+                  <p className={`text-[10px] mt-1.5 font-medium text-center w-12 leading-tight ${
                     isActive ? 'text-brand-700 font-semibold' : isDone ? 'text-slate-600' : 'text-slate-400'
                   }`}>
                     {stage.label}
                   </p>
                 </div>
-                {/* Connector */}
+                {/* Connector — mt-[13px] = half of 28px circle, sits exactly at circle center */}
                 {idx < ORDER_STAGES.length - 1 && (
-                  <div className="flex-1 h-0.5 mx-1.5 mb-5 rounded-full overflow-hidden">
+                  <div className="flex-1 h-0.5 mt-[13px] mx-1 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${idx < activeStage ? 'bg-brand-600' : 'bg-slate-200'}`} />
                   </div>
                 )}
