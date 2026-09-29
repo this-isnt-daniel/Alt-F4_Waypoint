@@ -18,13 +18,31 @@ export default function App() {
   };
 
   const [portal, setPortal] = useState(getInitialPortal);
+  
   const [currentPage, setCurrentPage] = useState('login');
+
+  const [currentUser, setCurrentUser] = useState({ name: 'A. Perera', pin: '123456' });
+  const [currentOutlet, setCurrentOutlet] = useState({ id: 'NGD-014', name: 'Nugegoda Outlet' });
 
   if (portal === 'storemanager') {
     if (currentPage === 'overview') {
-      return <StoreManagerOverview onLogout={() => setCurrentPage('login')} />;
+      return (
+        <StoreManagerOverview 
+          user={currentUser} 
+          outlet={currentOutlet}
+          onLogout={() => setCurrentPage('login')} 
+        />
+      );
     }
-    return <StoreManagerLogin onLogin={() => setCurrentPage('overview')} />;
+    return (
+      <StoreManagerLogin 
+        onLogin={(manager, outlet) => {
+          setCurrentUser(manager);
+          setCurrentOutlet(outlet);
+          setCurrentPage('overview');
+        }} 
+      />
+    );
   }
 
   // Loader Portal
