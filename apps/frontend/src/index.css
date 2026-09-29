@@ -4,6 +4,78 @@
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  --c-canvas: #F2F6F3;
+  --c-surface: #FFFFFF;
+  --c-raised: #ECF1ED;
+  --c-line: #DCE5DF;
+
+  --c-hero: #14532D;
+  --c-hero-label: #86D3A6;
+  --c-hero-ink: #FFFFFF;
+
+  --c-ink: #14201A;
+  --c-ink-muted: #5E6F66;
+
+  --c-green: #3FB27F;
+  --c-green-ink: #0E3A26;
+  --c-green-fill: #E4F4EC;
+
+  --c-success: #2F9E63;
+  --c-success-fill: #E2F3E9;
+
+  --c-warning: #C77D0A;
+  --c-warning-fill: #FBEEDA;
+
+  --c-danger: #B3261E;
+  --c-danger-fill: #FBE9E7;
+
+  --c-offline: #5B6B72;
+  --c-offline-fill: #E7ECEF;
+
+  --c-restriction: #3A4A42;
+  --c-restriction-fill: #EEF3EF;
+  --c-restriction-line: #CFDBD2;
+
+  --shadow-1: 0 1px 2px rgba(20, 32, 26, 0.06), 0 8px 24px rgba(20, 32, 26, 0.08);
+  --shadow-2: 0 2px 4px rgba(20, 32, 26, 0.08), 0 16px 40px rgba(20, 32, 26, 0.14);
+}
+
+[data-theme="dark"] {
+  --c-canvas: #07100D;
+  --c-surface: #101D19;
+  --c-raised: #172720;
+  --c-line: #2A4037;
+
+  --c-hero: #0C2A1C;
+  --c-hero-label: #7FCBA0;
+  --c-hero-ink: #F3F7F5;
+
+  --c-ink: #F3F7F5;
+  --c-ink-muted: #9EB2AA;
+
+  --c-green: #3FB27F;
+  --c-green-ink: #06140D;
+  --c-green-fill: #16352A;
+
+  --c-success: #46C285;
+  --c-success-fill: #143326;
+
+  --c-warning: #E2A33C;
+  --c-warning-fill: #3A2E12;
+
+  --c-danger: #F0776B;
+  --c-danger-fill: #3A1C1A;
+
+  --c-offline: #8FA3AB;
+  --c-offline-fill: #1B2A2E;
+
+  --c-restriction: #BFD2C8;
+  --c-restriction-fill: #13211C;
+  --c-restriction-line: #2A4037;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
 body {
@@ -25,4 +97,5 @@ body {
 .animate-flow-beam {
   animation: flowBeam 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
+
 
