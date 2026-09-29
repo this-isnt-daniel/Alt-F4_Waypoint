@@ -18,29 +18,34 @@ export default function App() {
   };
 
   const [portal, setPortal] = useState(getInitialPortal);
-  
-  const [currentPage, setCurrentPage] = useState('login');
 
+  // Temporarily bypass login for testing
+  const [currentPage, setCurrentPage] = useState('overview');
+
+  // Store Manager mock state
   const [currentUser, setCurrentUser] = useState({ name: 'A. Perera', pin: '123456' });
   const [currentOutlet, setCurrentOutlet] = useState({ id: 'NGD-014', name: 'Nugegoda Outlet' });
+
+  // Loader mock state
+  const [currentLoader, setCurrentLoader] = useState({ name: 'J. Silva', depot: 'peliyagoda', bay: 'Bay Lead A' });
 
   if (portal === 'storemanager') {
     if (currentPage === 'overview') {
       return (
-        <StoreManagerOverview 
-          user={currentUser} 
+        <StoreManagerOverview
+          user={currentUser}
           outlet={currentOutlet}
-          onLogout={() => setCurrentPage('login')} 
+          onLogout={() => setCurrentPage('login')}
         />
       );
     }
     return (
-      <StoreManagerLogin 
+      <StoreManagerLogin
         onLogin={(manager, outlet) => {
           setCurrentUser(manager);
           setCurrentOutlet(outlet);
           setCurrentPage('overview');
-        }} 
+        }}
       />
     );
   }
@@ -48,9 +53,16 @@ export default function App() {
   // Loader Portal
   if (portal === 'loader') {
     if (currentPage === 'overview') {
-      return <LoaderOverview onLogout={() => setCurrentPage('login')} />;
+      return <LoaderOverview user={currentLoader} onLogout={() => setCurrentPage('login')} />;
     }
-    return <LoaderLogin onLogin={() => setCurrentPage('overview')} />;
+    return (
+      <LoaderLogin 
+        onLogin={(loader) => {
+          setCurrentLoader(loader);
+          setCurrentPage('overview');
+        }} 
+      />
+    );
   }
 
   // Dispatcher Portal
