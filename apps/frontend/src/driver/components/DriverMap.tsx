@@ -36,6 +36,7 @@ export function DriverMap({
 }: DriverMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const { theme } = useTheme();
@@ -50,17 +51,35 @@ export function DriverMap({
       attributionControl: true,
     });
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // CARTO tiles based on OpenStreetMap data: high-speed CDN, no 403 usage blocks
+    const tileUrl = isDark
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+    const tileLayer = L.tileLayer(tileUrl, {
+      subdomains: 'abcd',
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(map);
 
+    tileLayerRef.current = tileLayer;
     mapRef.current = map;
 
     return () => {
       map.remove();
       mapRef.current = null;
+      tileLayerRef.current = null;
     };
   }, []);
+
+  // Update tile layer url dynamically when switching between light and dark themes
+  useEffect(() => {
+    if (!tileLayerRef.current) return;
+    const tileUrl = isDark
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    tileLayerRef.current.setUrl(tileUrl);
+  }, [isDark]);
 
   // Update markers, polyline and bounds
   useEffect(() => {
