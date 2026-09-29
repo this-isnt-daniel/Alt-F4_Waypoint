@@ -3,6 +3,9 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "./driver/**/*.{js,ts,jsx,tsx}",
+    "./dispatcher/**/*.{js,ts,jsx,tsx}",
+    "./loader/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
