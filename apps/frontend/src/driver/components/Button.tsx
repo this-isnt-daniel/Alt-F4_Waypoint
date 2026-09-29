@@ -1,10 +1,9 @@
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { AppIcon } from "./AppIcon";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "locked";
-  size?: "sm" | "md" | "lg";
+  size?: "md" | "lg";
   fullWidth?: boolean;
   children: ReactNode;
 }
@@ -20,16 +19,15 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-green focus-visible:outline-offset-2";
+    "inline-flex items-center justify-center font-semibold rounded-btn transition-colors focus-visible:outline-2 focus-visible:outline-green focus-visible:outline-offset-2 active:scale-[0.99]";
 
   const sizeStyles = {
-    sm: "min-h-[40px] px-3 text-[12px]",
-    md: "min-h-[48px] px-4 text-[13px]",
-    lg: "min-h-[56px] px-6 text-[13px]",
+    md: "min-h-[48px] px-4 text-sm",
+    lg: "min-h-[56px] px-6 text-base",
   };
 
   const variantStyles = {
-    primary: "bg-green text-white hover:opacity-95",
+    primary: "bg-green text-green-ink hover:opacity-95 shadow-1",
     secondary: "bg-raised text-ink border border-line hover:bg-surface",
     ghost: "bg-transparent text-green hover:bg-raised",
     danger: "bg-danger-fill text-danger border border-danger/20 hover:opacity-95",
@@ -47,14 +45,12 @@ export function Button({
         sizeStyles[size],
         variantStyles[variant],
         fullWidth && "w-full",
-        isLocked && "opacity-70 cursor-not-allowed",
+        isLocked && "opacity-70 cursor-not-allowed active:scale-100",
         className,
       )}
       {...props}
     >
-      {variant === "locked" && (
-        <AppIcon name="lock" size={14} className="mr-2 opacity-70" />
-      )}
+      {variant === "locked" && <span className="mr-2" aria-hidden="true">🔒</span>}
       {children}
     </button>
   );

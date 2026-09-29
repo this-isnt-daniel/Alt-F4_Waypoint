@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { sanitizeText } from "@/lib/security";
-import { AppIcon } from "./AppIcon";
 
 export interface ChoiceOption {
   id: string;
@@ -80,7 +79,7 @@ export function ChoiceList({
                 )}
                 aria-hidden="true"
               >
-                {isSelected && <AppIcon name="check" size={14} className="text-white" />}
+                {isSelected && <span className="text-xs font-bold">✓</span>}
               </div>
             </button>
           </div>

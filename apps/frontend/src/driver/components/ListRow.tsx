@@ -1,19 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { AppIcon, type AppIconName } from "./AppIcon";
 
 export interface ListRowProps {
   title: ReactNode;
   subtitle?: ReactNode;
-  status?:
-    | "pending"
-    | "matches"
-    | "flagged"
-    | "delivered"
-    | "partial"
-    | "failed"
-    | "returned"
-    | "syncing";
+  status?: "pending" | "matches" | "flagged" | "delivered" | "partial" | "failed" | "returned" | "syncing";
   statusLabel?: string;
   trailing?: ReactNode;
   expandable?: boolean;
@@ -35,15 +26,15 @@ export function ListRow({
 }: ListRowProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
-  const statusIcons: Record<string, AppIconName> = {
-    pending: "dot",
-    matches: "check",
-    flagged: "alert",
-    delivered: "check",
-    partial: "alert",
-    failed: "x",
-    returned: "refresh",
-    syncing: "refresh",
+  const statusIcons: Record<string, string> = {
+    pending: "○",
+    matches: "✓",
+    flagged: "⚠",
+    delivered: "✓",
+    partial: "⚠",
+    failed: "✕",
+    returned: "↩",
+    syncing: "⟳",
   };
 
   const statusStyles: Record<string, string> = {
@@ -86,33 +77,27 @@ export function ListRow({
         <div className="flex items-center gap-3 min-w-0">
           <span
             className={cn(
-              "grid h-8 w-8 shrink-0 place-items-center rounded-full border text-xs font-bold",
+              "grid h-8 w-8 shrink-0 place-items-center rounded-circle border text-xs font-bold",
               statusStyles[status],
             )}
             aria-hidden="true"
           >
-            <AppIcon name={statusIcons[status] ?? "dot"} size={14} />
+            {statusIcons[status]}
           </span>
           <div className="min-w-0">
             <div className="text-sm font-semibold text-ink truncate">{title}</div>
-            {subtitle && (
-              <div className="text-xs text-ink-muted truncate">{subtitle}</div>
-            )}
+            {subtitle && <div className="text-xs text-ink-muted truncate">{subtitle}</div>}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {statusLabel && (
-            <span className="text-xs font-medium text-ink-muted">
-              {statusLabel}
-            </span>
+            <span className="text-xs font-medium text-ink-muted">{statusLabel}</span>
           )}
           {trailing}
           {expandable && (
-            <AppIcon
-              name={expanded ? "chevron-up" : "chevron-down"}
-              size={14}
-              className="text-ink-muted"
-            />
+            <span className="text-ink-muted text-xs" aria-hidden="true">
+              {expanded ? "▲" : "▼"}
+            </span>
           )}
         </div>
       </div>

@@ -1,10 +1,8 @@
-import { useState, type ComponentType } from "react";
+import { type ComponentType } from "react";
 import { NavigatorProvider, useNavigator, type ScreenId } from "@/router/navigator";
 import { DriverStateProvider } from "@/driver/state/DriverStateProvider";
+import { useDriverState } from "@/driver/state/useDriverState";
 import { PreTripBar, ActiveTripBar } from "@/driver/components/TopBar";
-import { useDemoMode } from "@/driver/state/useDemoMode";
-import { ScenarioPanel } from "@/driver/components/ScenarioPanel";
-import { ListChecks } from "lucide-react";
 
 // Import all screens
 import { SignInScreen } from "./screens/SignInScreen";
@@ -77,8 +75,6 @@ const SCREEN_MAP: Record<ScreenId, ComponentType> = {
   "contact-dispatch": ContactDispatchSheet,
 };
 
-import { useDriverState } from "@/driver/state/useDriverState";
-
 const PRE_TRIP_SCREENS: ScreenId[] = [
   "signin",
   "start-day",
@@ -88,24 +84,20 @@ const PRE_TRIP_SCREENS: ScreenId[] = [
   "trip-complete",
   "day-summary",
   "no-trips",
-  "contact-dispatch",
-  "issue-wizard",
 ];
 
 function DriverContent() {
   const { route } = useNavigator();
-  const { trip1Started, currentStopIndex, trip1Sequence } = useDriverState();
-  const demo = useDemoMode();
-  const [scenOpen, setScenOpen] = useState(false);
-
+  const { currentStopSeq, trip2Unlocked, connection, syncRecords } = useDriverState();
   const Screen = SCREEN_MAP[route.id] ?? SignInScreen;
-  const hideTopBar = route.id === "chat" || route.id === "call-overlay";
-  const isPreTrip = !trip1Started || PRE_TRIP_SCREENS.includes(route.id);
-  const currentStopNum = currentStopIndex + 1;
-  const totalStops = trip1Sequence.length || 8;
+  const isPreTrip = PRE_TRIP_SCREENS.includes(route.id);
+
+  const dynamicTripLabel = trip2Unlocked ? "Trip 2 · Style" : "Trip 1 · Fresh";
+  const dynamicStopLabel = `Stop ${currentStopSeq || 2} of 8`;
+  const dynamicSyncTone = connection === "offline" ? "pending" : (syncRecords.some(r => r.state === "pending") ? "pending" : "success");
 
   return (
-    <div className="min-h-screen bg-canvas text-ink selection:bg-green-fill selection:text-green-ink">
+    <div className="min-h-screen bg-slate-950/20 sm:py-6 flex justify-center items-center text-ink selection:bg-green-fill selection:text-green-ink font-sans">
       <a
         href="#driver-main"
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-surface focus:text-green"
@@ -113,45 +105,22 @@ function DriverContent() {
         Skip to main content
       </a>
 
-      {/* Container wrapper */}
-      <div className="max-w-[430px] mx-auto min-h-screen bg-canvas flex flex-col shadow-2 relative">
-        {/* Demo mode quick button if ?demo=1 */}
-        {demo && (
-          <div className="bg-slate-900 text-white px-4 py-1.5 flex items-center justify-between text-xs">
-            <span className="font-semibold text-emerald-400">Judge / Demo Mode</span>
-            <button
-              type="button"
-              onClick={() => setScenOpen(true)}
-              className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-medium"
-            >
-              <ListChecks size={13} />
-              <span>Scenarios</span>
-            </button>
-          </div>
+      {/* Realistic Mobile Viewport Device Frame */}
+      <div className="w-full max-w-[430px] min-h-screen sm:min-h-[880px] sm:max-h-[92vh] bg-canvas flex flex-col shadow-2xl sm:rounded-[36px] sm:border-[8px] sm:border-slate-800 overflow-hidden relative">
+        {isPreTrip ? (
+          <PreTripBar />
+        ) : (
+          <ActiveTripBar tripLabel={dynamicTripLabel} stopLabel={dynamicStopLabel} syncTone={dynamicSyncTone} />
         )}
 
-        {!hideTopBar && (
-          isPreTrip ? (
-            <PreTripBar />
-          ) : (
-            <ActiveTripBar
-              tripLabel="Trip 1 · Fresh"
-              stopLabel={`Stop ${currentStopNum} of ${totalStops}`}
-            />
-          )
-        )}
-
-        <main id="driver-main" className="flex-1 flex flex-col">
+        <main id="driver-main" className="flex-1 overflow-y-auto">
           <Screen />
         </main>
-
-        {demo && (
-          <ScenarioPanel open={scenOpen} onClose={() => setScenOpen(false)} />
-        )}
       </div>
     </div>
   );
 }
+
 
 export function DriverApp() {
   return (

@@ -1,6 +1,5 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { AppIcon } from "./AppIcon";
 
 export interface EmptyStateProps {
   icon?: ReactNode;
@@ -11,7 +10,7 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({
-  icon,
+  icon = "📋",
   title,
   description,
   action,
@@ -24,8 +23,8 @@ export function EmptyState({
         className,
       )}
     >
-      <div className="grid h-16 w-16 place-items-center rounded-full bg-raised text-ink-muted mb-4">
-        {icon ?? <AppIcon name="package" size={28} />}
+      <div className="grid h-16 w-16 place-items-center rounded-circle bg-raised text-2xl mb-4">
+        {icon}
       </div>
       <h3 className="text-lg font-bold text-ink mb-1">{title}</h3>
       <p className="text-sm text-ink-muted max-w-xs mb-6 leading-relaxed">

@@ -1,38 +1,59 @@
+import { useState } from "react";
 import { useNavigator } from "@/router/navigator";
 import { Button } from "@/driver/components/Button";
 import { Card } from "@/driver/components/Card";
-import { AppIcon } from "@/driver/components/AppIcon";
+import { Toast } from "@/driver/components/Toast";
+import { TRIP_1_STOPS } from "@/driver/data/driverContent";
+import { isSafeExternalHref } from "@/lib/security";
 
 export function CallOverlayScreen() {
-  const { route, back } = useNavigator();
-  const isDispatch = route.params.recipient === "dispatch";
+  const { route, push, back } = useNavigator();
   const outletId = route.params.outletId ?? "OUT047";
+  const stop = TRIP_1_STOPS.find((s) => s.outletId === outletId) ?? TRIP_1_STOPS[1]!;
+
+  const [toastVisible, setToastVisible] = useState<boolean>(false);
+
+  const handleCall = () => {
+    const safeHref = "tel:+94770000042";
+    if (isSafeExternalHref(safeHref)) {
+      setToastVisible(true);
+      setTimeout(() => {
+        window.location.href = safeHref;
+      }, 800);
+    }
+  };
 
   return (
-    <div className="p-4 max-w-[430px] mx-auto min-h-[80vh] flex flex-col items-center justify-center">
-      <Card variant="raised" className="w-full text-center space-y-4 p-6">
-        <div className="w-16 h-16 rounded-full bg-slate-100 mx-auto flex items-center justify-center">
-          <AppIcon name="phone" size={32} className="text-slate-600" />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold text-slate-900">
-            {isDispatch ? "Call Central Dispatch?" : "Call Joseph Vijay?"}
-          </h1>
-          <p className="text-[13px] text-slate-500">
-            {isDispatch ? "Stephan Anthony · Kandy Hub" : `Store manager · ${outletId}`}
-          </p>
-        </div>
-        <div className="text-[15px] font-mono text-slate-900 bg-slate-50 py-2 rounded-lg border border-slate-100 tracking-wider">
-          {isDispatch ? "+94 81 ••• ••10" : "+94 77 ••• ••42"}
-        </div>
-        <p className="text-[12px] text-slate-400 leading-tight">
-          Your personal number stays hidden. {isDispatch ? "Direct dispatch hotline." : "Standard call rates may apply."}
+    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8 pt-12 text-center">
+      <div className="grid h-20 w-20 place-items-center rounded-circle bg-green-fill text-green text-3xl mx-auto mb-2">
+        📞
+      </div>
+
+      <div className="space-y-1">
+        <h1 className="text-xl font-extrabold text-ink">Call {stop.manager}?</h1>
+        <p className="text-xs text-ink-muted">
+          Store manager · {stop.outletId} · {stop.phoneMasked}
         </p>
-        <div className="flex gap-2 pt-2">
-          <Button variant="secondary" size="md" fullWidth={false} className="flex-1" onClick={back}>Cancel</Button>
-          <Button variant="primary" size="md" fullWidth={false} className="flex-1" onClick={back}>Call</Button>
-        </div>
+      </div>
+
+      <Card variant="raised" className="text-2xs text-ink-muted max-w-xs mx-auto leading-relaxed">
+        Your personal number stays hidden. Standard call rates may apply.
       </Card>
+
+      <div className="space-y-2 pt-4 max-w-xs mx-auto">
+        <Button variant="primary" size="lg" onClick={handleCall}>
+          Call
+        </Button>
+        <Button variant="secondary" size="md" onClick={() => back()}>
+          Cancel
+        </Button>
+      </div>
+
+      <Toast
+        message="Opening masked dialer..."
+        visible={toastVisible}
+        onClose={() => setToastVisible(false)}
+      />
     </div>
   );
 }

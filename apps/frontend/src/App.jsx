@@ -11,6 +11,7 @@ import LoaderLogin from './pages/loader/LoaderLogin';
 import LoaderOverview from './pages/loader/LoaderOverview';
 import CentralLogin from './pages/CentralLogin';
 import { DriverApp } from './driver/DriverApp';
+import { ThemeProvider } from './theme/ThemeProvider';
 
 const PORTAL_TITLES = {
   dispatcher: 'Waypoint - Dispatcher Portal',
@@ -46,6 +47,13 @@ export default function App() {
     document.title = PORTAL_TITLES[portal] ?? 'Waypoint';
   }, [portal]);
 
+  // Remove driver theme attribute when leaving driver portal
+  useEffect(() => {
+    if (portal !== 'driver') {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [portal]);
+
   // Grocery State
   const [currentUser, setCurrentUser] = useState({ name: 'A. Perera', pin: '123456' });
   const [currentOutlet, setCurrentOutlet] = useState({ id: 'NGD-014', name: 'Nugegoda Outlet' });
@@ -63,7 +71,11 @@ export default function App() {
 
   // ── Driver Portal ──
   if (portal === 'driver') {
-    return <DriverApp />;
+    return (
+      <ThemeProvider>
+        <DriverApp />
+      </ThemeProvider>
+    );
   }
 
   // ── Portal 1: Store Manager (Grocery & Fresh) ──

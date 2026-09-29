@@ -1,34 +1,64 @@
 import { useState } from "react";
 import { useNavigator } from "@/router/navigator";
 import { Button } from "@/driver/components/Button";
-import { AppIcon } from "@/driver/components/AppIcon";
-
-const REASONS = ["Outlet closed", "Mall bay unavailable", "Store refused delivery", "Unsafe access", "Receiver unavailable", "Other"];
+import { Card } from "@/driver/components/Card";
+import { ChoiceList, type ChoiceOption } from "@/driver/components/ChoiceList";
+import { OUTLET_CLOSED } from "@/driver/data/driverContent";
 
 export function FailedReasonScreen() {
   const { push } = useNavigator();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedReason, setSelectedReason] = useState<string | null>("Mall bay unavailable");
+
+  const options: ChoiceOption[] = [
+    { id: "Outlet closed", label: "Outlet closed", description: "Store is shut or unstaffed" },
+    { id: "Mall bay unavailable", label: "Mall bay unavailable", description: "Rear bay closed by security" },
+    { id: "Store refused delivery", label: "Store refused delivery", description: "Manager rejected shipment" },
+    { id: "Unsafe access", label: "Unsafe access", description: "Hazardous unloading area" },
+    { id: "Receiver unavailable", label: "Receiver unavailable", description: "Authorized personnel missing" },
+    { id: "Other", label: "Other", description: "Describe reason below" },
+  ];
+
+  const handleContinue = () => {
+    push("outlet-closed");
+  };
+
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto">
-      <div>
-        <h1 className="text-lg font-bold text-slate-900">Failed delivery</h1>
-        <p className="text-[13px] text-slate-500">OUT052 · Waypoint Fresh Kandy City Centre</p>
+    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8">
+      <div className="space-y-1">
+        <span className="text-2xs font-extrabold text-danger tracking-wider uppercase">
+          Delivery Exception
+        </span>
+        <h1 className="text-xl font-extrabold text-ink">Failed delivery</h1>
+        <p className="text-xs font-semibold text-ink-muted">
+          {OUTLET_CLOSED.outletId} · {OUTLET_CLOSED.outletName}
+        </p>
       </div>
-      <p className="text-[13px] text-slate-500">Why couldn't you deliver?</p>
-      <div className="space-y-2">
-        {REASONS.map((reason) => (
-          <button key={reason} type="button" onClick={() => setSelected(reason)}
-            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${
-              selected === reason ? "border-green/30 bg-green-fill" : "border-slate-200 bg-white"
-            }`}>
-            <span className="text-[13px] font-medium text-slate-900">{reason}</span>
-            {selected === reason && <AppIcon name="check" size={18} className="text-green" />}
-          </button>
-        ))}
+
+      <p className="text-xs text-ink-muted">
+        Why couldn’t you deliver? Choose the closest reason. Evidence and return items come next.
+      </p>
+
+      <ChoiceList
+        options={options}
+        selectedId={selectedReason}
+        onSelect={(id) => setSelectedReason(id)}
+      />
+
+      <Card variant="raised" className="text-2xs text-ink-muted">
+        <span className="font-bold text-ink block mb-0.5">Safety note:</span>
+        If you’re still in traffic, stop safely to continue.
+      </Card>
+
+      <div className="pt-2">
+        <Button
+          variant="primary"
+          size="lg"
+          disabled={!selectedReason}
+          onClick={handleContinue}
+        >
+          Continue to evidence
+        </Button>
       </div>
-      <Button variant="primary" size="lg" onClick={() => push("outlet-closed")} disabled={!selected}>
-        Continue
-      </Button>
     </div>
   );
 }

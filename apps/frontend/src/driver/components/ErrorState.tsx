@@ -1,6 +1,5 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { AppIcon } from "./AppIcon";
 
 export interface ErrorStateProps {
   icon?: ReactNode;
@@ -12,7 +11,7 @@ export interface ErrorStateProps {
 }
 
 export function ErrorState({
-  icon,
+  icon = "⚠️",
   title,
   description,
   action,
@@ -27,8 +26,8 @@ export function ErrorState({
       )}
       role="alert"
     >
-      <div className="grid h-16 w-16 place-items-center rounded-full bg-danger-fill text-danger mb-4">
-        {icon ?? <AppIcon name="alert" size={28} className="text-danger" />}
+      <div className="grid h-16 w-16 place-items-center rounded-circle bg-danger-fill text-danger text-2xl mb-4">
+        {icon}
       </div>
       <h3 className="text-lg font-bold text-ink mb-1">{title}</h3>
       <p className="text-sm text-ink-muted max-w-xs mb-6 leading-relaxed">

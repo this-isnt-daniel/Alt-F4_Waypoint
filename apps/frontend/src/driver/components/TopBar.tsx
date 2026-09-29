@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useNavigator } from "@/router/navigator";
 import { ThemeToggle } from "@/theme/ThemeToggle";
-import { ConnectionIndicator, type ConnectionTone } from "./ConnectionIndicator";
+import { ConnectionPill } from "./ConnectionPill";
+import { SyncPill } from "./SyncPill";
+import { type SyncState } from "@/driver/state/connection";
 import { VEHICLE } from "@/driver/data/driverContent";
-import { useDriverState } from "@/driver/state/useDriverState";
 
 function useClock() {
   const [time, setTime] = useState<string>(() =>
@@ -31,30 +34,31 @@ function useClock() {
 
 export function PreTripBar({ clock }: { clock?: string }) {
   const time = useClock();
-  const { connection, setConnection, syncRecords } = useDriverState();
   const displayClock = clock ?? time;
-  const tone: ConnectionTone = connection === "offline" ? "offline" : "online";
+  const { route, back } = useNavigator();
+  const showBack = route.id !== "signin";
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-surface border-b border-line">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] font-semibold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
+    <header className="flex items-center justify-between px-3 py-2.5 bg-surface border-b border-line gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        {showBack && (
+          <button
+            type="button"
+            onClick={back}
+            className="p-1 -ml-1 rounded-lg text-ink hover:bg-raised active:scale-95 transition cursor-pointer shrink-0"
+            aria-label="Back"
+            title="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 text-ink" />
+          </button>
+        )}
+        <ConnectionPill />
+        <span className="text-xs font-bold text-ink-muted bg-raised px-2 py-1 rounded-pill shrink-0">
           {VEHICLE.id}
         </span>
       </div>
-      <div className="flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => setConnection(connection === "offline" ? "online" : "offline")}
-          title={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
-          aria-label={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
-          className="rounded-full focus:outline-none focus:ring-2 focus:ring-green/50 transition-transform active:scale-95 cursor-pointer"
-        >
-          <ConnectionIndicator tone={tone} count={syncRecords.length} />
-        </button>
-        <span className="text-[11px] font-mono font-medium text-slate-400">
-          {displayClock}
-        </span>
+      <div className="flex items-center gap-2.5 shrink-0">
+        <span className="text-xs font-mono font-medium text-ink-muted">{displayClock}</span>
         <ThemeToggle />
       </div>
     </header>
@@ -62,46 +66,45 @@ export function PreTripBar({ clock }: { clock?: string }) {
 }
 
 export function ActiveTripBar({
-  tripLabel = "Trip 1 · Fresh",
+  tripLabel = "Trip 1",
   stopLabel = "Stop 2 of 8",
   syncTone,
   clock,
 }: {
   tripLabel?: string;
   stopLabel?: string;
-  syncTone?: ConnectionTone;
+  syncTone?: SyncState;
   clock?: string;
 }) {
   const time = useClock();
-  const { connection, setConnection, syncRecords } = useDriverState();
   const displayClock = clock ?? time;
-
-  const resolvedTone: ConnectionTone =
-    connection === "offline"
-      ? "offline"
-      : syncTone ?? "online";
+  const { back } = useNavigator();
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-surface border-b border-line">
-      <div className="flex flex-col">
-        <span className="text-[13px] font-bold text-slate-900">{tripLabel}</span>
-        <span className="text-[11px] text-slate-500">{stopLabel}</span>
-      </div>
-      <div className="flex items-center gap-2.5">
+    <header className="flex items-center justify-between px-3 py-2.5 bg-surface border-b border-line gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         <button
           type="button"
-          onClick={() => setConnection(connection === "offline" ? "online" : "offline")}
-          title={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
-          aria-label={connection === "offline" ? "No signal · Tap to switch online" : "Signal good · Tap to simulate No signal"}
-          className="rounded-full focus:outline-none focus:ring-2 focus:ring-green/50 transition-transform active:scale-95 cursor-pointer"
+          onClick={back}
+          className="p-1 -ml-1 rounded-lg text-ink hover:bg-raised active:scale-95 transition cursor-pointer shrink-0"
+          aria-label="Back"
+          title="Go back"
         >
-          <ConnectionIndicator tone={resolvedTone} count={syncRecords.length} />
+          <ArrowLeft className="w-5 h-5 text-ink" />
         </button>
-        <span className="text-[11px] font-mono font-medium text-slate-400">
-          {displayClock}
-        </span>
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs font-bold text-ink truncate">{tripLabel}</span>
+          <span className="text-2xs text-ink-muted truncate">{stopLabel}</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <ConnectionPill />
+        <SyncPill tone={syncTone} />
+        <span className="text-2xs font-mono font-medium text-ink-muted hidden xs:inline">{displayClock}</span>
         <ThemeToggle />
       </div>
     </header>
   );
 }
+
+

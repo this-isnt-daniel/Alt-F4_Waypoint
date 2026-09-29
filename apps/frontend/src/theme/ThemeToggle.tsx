@@ -1,22 +1,19 @@
 import { useTheme } from "./useTheme";
-import { AppIcon } from "@/driver/components/AppIcon";
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
+  const next = theme === "dark" ? "light" : "dark";
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-raised transition-colors"
+      aria-label={`Switch to ${next} mode`}
+      title={`${next} mode`}
+      className="grid h-11 w-11 place-items-center rounded-pill border border-line bg-surface text-ink-muted transition hover:text-ink"
     >
-      <AppIcon
-        name={isDark ? "sun" : "moon"}
-        size={16}
-        className="text-slate-500"
-      />
+      <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
+      <span className="sr-only">{theme === "dark" ? "Light" : "Dark"}</span>
     </button>
   );
 }
