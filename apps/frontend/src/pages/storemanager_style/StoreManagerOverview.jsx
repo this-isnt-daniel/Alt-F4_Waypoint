@@ -17,21 +17,9 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [orderDate, setOrderDate]     = useState('Tomorrow · 30 Sep');
 
-  // Delivery arrival & OTP state
-  const [deliveryArrived, setDeliveryArrived] = useState(true);
-  const [deliveryOtp, setDeliveryOtp]         = useState('482 910');
-  const [showOtpModal, setShowOtpModal]       = useState(false);
-
   const navigate = (tab, params = null) => {
     setActiveTab(tab);
     setActiveTabParams(params);
-  };
-
-  const handleConfirmDelivery = () => {
-    setDeliveryArrived(false);
-    setIsConfirmed(true);
-    setShowOtpModal(false);
-    navigate('receipts');
   };
 
   // ── Basket operations hoisted for global search access ──
@@ -82,11 +70,6 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
       basketCount={basket.length}
       user={user}
       outlet={outlet}
-      deliveryArrived={deliveryArrived}
-      deliveryOtp={deliveryOtp}
-      showOtpModal={showOtpModal}
-      setShowOtpModal={setShowOtpModal}
-      onConfirmDelivery={handleConfirmDelivery}
     >
       <div className="h-full w-full overflow-hidden">
         {activeTab === 'overview' && (
@@ -96,8 +79,6 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
             setIsConfirmed={setIsConfirmed}
             basket={basket}
             onSetQty={setQty}
-            deliveryArrived={deliveryArrived}
-            onOpenOtpModal={() => setShowOtpModal(true)}
           />
         )}
 
@@ -116,7 +97,7 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
 
         {activeTab === 'progress' && <OrdersTab selectedOrderId={activeTabParams} />}
 
-        {activeTab === 'receipts' && <ReceiptsTab isConfirmed={isConfirmed} />}
+        {activeTab === 'receipts' && <ReceiptsTab />}
       </div>
     </SMLayout>
   );

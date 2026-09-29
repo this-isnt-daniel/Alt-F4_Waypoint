@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import VerifyDispatchPlanModal from './VerifyDispatchPlanModal';
+import RouteAllocationBoard from './RouteAllocationBoard';
+import RecoveryPlanModal from './RecoveryPlanModal';
 import { 
   Moon, 
   ChevronDown, 
@@ -9,6 +11,7 @@ import {
   Bell, 
   Search, 
   ArrowRight,
+  ArrowLeft,
   Check,
   Lock,
   Clock,
@@ -31,7 +34,7 @@ import {
 } from 'lucide-react';
 
 export default function DispatcherRoster({ onLogout }) {
-  // Navigation & Sub-tabs
+  // Navigation & Sub-tabs (Reset for Fleet Allocation Demo Video)
   const [activeNav, setActiveNav] = useState('Overview');
   const [activeSubTab, setActiveSubTab] = useState('Fleet Availability');
   const [selectedHub, setSelectedHub] = useState('Peliyagoda');
@@ -41,6 +44,7 @@ export default function DispatcherRoster({ onLogout }) {
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState('VEH004');
   const [showDispatchPlanModal, setShowDispatchPlanModal] = useState(false);
+  const [showAllocationBoard, setShowAllocationBoard] = useState(false);
 
   // Overview Section State (Requested by user: schematic map & live runs table)
   const [overviewDepot, setOverviewDepot] = useState('Peliyagoda Depot');
@@ -60,6 +64,124 @@ export default function DispatcherRoster({ onLogout }) {
   const [expandedOutletIds, setExpandedOutletIds] = useState(new Set(['OUT-4089'])); // Default expanded for outlet vehicle inspection
   const [isAllocationConfirmed, setIsAllocationConfirmed] = useState(false);
   const [showConfirmToast, setShowConfirmToast] = useState(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryDeployed, setRecoveryDeployed] = useState(false);
+  const [expandedContingencyIds, setExpandedContingencyIds] = useState(new Set());
+  const [expandedActiveTripIds, setExpandedActiveTripIds] = useState(new Set(['VEH014']));
+
+  // Contingency Dispatch Disrupted Orders Dataset (Breakdowns & Damaged POD)
+  const contingencyDisruptedOrders = [
+    {
+      id: 'ORD-30088',
+      incidentVehicle: 'VEH011',
+      type: 'Van',
+      refrigeration: 'Reefer',
+      tripLabel: 'Trip 1 of 2',
+      cargoLine: 'Fresh - Chilled Chicken 390 kg',
+      reasonPill: 'Vehicle Breakdown',
+      reasonDetail: 'Hydraulic lock & starter failure during pre-trip dock staging at Bay 3',
+      destination: 'OUT-3012 Maharagama',
+      reportedTime: '08:15 AM - 09:45 AM',
+      driver: 'N. Perera',
+      freshWindow: 'Window closes in 45 min'
+    },
+    {
+      id: 'ORD-30095',
+      incidentVehicle: 'VEH006',
+      type: 'Truck',
+      refrigeration: 'Reefer',
+      tripLabel: 'Trip 1 of 2',
+      cargoLine: 'Fresh - Cold Chain Dairy 440 kg',
+      reasonPill: 'Vehicle Breakdown',
+      reasonDetail: 'Axle shear & steering linkage failure en route on A1 Highway km 14',
+      destination: 'OUT-5021 Mount Lavinia',
+      reportedTime: '08:35 AM - 10:15 AM',
+      driver: 'K. Gunawardena',
+      freshWindow: 'Cold chain alert (+3.2°C)'
+    },
+    {
+      id: 'ORD-30114',
+      incidentVehicle: 'VEH009',
+      type: 'Truck',
+      refrigeration: 'Ambient',
+      tripLabel: 'Trip 2 of 2',
+      cargoLine: 'Grocery - Highland Butter 280 kg',
+      reasonPill: 'Damaged Goods at POD',
+      reasonDetail: 'Pallet shrinkwrap rupture & package crushing upon unloading at receiving dock',
+      destination: 'OUT-2041 Wattala',
+      reportedTime: '08:45 AM - 10:30 AM',
+      driver: 'Receiving Mgr (Wattala)',
+      freshWindow: 'Quarantined for claims inspection'
+    },
+    {
+      id: 'ORD-30129',
+      incidentVehicle: 'VEH011',
+      type: 'Van',
+      refrigeration: 'Ambient',
+      tripLabel: 'Trip 2 of 2',
+      cargoLine: 'Style - Dry Lentils & Dhal 620 kg',
+      reasonPill: 'Vehicle Breakdown',
+      reasonDetail: 'Stranded at Bay 3 due to VEH011 starter motor burnout',
+      destination: 'OUT-1029 Liberty Plaza',
+      reportedTime: '08:20 AM - 09:50 AM',
+      driver: 'Lead Loader (Bay 3)',
+      freshWindow: 'Dry ambient safe (staged)'
+    }
+  ];
+
+  // Active Contingency Recovery Trips (Matching user screenshot)
+  const contingencyActiveTrips = [
+    {
+      vehicleId: 'VEH014',
+      type: 'Van',
+      refrigeration: 'Reefer',
+      tripLabel: 'Trip 1 of 2',
+      cargoLine: 'Fresh - Colombo Central',
+      stopsCount: 5,
+      destination: 'OUT-4089 Nugegoda',
+      timeWindow: '07:45 AM - 11:15 AM',
+      stopList: [
+        { stop: 1, name: 'Colombo South OUT011', time: '08:15 AM', status: 'Completed' },
+        { stop: 2, name: 'Kollupitiya OUT015', time: '09:00 AM', status: 'In Transit' },
+        { stop: 3, name: 'Liberty Plaza OUT1029', time: '09:45 AM', status: 'Scheduled (Recovered)' },
+        { stop: 4, name: 'Maharagama OUT3012', time: '10:30 AM', status: 'Scheduled (Recovered)' },
+        { stop: 5, name: 'Nugegoda OUT4089', time: '11:15 AM', status: 'Scheduled' }
+      ]
+    },
+    {
+      vehicleId: 'VEH009',
+      type: 'Truck',
+      refrigeration: 'Reefer',
+      tripLabel: 'Trip 2 of 2',
+      cargoLine: 'Fresh - Gampaha',
+      stopsCount: 5,
+      destination: 'OUT-2041 Wattala',
+      timeWindow: '07:15 AM - 11:00 AM',
+      stopList: [
+        { stop: 1, name: 'Peliyagoda OUT001', time: '07:45 AM', status: 'Completed' },
+        { stop: 2, name: 'Wattala OUT2041', time: '08:30 AM', status: 'In Transit' },
+        { stop: 3, name: 'Ja-Ela Central OUT091', time: '09:15 AM', status: 'Scheduled' },
+        { stop: 4, name: 'Kandana OUT064', time: '10:00 AM', status: 'Scheduled' },
+        { stop: 5, name: 'Gampaha North OUT102', time: '11:00 AM', status: 'Scheduled' }
+      ]
+    },
+    {
+      vehicleId: 'VEH041',
+      type: 'Truck',
+      refrigeration: 'Ambient',
+      tripLabel: 'Trip 1 of 2',
+      cargoLine: 'Style - Colombo',
+      stopsCount: 4,
+      destination: 'OUT-1029 Liberty Plaza',
+      timeWindow: '08:00 AM - 11:45 AM',
+      stopList: [
+        { stop: 1, name: 'Pettah Main OUT004', time: '08:45 AM', status: 'Completed' },
+        { stop: 2, name: 'Fort Central OUT008', time: '09:30 AM', status: 'In Transit' },
+        { stop: 3, name: 'Wellawatte OUT022', time: '10:45 AM', status: 'Scheduled' },
+        { stop: 4, name: 'Liberty Plaza OUT1029', time: '11:45 AM', status: 'Scheduled (Recovered)' }
+      ]
+    }
+  ];
 
   // Hover state for unavailable vehicle popover tooltip (Fleet Availability)
   const [hoveredUnavailableVehicle, setHoveredUnavailableVehicle] = useState(null);
@@ -1058,8 +1180,96 @@ export default function DispatcherRoster({ onLogout }) {
   const totalVolumeM3 = (420.5 - dispatcherExcludedVolume).toFixed(1);
   const totalPayloadKg = (98400 - dispatcherExcludedWeight).toLocaleString();
 
+  // Recovery Vehicle Assignments (Added upon confirming Recovery Plan)
+  const recoveryVehicleAssignments = [
+    {
+      id: 'VEH014',
+      isRecovery: true,
+      type: 'Van',
+      refrigeration: 'Reefer',
+      activeLeg: 'Trip 2 of 2',
+      tripLock: 'Fresh - Colombo Central (Recovery)',
+      currentDestination: 'OUT-1029 Liberty Plaza',
+      startTime: '09:30 AM',
+      endTime: '11:45 AM',
+      stopsCount: 2,
+      tripStatus: 'Scheduled',
+      driverName: 'Sunil Bandara',
+      driverPhone: '+94 77 123 4567',
+      departureTime: '09:30 AM',
+      totalCrates: 22,
+      payloadKg: 1100,
+      stops: [
+        {
+          id: 'OUT-1029',
+          name: 'Liberty Plaza Express',
+          eta: '09:45 AM',
+          status: 'Scheduled',
+          crates: 12,
+          weightKg: 680,
+          cargo: 'Chilled Dairy & Yogurts',
+          items: [
+            { sku: 'DAI-204', name: 'Anchor Full Cream Milk 1L', category: 'Dairy', quantity: '4 Crates (48 Units)', weight: '48 kg' },
+            { sku: 'DAI-309', name: 'Highland Set Yogurt 80g', category: 'Dairy', quantity: '5 Crates (120 Units)', weight: '24 kg' },
+            { sku: 'DAI-112', name: 'Pelwatte Salted Butter 200g', category: 'Dairy', quantity: '3 Crates (60 Units)', weight: '12 kg' }
+          ]
+        },
+        {
+          id: 'OUT-4089',
+          name: 'Nugegoda Supermarket',
+          eta: '10:15 AM',
+          status: 'Scheduled',
+          crates: 10,
+          weightKg: 420,
+          cargo: 'Fresh Berries & Cream',
+          items: [
+            { sku: 'FRU-301', name: 'Imported Strawberries Grade A 250g', category: 'Berries', quantity: '6 Crates (120 Punnets)', weight: '30 kg' },
+            { sku: 'DAI-502', name: 'Fresh Whipping Cream 250ml', category: 'Dairy', quantity: '4 Crates (80 Units)', weight: '22 kg' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'VEH016',
+      isRecovery: true,
+      type: 'Truck',
+      refrigeration: 'Reefer',
+      activeLeg: 'Trip 1 of 2',
+      tripLock: 'Fresh - Kollupitiya Central (Recovery)',
+      currentDestination: 'OUT-1044 Kollupitiya',
+      startTime: '09:00 AM',
+      endTime: '10:30 AM',
+      stopsCount: 1,
+      tripStatus: 'Staged at Bay 3',
+      driverName: 'Nimal Jayasuriya',
+      driverPhone: '+94 71 334 5566',
+      departureTime: '09:00 AM',
+      totalCrates: 14,
+      payloadKg: 840,
+      stops: [
+        {
+          id: 'OUT-1044',
+          name: 'Kollupitiya Central',
+          eta: '09:15 AM',
+          status: 'Scheduled',
+          crates: 14,
+          weightKg: 840,
+          cargo: 'Fresh Poultry & Meat',
+          items: [
+            { sku: 'MEA-105', name: 'Bairaha Chilled Chicken Breasts 500g', category: 'Poultry', quantity: '8 Crates (80 Packs)', weight: '56 kg' },
+            { sku: 'MEA-204', name: 'Farm Fresh Chicken Drumsticks', category: 'Poultry', quantity: '6 Crates (60 Packs)', weight: '42 kg' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  const currentVehicleAssignments = recoveryDeployed
+    ? [...recoveryVehicleAssignments, ...initialVehicleAssignments]
+    : initialVehicleAssignments;
+
   // Filtered Vehicle Assignments for Workbench
-  const filteredVehicleAssignments = initialVehicleAssignments.filter((va) => {
+  const filteredVehicleAssignments = currentVehicleAssignments.filter((va) => {
     if (workbenchFilter === 'reefers' && va.refrigeration !== 'Reefer') return false;
     if (workbenchFilter === 'delayed' && !va.tripStatus.includes('Delayed')) return false;
     if (workbenchSearch.trim()) {
@@ -1189,6 +1399,24 @@ export default function DispatcherRoster({ onLogout }) {
     return true;
   });
 
+  if (showAllocationBoard) {
+    return (
+      <RouteAllocationBoard
+        onBack={() => setShowAllocationBoard(false)}
+        fleetList={fleetList}
+        onConfirmAllocations={() => {
+          setShowAllocationBoard(false);
+          setIsAllocationConfirmed(true);
+          setShowConfirmToast(true);
+          setTimeout(() => {
+            setShowConfirmToast(false);
+          }, 4000);
+          setActiveNav('Overview');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-[#FAFBFA] text-gray-900 font-sans antialiased pb-12">
       {/* Top Navigation Bar */}
@@ -1222,6 +1450,7 @@ export default function DispatcherRoster({ onLogout }) {
               {[
                 { name: 'Overview', id: 'Overview' },
                 { name: 'Route Allocation & Capacity', id: 'Route Allocation & Capacity' },
+                { name: 'Contingency Dispatch', id: 'Contingency Dispatch' },
                 { name: 'Deferral Log', id: 'Deferral Log' }
               ].map((tab) => {
                 const isActive = activeNav === tab.id;
@@ -1232,16 +1461,16 @@ export default function DispatcherRoster({ onLogout }) {
                     onClick={() => {
                       setActiveNav(tab.id);
                       if (tab.id === 'Route Allocation & Capacity') {
-                        setActiveSubTab('Fleet Availability');
+                        setActiveSubTab('Allocation Workbench');
                       }
                     }}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                       isActive
                         ? 'bg-[#E8F7F0] text-[#059669]'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    {tab.name}
+                    <span>{tab.name}</span>
                   </button>
                 );
               })}
@@ -1327,83 +1556,55 @@ export default function DispatcherRoster({ onLogout }) {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-6 py-5 flex flex-col gap-4">
-        {activeNav === 'Overview' ? (
-          <div className="flex flex-col gap-4">
-            {/* Top Depot Header & Metrics Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-              {/* Left: Depot Switcher & Inline KPI Metrics */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Peliyagoda Depot Dropdown */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowOverviewDepotMenu(!showOverviewDepotMenu)}
-                    className="inline-flex items-center gap-1.5 text-lg font-bold text-slate-900 hover:text-slate-700 transition cursor-pointer"
-                  >
-                    <span>{overviewDepot}</span>
-                    <ChevronDown size={18} className="text-slate-600 mt-0.5" />
-                  </button>
+        {/* Universal Top Depot Header & Metrics Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+          {/* Left: Depot Switcher & Inline KPI Metrics */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Depot Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowOverviewDepotMenu(!showOverviewDepotMenu)}
+                className="inline-flex items-center gap-1.5 text-lg font-bold text-slate-900 hover:text-slate-700 transition cursor-pointer"
+              >
+                <span>{overviewDepot}</span>
+                <ChevronDown size={18} className="text-slate-600 mt-0.5" />
+              </button>
 
-                  {showOverviewDepotMenu && (
-                    <div className="absolute left-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-30">
-                      {['Peliyagoda Depot', 'Kandy Regional Hub', 'Galle Hub'].map((depot) => (
-                        <button
-                          key={depot}
-                          type="button"
-                          onClick={() => {
-                            setOverviewDepot(depot);
-                            setShowOverviewDepotMenu(false);
-                          }}
-                          className={`w-full text-left px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 transition cursor-pointer ${
-                            overviewDepot === depot ? 'text-[#059669] bg-emerald-50/50' : 'text-slate-700'
-                          }`}
-                        >
-                          {depot}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              {showOverviewDepotMenu && (
+                <div className="absolute left-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-30">
+                  {['Peliyagoda Depot', 'Kandy Regional Hub'].map((depot) => (
+                    <button
+                      key={depot}
+                      type="button"
+                      onClick={() => {
+                        setOverviewDepot(depot);
+                        setShowOverviewDepotMenu(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 transition cursor-pointer ${
+                        overviewDepot === depot ? 'text-[#059669] bg-emerald-50/50' : 'text-slate-700'
+                      }`}
+                    >
+                      {depot}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Metric Chips with separators */}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {/* Fleet Utilization Chip */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
-                    <span className="text-slate-500 font-medium">Fleet Utilization</span>
-                    <span className="font-bold text-[#059669]">34 / 60 Active</span>
-                  </div>
-
-                  <span className="text-slate-300 font-light">+</span>
-
-                  {/* Reefer Cold Chain Chip */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
-                    <span className="text-slate-500 font-medium">Reefer Cold Chain</span>
-                    <span className="font-bold">
-                      <span className="text-slate-800">15 Normal</span>
-                      <span className="text-slate-400 font-normal"> - </span>
-                      <span className="text-amber-600">1 Warning</span>
-                    </span>
-                  </div>
-
-                  <span className="text-slate-300 font-light">+</span>
-
-                  {/* Fleet Quota Chip */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
-                    <span className="text-slate-500 font-medium">Fleet Quota</span>
-                    <span className="font-bold text-slate-800">68% Burn</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Attention Warning Pill */}
-              <div className="flex items-center">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] shadow-2xs">
-                  <span className="w-2 h-2 rounded-full bg-[#D97706] animate-pulse" />
-                  <span>3 runs need attention</span>
-                </div>
-              </div>
+              )}
             </div>
 
+            {/* Metric Chips with separators */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {/* Fleet Utilization Chip */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
+                <span className="text-slate-500 font-medium">Fleet Utilization</span>
+                <span className="font-bold text-[#059669]">34 / 60 Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {activeNav === 'Overview' ? (
+          <div className="flex flex-col gap-4">
             {/* Schematic Map Container */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
               {/* Map Header: Title & Vehicle/Route Search */}
@@ -1424,106 +1625,22 @@ export default function DispatcherRoster({ onLogout }) {
 
               {/* Schematic Visual Canvas */}
               <div className="relative h-[340px] sm:h-[380px] w-full bg-[#F4F6F4] overflow-hidden select-none">
-                {/* SVG Background Grid & Corridors */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <pattern id="schematic-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E2E8F0" strokeWidth="0.8" opacity="0.6" />
-                    </pattern>
-                  </defs>
-                  
-                  {/* Background Grid */}
-                  <rect width="100%" height="100%" fill="url(#schematic-grid)" />
-
-                  {/* Main Expressway Corridor */}
-                  <path
-                    d="M -20 120 C 140 120, 220 180, 480 180 S 800 240, 1100 240"
-                    fill="none"
-                    stroke="#CBD5E1"
-                    strokeWidth="14"
-                    strokeLinecap="round"
-                    opacity="0.85"
-                  />
-                  <path
-                    d="M -20 120 C 140 120, 220 180, 480 180 S 800 240, 1100 240"
-                    fill="none"
-                    stroke="#FFFFFF"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Secondary Expressway Connector */}
-                  <path
-                    d="M 180 0 L 180 380"
-                    fill="none"
-                    stroke="#CBD5E1"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                    opacity="0.75"
-                  />
-                  <path
-                    d="M 180 0 L 180 380"
-                    fill="none"
-                    stroke="#FFFFFF"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Nugegoda / South Artery */}
-                  <path
-                    d="M 380 160 L 380 380"
-                    fill="none"
-                    stroke="#CBD5E1"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    opacity="0.7"
-                  />
-                  <path
-                    d="M 380 160 L 380 380"
-                    fill="none"
-                    stroke="#FFFFFF"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Kandy Corridor Radial Curves */}
-                  <g opacity="0.4" stroke="#94A3B8" strokeWidth="1.5" fill="none">
-                    <rect x="360" y="20" width="120" height="90" rx="16" />
-                    <rect x="375" y="32" width="90" height="66" rx="12" />
-                    <rect x="390" y="44" width="60" height="42" rx="8" />
-                  </g>
-
-                  {/* Cross city streets */}
-                  <line x1="0" y1="280" x2="1200" y2="280" stroke="#CBD5E1" strokeWidth="3" opacity="0.5" />
-                  <line x1="0" y1="210" x2="1200" y2="210" stroke="#CBD5E1" strokeWidth="3" opacity="0.4" />
-                  <line x1="560" y1="0" x2="560" y2="380" stroke="#CBD5E1" strokeWidth="4" opacity="0.5" />
-                </svg>
-
-                {/* Corridor & Landmark Text Labels */}
-                <div className="absolute top-8 left-12 text-[10px] font-semibold text-slate-400 uppercase tracking-widest pointer-events-none">
-                  Peliyagoda
-                </div>
-                <div className="absolute top-8 left-52 text-[10px] font-semibold text-slate-400 uppercase tracking-widest pointer-events-none">
-                  Depot Hub
-                </div>
-                <div className="absolute top-36 left-12 text-[9px] font-bold text-slate-500 tracking-wider pointer-events-none">
-                  COLOMBO EXPRESSWAY
-                </div>
-                <div className="absolute top-10 left-[41%] text-[10px] font-bold text-slate-600 tracking-wider pointer-events-none">
-                  KANDY CORRIDOR
-                </div>
-                <div className="absolute bottom-16 left-[20%] text-[9px] font-bold text-slate-500 tracking-wider pointer-events-none">
-                  NUGEGODA ROAD
-                </div>
-                <div className="absolute bottom-8 left-12 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pointer-events-none">
-                  Nugegoda
-                </div>
-                <div className="absolute bottom-8 left-48 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pointer-events-none">
-                  Liberty Plaza
-                </div>
-                <div className="absolute bottom-8 left-[42%] text-[10px] font-semibold text-slate-400 uppercase tracking-wider pointer-events-none">
-                  Colombo
-                </div>
+                {/* OpenStreetMap Embed */}
+                <iframe
+                  title="OpenStreetMap - Colombo Region"
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  scrolling="no"
+                  marginHeight="0"
+                  marginWidth="0"
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=79.8200%2C6.8800%2C79.9400%2C6.9700&amp;layer=mapnik"
+                  className="absolute inset-0 z-0"
+                  style={{ border: 0, opacity: 0.9 }}
+                />
+                
+                {/* Overlay to dim map slightly and prevent scroll hijacking */}
+                <div className="absolute inset-0 bg-white/20 pointer-events-none z-0" />
 
                 {/* Vehicle Pins */}
                 {/* VEH009 (On Time - Green) */}
@@ -1803,6 +1920,319 @@ export default function DispatcherRoster({ onLogout }) {
               </div>
             </div>
           </div>
+        ) : activeNav === 'Contingency Dispatch' ? (
+          /* ======================================================= */
+          /* CONTINGENCY DISPATCH (MID-SHIFT DISRUPTION & RECOVERY)  */
+          /* ======================================================= */
+          <div className="flex flex-col gap-4">
+            {/* Top Bar: Hub + Summary Strip + Action Button */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                {/* Hub Pill */}
+                <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
+                  <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-2xs">
+                    Peliyagoda Hub
+                  </span>
+                </div>
+
+                {/* Status Badges */}
+                {!recoveryDeployed ? (
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold bg-[#FFF1F2] text-[#BE123C] border border-[#FECDD3]">
+                      <AlertTriangle size={12} className="text-[#BE123C]" />
+                      <span>2 Vehicle Breakdowns</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold bg-[#FEF6EE] text-[#B45309] border border-[#FBE3CC]">
+                      <span>1 Damaged at POD</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold bg-[#EBF5FB] text-[#0284C7] border border-[#CCE5F7]">
+                      <span>4 Orders Disrupted (1,730 kg)</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold bg-[#EAF7EE] text-[#059669] border border-[#D1F2DD]">
+                      <CheckCircle2 size={13} className="text-[#059669]" />
+                      <span>Recovery Plan v2 Active</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold bg-[#EBF5FB] text-[#0284C7] border border-[#CCE5F7]">
+                      <span>3 Recovery Trips Underway</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action on Right */}
+              <div className="flex items-center gap-2.5">
+                {!recoveryDeployed ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowRecoveryModal(true)}
+                    className="inline-flex items-center justify-center gap-2 bg-[#059669] hover:bg-[#047857] active:bg-[#065F46] text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
+                  >
+                    <span>Start Recovery Plan</span>
+                    <ArrowRight size={14} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecoveryDeployed(false);
+                      setShowRecoveryModal(false);
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition shadow-2xs cursor-pointer"
+                    title="Simulate / Re-evaluate breakdown incident"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Reset Incident Demo</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Sub-header Banner */}
+            {!recoveryDeployed ? (
+              <div className="w-full bg-[#FFF1F2] border border-[#FECDD3] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#881337] shadow-2xs animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center flex-shrink-0 text-[#BE123C]">
+                    <AlertTriangle size={16} />
+                  </div>
+                  <div>
+                    <strong className="font-bold text-[#4C0519]">Mid-shift disruption detected: </strong>
+                    <span>VEH011 broke down during dock staging (Bay 3) and VEH006 disabled en route. Damaged pallets reported at OUT-2041. Review orders below and launch the recovery plan.</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full bg-[#EAF7EE] border border-[#D1F2DD] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#065F46] shadow-2xs animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center flex-shrink-0 text-[#059669]">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <div>
+                    <strong className="font-bold text-[#0B2019]">Recovery Plan v2 is actively executing: </strong>
+                    <span>3 recovered orders have been re-slotted onto open vehicle capacity. Updated manifests pushed to mobile apps. Active trips in progress below:</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Rows Table */}
+            <div className="w-full bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
+              {!recoveryDeployed ? (
+                /* PRE-RECOVERY: Disrupted / Deferred Orders Rows */
+                <div className="divide-y divide-gray-100">
+                  {contingencyDisruptedOrders.map((order) => {
+                    const isExpanded = expandedContingencyIds.has(order.id);
+                    return (
+                      <div key={order.id} className="transition">
+                        <div 
+                          onClick={() => {
+                            setExpandedContingencyIds(prev => {
+                              const next = new Set(prev);
+                              if (next.has(order.id)) next.delete(order.id);
+                              else next.add(order.id);
+                              return next;
+                            });
+                          }}
+                          className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/70 transition cursor-pointer select-none bg-white"
+                        >
+                          {/* Col 1: Order ID + Incident Vehicle + Refrigeration */}
+                          <div className="flex items-center gap-2.5 w-60 flex-shrink-0">
+                            <span className="font-bold text-slate-900 text-sm font-sans tracking-tight">
+                              {order.id}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">
+                              {order.incidentVehicle} ({order.type})
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                              order.refrigeration === 'Reefer'
+                                ? 'bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD]'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {order.refrigeration}
+                            </span>
+                          </div>
+
+                          {/* Col 2: Incident label */}
+                          <div className="w-36 flex-shrink-0">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {order.tripLabel}
+                            </span>
+                          </div>
+
+                          {/* Col 3: Cargo description */}
+                          <div className="w-52 text-slate-500 text-sm truncate flex-shrink-0">
+                            {order.cargoLine}
+                          </div>
+
+                          {/* Col 4: Reason Pill */}
+                          <div className="flex-shrink-0">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#EDF2F7] text-slate-600">
+                              {order.reasonPill.includes('Breakdown') ? (
+                                <AlertTriangle size={12} className="text-amber-500" />
+                              ) : (
+                                <Package size={12} className="text-rose-500" />
+                              )}
+                              <span>{order.reasonPill}</span>
+                            </span>
+                          </div>
+
+                          {/* Col 5: Destination */}
+                          <div className="w-52 flex-shrink-0">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {order.destination}
+                            </span>
+                          </div>
+
+                          {/* Col 6: Logged Time */}
+                          <div className="flex items-center gap-1.5 text-slate-700 text-xs font-medium flex-shrink-0">
+                            <Clock size={13} className="text-slate-400" />
+                            <span className="font-mono font-bold">{order.reportedTime}</span>
+                          </div>
+
+                          {/* Col 7: Chevron */}
+                          <div className="flex-shrink-0 text-slate-400">
+                            {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                          </div>
+                        </div>
+
+                        {/* Expanded details */}
+                        {isExpanded && (
+                          <div className="px-6 py-3.5 bg-slate-50/60 border-t border-slate-100 text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+                            <div className="space-y-1">
+                              <p><strong className="text-slate-900">Incident Details:</strong> {order.reasonDetail}</p>
+                              <p><strong className="text-slate-900">Reported By:</strong> {order.driver} · <span className="text-amber-700 font-semibold">{order.freshWindow}</span></p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowRecoveryModal(true);
+                              }}
+                              className="text-xs font-bold text-[#059669] hover:underline whitespace-nowrap self-end sm:self-center cursor-pointer"
+                            >
+                              Re-allocate in Recovery Plan →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* POST-RECOVERY: Exact Trips Going on Trips (Matching Screenshot!) */
+                <div className="divide-y divide-gray-100">
+                  {contingencyActiveTrips.map((trip) => {
+                    const isExpanded = expandedActiveTripIds.has(trip.vehicleId);
+                    return (
+                      <div key={trip.vehicleId} className="transition">
+                        <div 
+                          onClick={() => {
+                            setExpandedActiveTripIds(prev => {
+                              const next = new Set(prev);
+                              if (next.has(trip.vehicleId)) next.delete(trip.vehicleId);
+                              else next.add(trip.vehicleId);
+                              return next;
+                            });
+                          }}
+                          className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/70 transition cursor-pointer select-none bg-white"
+                        >
+                          {/* Col 1: Vehicle ID + Van/Truck + Reefer/Ambient */}
+                          <div className="flex items-center gap-3 w-56 flex-shrink-0">
+                            <span className="font-bold text-slate-900 text-sm font-sans tracking-tight">
+                              {trip.vehicleId}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                              {trip.type}
+                            </span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              trip.refrigeration === 'Reefer'
+                                ? 'bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD]'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {trip.refrigeration}
+                            </span>
+                          </div>
+
+                          {/* Col 2: Trip Label (e.g. Trip 1 of 2) */}
+                          <div className="w-32 flex-shrink-0">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {trip.tripLabel}
+                            </span>
+                          </div>
+
+                          {/* Col 3: Cargo Line (e.g. Fresh - Colombo Central) */}
+                          <div className="w-48 text-slate-500 text-sm truncate flex-shrink-0">
+                            {trip.cargoLine}
+                          </div>
+
+                          {/* Col 4: Stops count pill (e.g. 5 Stops) */}
+                          <div className="flex-shrink-0">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#EDF2F7] text-slate-600">
+                              <MapPin size={12} className="text-slate-400" />
+                              <span>{trip.stopsCount} Stops</span>
+                            </span>
+                          </div>
+
+                          {/* Col 5: Destination (e.g. OUT-4089 Nugegoda) */}
+                          <div className="w-48 flex-shrink-0">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {trip.destination}
+                            </span>
+                          </div>
+
+                          {/* Col 6: Scheduled Time Window (e.g. 07:45 AM - 11:15 AM) */}
+                          <div className="flex items-center gap-2 text-slate-700 text-xs font-medium flex-shrink-0">
+                            <Clock size={13} className="text-slate-400" />
+                            <span className="font-mono font-bold">{trip.timeWindow}</span>
+                          </div>
+
+                          {/* Col 7: Chevron Toggle */}
+                          <div className="flex-shrink-0 text-slate-400">
+                            {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                          </div>
+                        </div>
+
+                        {/* Expanded Stop Manifest */}
+                        {isExpanded && (
+                          <div className="px-6 py-3.5 bg-slate-50/70 border-t border-slate-100 text-xs space-y-2 animate-in fade-in">
+                            <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px] block">
+                              Active Stop Manifest & Recovered Cargo
+                            </span>
+                            <div className="space-y-1.5">
+                              {trip.stopList.map((stopItem) => (
+                                <div key={stopItem.stop} className="flex items-center justify-between text-xs py-1 border-b border-slate-200/50 last:border-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">
+                                      {stopItem.stop}
+                                    </span>
+                                    <span className="font-semibold text-slate-800">{stopItem.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-slate-500 font-mono">{stopItem.time}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                      stopItem.status.includes('Recovered')
+                                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                        : stopItem.status === 'Completed'
+                                        ? 'bg-emerald-50 text-emerald-700'
+                                        : 'bg-sky-50 text-sky-700'
+                                    }`}>
+                                      {stopItem.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         ) : activeNav === 'Deferral Log' ? (
           /* ======================================================= */
           /* DEDICATED DEFERRAL LOG PAGE (JUST SEARCH BAR + TABLE)   */
@@ -1911,32 +2341,6 @@ export default function DispatcherRoster({ onLogout }) {
           </div>
         ) : (
           <>
-            {/* Sub-tabs: Fleet Availability vs Allocation Workbench */}
-            <div className="flex items-center gap-6 border-b border-gray-200/80">
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('Fleet Availability')}
-                className={`pb-2.5 text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
-                  activeSubTab === 'Fleet Availability'
-                    ? 'text-[#059669] border-b-2 border-[#059669]'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <span>Fleet Availability</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('Allocation Workbench')}
-                className={`pb-2.5 text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
-                  activeSubTab === 'Allocation Workbench'
-                    ? 'text-[#059669] border-b-2 border-[#059669]'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <span>Allocation Workbench</span>
-              </button>
-            </div>
-
             {/* ======================================================= */}
             {/* SUB-TAB 2: ALLOCATION WORKBENCH (PROPOSED ASSIGNMENTS)    */}
             {/* ======================================================= */}
@@ -1946,6 +2350,19 @@ export default function DispatcherRoster({ onLogout }) {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
                   {/* Left: Hub Switcher & Segment Bar */}
                   <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                    {/* Back to Fleet Availability (Hidden once routes are confirmed) */}
+                    {!isAllocationConfirmed && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveSubTab('Fleet Availability')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                        title="Back to Fleet Availability"
+                      >
+                        <ArrowLeft size={13} />
+                        <span>Fleet Availability</span>
+                      </button>
+                    )}
+
                     {/* Hub Selector */}
                     <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
                       <button
@@ -2177,52 +2594,98 @@ export default function DispatcherRoster({ onLogout }) {
                 {/* 1. VIEW BY VEHICLE (EXACT MATCH TO USER SCREENSHOT) */}
                 {/* =================================================== */}
                 {workbenchView === 'vehicle' && (
-                  <div className="w-full bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="bg-[#F8FAFC] text-slate-500 font-semibold border-b border-gray-200/70 select-none">
-                            <th className="py-3 px-4">VEHICLE ID</th>
-                            <th className="py-3 px-4">ACTIVE LEG</th>
-                            <th className="py-3 px-4">TRIP LOCK</th>
-                            <th className="py-3 px-4">STOPS</th>
-                            <th className="py-3 px-4">CURRENT DESTINATION</th>
-                            <th className="py-3 px-4">TRIP TIME</th>
-                            <th className="py-3 px-4 text-right">ACTIONS</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {filteredVehicleAssignments.map((va) => {
-                            const isExpanded = expandedVehicleIds.has(va.id);
+                  <div className="flex flex-col gap-3">
+                    {/* Disruption Banner on Confirmed Screen (Matching User's Attached Screenshot) */}
+                    {!recoveryDeployed ? (
+                      <div className="w-full bg-[#FFF1F2] border border-[#FECDD3] rounded-2xl p-3 sm:px-5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs animate-in fade-in">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-9 h-9 rounded-xl bg-rose-100/80 border border-rose-200/90 flex items-center justify-center flex-shrink-0 text-[#BE123C]">
+                            <AlertTriangle size={18} strokeWidth={2.2} />
+                          </div>
+                          <div className="text-xs text-[#881337] leading-relaxed">
+                            <span>2 vehicles lost since Plan v1 · </span>
+                            <strong className="font-mono font-bold text-[#4C0519]">VEH011</strong>
+                            <span> (at dock, cargo staged) · </span>
+                            <strong className="font-mono font-bold text-[#4C0519]">VEH006</strong>
+                            <span> (en route, 4 stops undelivered) · </span>
+                            <strong className="font-bold text-[#4C0519]">5 orders · 3,270 kg unassigned</strong>
+                          </div>
+                        </div>
 
-                            return (
-                              <React.Fragment key={va.id}>
-                                <tr
-                                  onClick={() => toggleVehicleExpand(va.id)}
-                                  className={`transition-colors cursor-pointer ${
-                                    isExpanded ? 'bg-slate-50/80' : 'hover:bg-slate-50/60'
-                                  }`}
-                                >
-                                  {/* VEHICLE ID + TYPE + REFRIGERATION */}
-                                  <td className="py-3.5 px-4">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono font-bold text-slate-900 text-xs">
-                                        {va.id}
-                                      </span>
-                                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
-                                        {va.type}
-                                      </span>
-                                      {va.refrigeration === 'Reefer' ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                                          Reefer
+                        <button
+                          type="button"
+                          onClick={() => setShowRecoveryModal(true)}
+                          className="inline-flex items-center justify-center gap-2 bg-[#059669] hover:bg-[#047857] active:bg-[#065F46] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer flex-shrink-0"
+                        >
+                          <span>Start Recovery Plan</span>
+                          <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full bg-[#EAF7EE] border border-[#CDEED6] rounded-2xl p-3 sm:px-5 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#065F46] shadow-2xs animate-in fade-in">
+                        <div className="flex items-center gap-2.5">
+                          <CheckCircle2 size={18} className="text-[#059669] flex-shrink-0" />
+                          <span className="font-semibold">
+                            Recovery Plan v2 active · 3 recovered orders placed in open slots (VEH014 & VEH016) · Loader, Driver and Store Managers notified.
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-[#059669] bg-white px-2.5 py-1 rounded-lg border border-[#CDEED6]">
+                          Recovery Deployed
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="w-full bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="bg-[#F8FAFC] text-slate-500 font-semibold border-b border-gray-200/70 select-none">
+                              <th className="py-3 px-4">VEHICLE ID</th>
+                              <th className="py-3 px-4">ACTIVE LEG</th>
+                              <th className="py-3 px-4">TRIP LOCK</th>
+                              <th className="py-3 px-4">STOPS</th>
+                              <th className="py-3 px-4">CURRENT DESTINATION</th>
+                              <th className="py-3 px-4">TRIP TIME</th>
+                              <th className="py-3 px-4 text-right">ACTIONS</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {filteredVehicleAssignments.map((va) => {
+                              const isExpanded = expandedVehicleIds.has(va.id);
+
+                              return (
+                                <React.Fragment key={`${va.id}-${va.activeLeg}`}>
+                                  <tr
+                                    onClick={() => toggleVehicleExpand(va.id)}
+                                    className={`transition-colors cursor-pointer ${
+                                      isExpanded ? 'bg-slate-50/80' : 'hover:bg-slate-50/60'
+                                    }`}
+                                  >
+                                    {/* VEHICLE ID + TYPE + REFRIGERATION */}
+                                    <td className="py-3.5 px-4">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono font-bold text-slate-900 text-xs">
+                                          {va.id}
                                         </span>
-                                      ) : (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
-                                          Ambient
+                                        {va.isRecovery && (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                            Recovery
+                                          </span>
+                                        )}
+                                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                                          {va.type}
                                         </span>
-                                      )}
-                                    </div>
-                                  </td>
+                                        {va.refrigeration === 'Reefer' ? (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                            Reefer
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
+                                            Ambient
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
 
                                   {/* ACTIVE LEG */}
                                   <td className="py-3.5 px-4 font-bold text-slate-900">
@@ -2472,7 +2935,8 @@ export default function DispatcherRoster({ onLogout }) {
                       </table>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
                 {/* =================================================== */}
                 {/* 2. VIEW BY OUTLET (OUTLET CARDS WITH VEHICLES DROPDOWN) */}
@@ -2827,7 +3291,7 @@ export default function DispatcherRoster({ onLogout }) {
                   <button
                     type="button"
                     onClick={() => setShowDispatchPlanModal(true)}
-                    className="inline-flex items-center justify-center gap-2 bg-black hover:bg-slate-900 active:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
+                    className="inline-flex items-center justify-center gap-2 bg-[#059669] hover:bg-[#047857] active:bg-[#065F46] text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
                   >
                     <span>Proceed to Route Allocation</span>
                     <ArrowRight size={14} />
@@ -3171,7 +3635,11 @@ export default function DispatcherRoster({ onLogout }) {
         onClose={() => setShowDispatchPlanModal(false)}
         onAdjustInWorkbench={() => {
           setShowDispatchPlanModal(false);
-          setActiveSubTab('Allocation Workbench');
+          setShowAllocationBoard(true);
+        }}
+        onManualAllocation={() => {
+          setShowDispatchPlanModal(false);
+          setShowAllocationBoard(true);
         }}
         onConfirmAndLock={() => {
           setShowDispatchPlanModal(false);
@@ -3181,6 +3649,25 @@ export default function DispatcherRoster({ onLogout }) {
             setShowConfirmToast(false);
           }, 4000);
           setActiveSubTab('Allocation Workbench');
+        }}
+      />
+
+      {/* Recovery Plan Modal */}
+      <RecoveryPlanModal
+        isOpen={showRecoveryModal}
+        onClose={() => setShowRecoveryModal(false)}
+        onAdjustInWorkbench={() => {
+          setShowRecoveryModal(false);
+          setShowAllocationBoard(true);
+        }}
+        onConfirmRecovery={() => {
+          setShowRecoveryModal(false);
+          setRecoveryDeployed(true);
+          setShowConfirmToast(true);
+          setTimeout(() => {
+            setShowConfirmToast(false);
+          }, 4000);
+          setActiveNav('Contingency Dispatch');
         }}
       />
     </div>
