@@ -66,7 +66,6 @@ export default function DriverApp({ onBack }) {
       {/* Persistent header */}
       <DriverHeader
         isOnline={screen === '08-offline' ? false : isOnline}
-        onSwitchToStoreManager={onBack}
       />
 
       {/* Navigation bar for all 10 screens + System pages */}

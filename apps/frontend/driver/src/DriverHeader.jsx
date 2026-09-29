@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, ChevronDown, ArrowRightLeft, Store, Truck } from 'lucide-react';
+import { Wifi, WifiOff, ChevronDown } from 'lucide-react';
 import waypointLogo from './assets/icons/waypoint_logo.png';
 
-export default function DriverHeader({ isOnline = true, onSwitchToStoreManager }) {
+export default function DriverHeader({ isOnline = true }) {
   const [time, setTime] = useState('');
   const [showMenu, setShowMenu] = useState(false);
 
@@ -68,22 +68,8 @@ export default function DriverHeader({ isOnline = true, onSwitchToStoreManager }
           </span>
         </div>
 
-        {/* Right: Direct Portal Switcher + Driver Avatar */}
+        {/* Right: Driver Avatar */}
         <div className="flex items-center gap-3">
-          {/* Direct Switch to Store Manager button */}
-          <button
-            type="button"
-            onClick={onSwitchToStoreManager}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-2xs hover:bg-gray-50"
-            style={{ background: '#FFFFFF', borderColor: '#C6E8D9', color: '#059669' }}
-            title="Switch to Store Manager Portal"
-          >
-            <Store size={13} />
-            <span className="hidden sm:inline">Store Manager</span>
-            <span className="sm:hidden">Store</span>
-          </button>
-
-          {/* User profile */}
           <div className="relative">
             <button
               type="button"
@@ -104,21 +90,14 @@ export default function DriverHeader({ isOnline = true, onSwitchToStoreManager }
 
             {/* Dropdown Menu */}
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-50">
                 <div className="px-3 py-2 border-b border-gray-100">
                   <p className="text-xs font-semibold text-gray-900">Kasun Perera</p>
                   <p className="text-[11px] text-gray-500">Driver · VEH-014</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMenu(false);
-                    if (onSwitchToStoreManager) onSwitchToStoreManager();
-                  }}
-                  className="w-full text-left px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors flex items-center gap-2 cursor-pointer"
-                >
-                  <Store size={13} /> Switch to Store Manager
-                </button>
+                <div className="px-3 py-1.5 text-xs text-gray-500">
+                  Peliyagoda Depot
+                </div>
               </div>
             )}
           </div>
