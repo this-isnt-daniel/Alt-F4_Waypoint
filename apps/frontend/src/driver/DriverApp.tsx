@@ -77,6 +77,8 @@ const SCREEN_MAP: Record<ScreenId, ComponentType> = {
   "contact-dispatch": ContactDispatchSheet,
 };
 
+import { useDriverState } from "@/driver/state/useDriverState";
+
 const PRE_TRIP_SCREENS: ScreenId[] = [
   "signin",
   "start-day",
@@ -86,15 +88,21 @@ const PRE_TRIP_SCREENS: ScreenId[] = [
   "trip-complete",
   "day-summary",
   "no-trips",
+  "contact-dispatch",
+  "issue-wizard",
 ];
 
 function DriverContent() {
   const { route } = useNavigator();
+  const { trip1Started, currentStopIndex, trip1Sequence } = useDriverState();
   const demo = useDemoMode();
   const [scenOpen, setScenOpen] = useState(false);
 
   const Screen = SCREEN_MAP[route.id] ?? SignInScreen;
-  const isPreTrip = PRE_TRIP_SCREENS.includes(route.id);
+  const hideTopBar = route.id === "chat" || route.id === "call-overlay";
+  const isPreTrip = !trip1Started || PRE_TRIP_SCREENS.includes(route.id);
+  const currentStopNum = currentStopIndex + 1;
+  const totalStops = trip1Sequence.length || 8;
 
   return (
     <div className="min-h-screen bg-canvas text-ink selection:bg-green-fill selection:text-green-ink">
@@ -122,13 +130,18 @@ function DriverContent() {
           </div>
         )}
 
-        {isPreTrip ? (
-          <PreTripBar />
-        ) : (
-          <ActiveTripBar tripLabel="Trip 1 · Fresh" stopLabel="Stop 2 of 8" />
+        {!hideTopBar && (
+          isPreTrip ? (
+            <PreTripBar />
+          ) : (
+            <ActiveTripBar
+              tripLabel="Trip 1 · Fresh"
+              stopLabel={`Stop ${currentStopNum} of ${totalStops}`}
+            />
+          )
         )}
 
-        <main id="driver-main" className="flex-1">
+        <main id="driver-main" className="flex-1 flex flex-col">
           <Screen />
         </main>
 

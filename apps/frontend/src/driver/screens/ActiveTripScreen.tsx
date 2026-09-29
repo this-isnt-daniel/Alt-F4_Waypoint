@@ -23,9 +23,9 @@ export function ActiveTripScreen() {
     TRIP_1_STOPS.find((s) => s.outletId === currentOutletId) ?? TRIP_1_STOPS[1]!;
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-52px)] max-w-[430px] mx-auto pb-44">
+    <div className="flex flex-col flex-1 h-[calc(100vh-52px)] max-w-[430px] mx-auto overflow-hidden">
       {/* Map / List toggle floating header */}
-      <div className="absolute top-3 right-3 z-30">
+      <div className="absolute top-3 right-3 z-[1001]">
         <button
           type="button"
           onClick={() => setViewMode(viewMode === "map" ? "list" : "map")}
@@ -39,7 +39,7 @@ export function ActiveTripScreen() {
 
       {/* Surface: Map or Accessible Stop List */}
       {viewMode === "map" ? (
-        <div className="flex-1 relative min-h-[360px]">
+        <div className="flex-1 relative min-h-0">
           <DriverMap
             stopIds={trip1Sequence}
             currentStopId={currentOutletId}
@@ -54,7 +54,7 @@ export function ActiveTripScreen() {
           />
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2 bg-slate-50">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
             Route Stops ({trip1Sequence.length})
           </h2>
@@ -127,16 +127,18 @@ export function ActiveTripScreen() {
         </div>
       )}
 
-      {/* Persistent Bottom Sheet */}
-      <BottomSheet
-        stop={stop}
-        etaMin={12}
-        windowClosingMin={43}
-        onMarkArrived={() => push("mark-arrived", { seq: String(stop.seq) })}
-        onChat={() => push("chat", { outletId: stop.outletId })}
-        onCall={() => push("call-overlay", { outletId: stop.outletId })}
-        onDetails={() => push("stop-detail", { seq: String(stop.seq) })}
-      />
+      {/* Persistent Bottom Sheet docked at bottom */}
+      <div className="shrink-0 z-30 w-full">
+        <BottomSheet
+          stop={stop}
+          etaMin={12}
+          windowClosingMin={43}
+          onMarkArrived={() => push("mark-arrived", { seq: String(stop.seq) })}
+          onChat={() => push("chat", { outletId: stop.outletId })}
+          onCall={() => push("call-overlay", { outletId: stop.outletId })}
+          onDetails={() => push("stop-detail", { seq: String(stop.seq) })}
+        />
+      </div>
     </div>
   );
 }

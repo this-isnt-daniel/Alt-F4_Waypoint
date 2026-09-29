@@ -102,9 +102,8 @@ export function BottomSheet(props: BottomSheetProps) {
       : "pin";
 
   return (
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40">
-      <div className="bg-white border-t border-slate-200 rounded-t-2xl shadow-lg px-4 pt-3 pb-6">
-        {/* Handle */}
+    <div className="w-full bg-white border-t border-slate-200 rounded-t-2xl shadow-lg px-4 pt-3 pb-5">
+      {/* Handle */}
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
@@ -217,6 +216,5 @@ export function BottomSheet(props: BottomSheetProps) {
           )}
         </div>
       </div>
-    </div>
   );
 }

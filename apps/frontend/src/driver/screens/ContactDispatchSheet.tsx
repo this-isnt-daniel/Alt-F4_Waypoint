@@ -26,10 +26,21 @@ export function ContactDispatchSheet() {
         ))}
       </div>
       <div className="space-y-2 pt-2">
-        <Button variant="primary" size="lg" onClick={() => push("active-trip")} disabled={!selected}>
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() =>
+            push("chat", { recipient: "dispatch", topic: selected ?? "" })
+          }
+          disabled={!selected}
+        >
           <AppIcon name="send" size={16} className="mr-2" /> Send to dispatch
         </Button>
-        <Button variant="secondary" size="md" onClick={() => push("call-overlay")}>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={() => push("call-overlay", { recipient: "dispatch" })}
+        >
           <AppIcon name="phone" size={16} className="mr-2" /> Call dispatcher
         </Button>
         <Button variant="ghost" size="md" onClick={back}>
