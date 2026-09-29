@@ -33,34 +33,40 @@ const tokens = {
   ]
 };
 
-export default function DriverTokens() {
+export default function DriverTokens({ darkMode = false }) {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8" style={{ background: '#F4F8F6', minHeight: 'calc(100vh - 64px)' }}>
+    <div className={`w-full transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
       {/* Header */}
       <div className="mb-8">
-        <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider" style={{ background: '#E8F5EF', color: '#0F9D6C', border: '1px solid #C6E8D9' }}>
+        <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border ${
+          darkMode ? 'bg-[#10382E] text-[#34D399] border-[#185344]' : 'bg-[#E8F5EF] text-[#0F9D6C] border-[#C6E8D9]'
+        }`}>
           Design Tokens &amp; Style Guide
         </span>
-        <h1 className="text-3xl font-bold mt-2" style={{ color: '#0B3D33' }}>
+        <h1 className={`text-3xl font-bold mt-2 ${darkMode ? 'text-white' : 'text-[#0B3D33]'}`}>
           Waypoint Driver Design Tokens
         </h1>
-        <p className="text-sm mt-1" style={{ color: '#5B6B66' }}>
+        <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>
           Complete token specifications: Colors, Typography, Shapes, Grid, Elevation, and Accessibility rules.
         </p>
       </div>
 
       {/* Colors Section */}
-      <div className="rounded-[20px] p-6 bg-white border border-[#E2ECE7] shadow-sm mb-6">
-        <h2 className="text-base font-bold mb-4" style={{ color: '#0B3D33' }}>Color Tokens</h2>
+      <div className={`rounded-[20px] p-6 border shadow-sm mb-6 transition-all ${
+        darkMode ? 'bg-[#122822] border-[#1F3D35]' : 'bg-white border-[#E2ECE7]'
+      }`}>
+        <h2 className={`text-base font-bold mb-4 ${darkMode ? 'text-white' : 'text-[#0B3D33]'}`}>Color Tokens</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {tokens.colors.map((c) => (
-            <div key={c.name} className="rounded-xl border border-[#E2ECE7] overflow-hidden bg-[#FAFCFB]">
+            <div key={c.name} className={`rounded-xl border overflow-hidden transition-all ${
+              darkMode ? 'border-[#1F3D35] bg-[#16332B]' : 'border-[#E2ECE7] bg-[#FAFCFB]'
+            }`}>
               <div className="h-16 flex items-center justify-center font-mono font-bold text-xs" style={{ background: c.hex, color: c.text }}>
                 {c.hex}
               </div>
               <div className="p-3">
-                <p className="text-xs font-bold" style={{ color: '#0E1A17' }}>{c.name}</p>
-                <p className="text-[11px] mt-1" style={{ color: '#5B6B66' }}>{c.desc}</p>
+                <p className={`text-xs font-bold ${darkMode ? 'text-white' : 'text-[#0E1A17]'}`}>{c.name}</p>
+                <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>{c.desc}</p>
               </div>
             </div>
           ))}
@@ -70,30 +76,38 @@ export default function DriverTokens() {
       {/* Typography & System Rules */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Typography */}
-        <div className="rounded-[20px] p-6 bg-white border border-[#E2ECE7] shadow-sm">
-          <h2 className="text-base font-bold mb-4" style={{ color: '#0B3D33' }}>Typography System (Inter)</h2>
+        <div className={`rounded-[20px] p-6 border shadow-sm transition-all ${
+          darkMode ? 'bg-[#122822] border-[#1F3D35]' : 'bg-white border-[#E2ECE7]'
+        }`}>
+          <h2 className={`text-base font-bold mb-4 ${darkMode ? 'text-white' : 'text-[#0B3D33]'}`}>Typography System (Inter)</h2>
           <div className="flex flex-col gap-4">
             {tokens.typography.map((t) => (
-              <div key={t.level} className="p-3 rounded-xl bg-[#F4F8F6] border border-[#E2ECE7]">
+              <div key={t.level} className={`p-3 rounded-xl border transition-all ${
+                darkMode ? 'bg-[#16332B] border-[#1F3D35]' : 'bg-[#F4F8F6] border-[#E2ECE7]'
+              }`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase" style={{ color: '#0F9D6C' }}>{t.level}</span>
-                  <span className="text-[11px] font-mono" style={{ color: '#5B6B66' }}>{t.spec}</span>
+                  <span className="text-xs font-bold uppercase text-[#0F9D6C]">{t.level}</span>
+                  <span className={`text-[11px] font-mono ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>{t.spec}</span>
                 </div>
-                <p className="text-sm font-semibold mt-1" style={{ color: '#0E1A17' }}>{t.sample}</p>
-                <p className="text-[11px] mt-0.5" style={{ color: '#5B6B66' }}>{t.usage}</p>
+                <p className={`text-sm font-semibold mt-1 ${darkMode ? 'text-white' : 'text-[#0E1A17]'}`}>{t.sample}</p>
+                <p className={`text-[11px] mt-0.5 ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>{t.usage}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Spatial, Shape & Accessibility Rules */}
-        <div className="rounded-[20px] p-6 bg-white border border-[#E2ECE7] shadow-sm">
-          <h2 className="text-base font-bold mb-4" style={{ color: '#0B3D33' }}>Shape, Spacing &amp; Accessibility</h2>
+        <div className={`rounded-[20px] p-6 border shadow-sm transition-all ${
+          darkMode ? 'bg-[#122822] border-[#1F3D35]' : 'bg-white border-[#E2ECE7]'
+        }`}>
+          <h2 className={`text-base font-bold mb-4 ${darkMode ? 'text-white' : 'text-[#0B3D33]'}`}>Shape, Spacing &amp; Accessibility</h2>
           <div className="flex flex-col gap-4">
             {tokens.rules.map((r) => (
-              <div key={r.title} className="p-3.5 rounded-xl bg-[#F4F8F6] border border-[#E2ECE7]">
-                <p className="text-xs font-bold uppercase" style={{ color: '#0B3D33' }}>{r.title}</p>
-                <p className="text-xs mt-1 leading-relaxed" style={{ color: '#5B6B66' }}>{r.value}</p>
+              <div key={r.title} className={`p-3.5 rounded-xl border transition-all ${
+                darkMode ? 'bg-[#16332B] border-[#1F3D35]' : 'bg-[#F4F8F6] border-[#E2ECE7]'
+              }`}>
+                <p className={`text-xs font-bold uppercase ${darkMode ? 'text-white' : 'text-[#0B3D33]'}`}>{r.title}</p>
+                <p className={`text-xs mt-1 leading-relaxed ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>{r.value}</p>
               </div>
             ))}
           </div>

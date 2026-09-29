@@ -16,60 +16,53 @@ import DriverComponents from './DriverComponents';
 import DriverTokens from './DriverTokens';
 
 /**
- * DriverApp — orchestrates Driver Authentication (Sign-in / Sign-up) and all 10 Driver operational screens.
- *
- * Auth Flow:
- *  Unauthenticated -> DriverAuth (Driver Sign-in / Sign-up)
- *  Authenticated   -> 01 (Start Shift) -> 02 (Today's Runs) -> 03 -> 04 -> 05 -> 06 -> 10
+ * Primary Operational Tabs (mirrors Store Manager 3-tab simplicity)
+ * Overview (Shift/Runs), Active Route (Route/Stop/POD), History & System
  */
-
-const SCREENS = [
-  'flow',
-  '01-login',
-  '02-runs',
-  '03-checklist',
-  '04-route',
-  '05-stop',
-  '06-pod',
-  '07-problem',
-  '08-offline',
-  '09-route-change',
-  '10-summary',
-  'components',
-  'tokens',
+const DRIVER_CORE_TABS = [
+  { id: '01-login', label: 'Shift Overview' },
+  { id: '02-runs', label: 'Assigned Trips' },
+  { id: '04-route', label: 'Active Route' },
+  { id: '10-summary', label: 'Trip Summary' },
 ];
 
-const SCREEN_LABELS = {
-  'flow':           '🗺️ Flow & Persona',
-  '01-login':       '01 Start Shift',
-  '02-runs':        "02 Today's Runs",
-  '03-checklist':   '03 Pre-departure',
-  '04-route':       '04 Route',
-  '05-stop':        '05 Stop Detail',
-  '06-pod':         '06 POD',
-  '07-problem':     '07 Problem',
-  '08-offline':     '08 Offline',
-  '09-route-change': '09 Route Change',
-  '10-summary':     '10 Summary',
-  'components':     '🧩 Components',
-  'tokens':         '🎨 Tokens',
-};
+/**
+ * All 10 screens and system pages accessible via secondary selector
+ */
+const ALL_DRIVER_VIEWS = [
+  { id: '01-login', label: 'Shift Overview' },
+  { id: '02-runs', label: 'Assigned Trips' },
+  { id: '03-checklist', label: 'Pre-departure' },
+  { id: '04-route', label: 'Active Route' },
+  { id: '05-stop', label: 'Stop Detail' },
+  { id: '06-pod', label: 'Proof of Delivery' },
+  { id: '07-problem', label: 'Report Problem' },
+  { id: '08-offline', label: 'Offline Mode' },
+  { id: '09-route-change', label: 'Route Update' },
+  { id: '10-summary', label: 'Trip Summary' },
+  { id: 'flow', label: 'Flow' },
+  { id: 'components', label: 'Components' },
+  { id: 'tokens', label: 'Tokens' },
+];
 
 export default function DriverApp({ onBack }) {
-  // Check if driver is already logged in (defaults to null for sign-in first)
   const [driverUser, setDriverUser] = useState(null);
   const [screen, setScreen] = useState('01-login');
   const [isOnline, setIsOnline] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
+  const [currentDepot, setCurrentDepot] = useState('Peliyagoda Depot');
 
   const nav = (s) => setScreen(s);
 
   // If driver is not authenticated yet, present the Driver sign-in / sign-up screen
   if (!driverUser) {
     return (
-      <div className="min-h-screen w-full" style={{ background: '#081C17' }}>
+      <div className={`min-h-screen w-full ${darkMode ? 'dark bg-[#081C17]' : 'bg-[#081C17]'}`}>
         <DriverAuth
           onAuthSuccess={(user) => {
             setDriverUser(user);
+            if (user?.depot) setCurrentDepot(user.depot);
             setScreen('01-login');
           }}
         />
@@ -77,102 +70,117 @@ export default function DriverApp({ onBack }) {
     );
   }
 
-  // Once authenticated, unlock full driver portal & screens
+  // Once authenticated, unlock full driver portal & screens with unified StoreManager style header
   return (
-    <div className="min-h-screen" style={{ background: '#F4F8F6' }}>
-      {/* Persistent header with dynamic Driver user & Logout action */}
+    <div 
+      className={`min-h-screen font-sans antialiased transition-colors duration-200 ${
+        darkMode ? 'dark bg-[#0B1A16] text-gray-100' : 'bg-[#FAFBFA] text-gray-900'
+      }`}
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      {/* ── Driver Header matching StoreManager navbar styling ── */}
       <DriverHeader
-        isOnline={screen === '08-offline' ? false : isOnline}
+        navTabs={DRIVER_CORE_TABS}
+        activeTab={screen}
+        onSelectTab={nav}
         driverUser={driverUser}
         onLogout={() => setDriverUser(null)}
+        isOnline={screen === '08-offline' ? false : isOnline}
+        onToggleSignal={() => setIsOnline(!isOnline)}
+        darkMode={darkMode}
+        onToggleDarkMode={() => setDarkMode(!darkMode)}
+        hasUnreadNotifications={hasUnreadNotifications}
+        onToggleNotifications={() => setHasUnreadNotifications(!hasUnreadNotifications)}
+        currentDepot={currentDepot}
+        onSelectDepot={(d) => setCurrentDepot(d)}
       />
 
-      {/* Navigation bar for all 10 operational screens + System pages */}
+      {/* ── Secondary Pill Strip for Direct Screen Inspection ── */}
       <div
-        className="w-full overflow-x-auto sticky top-16 z-30 shadow-xs"
-        style={{ background: '#0B3D33', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+        className={`w-full overflow-x-auto border-b px-4 sm:px-6 py-2 flex items-center gap-1.5 transition-colors select-none ${
+          darkMode ? 'bg-[#10241F] border-[#1A3830]' : 'bg-white border-gray-100'
+        }`}
       >
-        <div className="flex items-center gap-1 px-4 py-2 min-w-max">
-          {SCREENS.map((s) => (
+        <span className={`text-[11px] font-bold uppercase tracking-wider mr-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>
+          Workflow:
+        </span>
+        {ALL_DRIVER_VIEWS.map((tab) => {
+          const isActive = screen === tab.id;
+          return (
             <button
-              key={s}
-              onClick={() => nav(s)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer"
-              style={{
-                background: screen === s ? '#0F9D6C' : 'transparent',
-                color: screen === s ? 'white' : '#A7D4C0',
-              }}
+              key={tab.id}
+              type="button"
+              onClick={() => nav(tab.id)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                isActive
+                  ? darkMode
+                    ? 'bg-[#16483A] text-[#34D399]'
+                    : 'bg-[#E8F7F0] text-[#059669]'
+                  : darkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-[#153128]'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
             >
-              {SCREEN_LABELS[s]}
+              {tab.label}
             </button>
-          ))}
-
-          {/* Quick Online/Offline Demo toggle */}
-          <div className="ml-4 flex items-center gap-2 pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.15)' }}>
-            <span className="text-xs font-medium" style={{ color: '#A7D4C0' }}>Signal:</span>
-            <button
-              onClick={() => setIsOnline(!isOnline)}
-              className="px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all"
-              style={{
-                background: isOnline ? '#E6F6EC' : '#FDECEC',
-                color: isOnline ? '#16A34A' : '#E5484D',
-              }}
-            >
-              {isOnline ? '● Online' : '● Offline'}
-            </button>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {/* Screen renderer */}
-      {screen === 'flow' && (
-        <DriverFlow onSelectScreen={nav} />
-      )}
-      {screen === '01-login' && (
-        <Screen01Login onStart={() => nav('02-runs')} />
-      )}
-      {screen === '02-runs' && (
-        <Screen02Runs onStartTrip={() => nav('03-checklist')} />
-      )}
-      {screen === '03-checklist' && (
-        <Screen03Checklist onConfirm={() => nav('04-route')} />
-      )}
-      {screen === '04-route' && (
-        <Screen04Route
-          onNavigate={() => nav('05-stop')}
-          onProblem={() => nav('07-problem')}
-        />
-      )}
-      {screen === '05-stop' && (
-        <Screen05StopDetail
-          onArrived={() => nav('06-pod')}
-          onProblem={() => nav('07-problem')}
-        />
-      )}
-      {screen === '06-pod' && (
-        <Screen06POD onConfirm={() => nav('10-summary')} />
-      )}
-      {screen === '07-problem' && (
-        <Screen07Problem onSubmit={() => nav('04-route')} />
-      )}
-      {screen === '08-offline' && (
-        <Screen08Offline
-          onContinue={() => nav('04-route')}
-          onReviewRoute={() => nav('09-route-change')}
-        />
-      )}
-      {screen === '09-route-change' && (
-        <Screen09RouteChange onAcknowledge={() => nav('04-route')} />
-      )}
-      {screen === '10-summary' && (
-        <Screen10Summary onStartTrip2={() => nav('02-runs')} />
-      )}
-      {screen === 'components' && (
-        <DriverComponents />
-      )}
-      {screen === 'tokens' && (
-        <DriverTokens />
-      )}
+      {/* ── Screen Rendering Container (Matching StoreManager max-w-7xl mx-auto px-6 dimensions) ── */}
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        {screen === 'flow' && (
+          <DriverFlow onSelectScreen={nav} darkMode={darkMode} />
+        )}
+        {screen === '01-login' && (
+          <Screen01Login onStart={() => nav('02-runs')} darkMode={darkMode} />
+        )}
+        {screen === '02-runs' && (
+          <Screen02Runs onStartTrip={() => nav('03-checklist')} darkMode={darkMode} />
+        )}
+        {screen === '03-checklist' && (
+          <Screen03Checklist onConfirm={() => nav('04-route')} darkMode={darkMode} />
+        )}
+        {screen === '04-route' && (
+          <Screen04Route
+            onNavigate={() => nav('05-stop')}
+            onProblem={() => nav('07-problem')}
+            darkMode={darkMode}
+          />
+        )}
+        {screen === '05-stop' && (
+          <Screen05StopDetail
+            onArrived={() => nav('06-pod')}
+            onProblem={() => nav('07-problem')}
+            darkMode={darkMode}
+          />
+        )}
+        {screen === '06-pod' && (
+          <Screen06POD onConfirm={() => nav('10-summary')} darkMode={darkMode} />
+        )}
+        {screen === '07-problem' && (
+          <Screen07Problem onSubmit={() => nav('04-route')} darkMode={darkMode} />
+        )}
+        {screen === '08-offline' && (
+          <Screen08Offline
+            onContinue={() => nav('04-route')}
+            onReviewRoute={() => nav('09-route-change')}
+            darkMode={darkMode}
+          />
+        )}
+        {screen === '09-route-change' && (
+          <Screen09RouteChange onAcknowledge={() => nav('04-route')} darkMode={darkMode} />
+        )}
+        {screen === '10-summary' && (
+          <Screen10Summary onStartTrip2={() => nav('02-runs')} darkMode={darkMode} />
+        )}
+        {screen === 'components' && (
+          <DriverComponents darkMode={darkMode} />
+        )}
+        {screen === 'tokens' && (
+          <DriverTokens darkMode={darkMode} />
+        )}
+      </main>
     </div>
   );
 }

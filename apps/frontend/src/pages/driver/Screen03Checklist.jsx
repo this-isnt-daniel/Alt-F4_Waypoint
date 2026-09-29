@@ -14,14 +14,18 @@ const vehicleChecks = [
   { label: 'Waybills & Documents', value: 'OK ✓', ok: true },
 ];
 
-export default function Screen03Checklist({ onConfirm }) {
+export default function Screen03Checklist({ onConfirm, darkMode = false }) {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8" style={{ background: '#F4F8F6', minHeight: 'calc(100vh - 64px)' }}>
+    <div className={`w-full transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
 
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: '#0B3D33' }}>PRE-DEPARTURE CHECK</h1>
-        <p className="text-sm mt-1" style={{ color: '#5B6B66' }}>Trip 1: Fresh Gampaha</p>
+        <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-[#0B3D33]'}`}>
+          PRE-DEPARTURE CHECK
+        </h1>
+        <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>
+          Trip 1: Fresh Gampaha
+        </p>
       </div>
 
       {/* Main 2-column layout */}
@@ -29,53 +33,80 @@ export default function Screen03Checklist({ onConfirm }) {
 
         {/* Left: Loader verification (3/5) */}
         <div
-          className="lg:col-span-3 rounded-[20px] p-6"
-          style={{ background: '#FFFFFF', border: '1px solid #E2ECE7', boxShadow: '0 8px 24px rgba(11,61,51,0.08)' }}
+          className={`lg:col-span-3 rounded-[20px] p-6 border transition-all ${
+            darkMode 
+              ? 'bg-[#122822] border-[#1F3D35] shadow-lg' 
+              : 'bg-white border-[#E2ECE7] shadow-sm'
+          }`}
         >
           {/* Loader header */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#5B6B66' }}>
+              <p className={`text-[11px] uppercase tracking-widest font-semibold mb-1 ${
+                darkMode ? 'text-gray-400' : 'text-[#5B6B66]'
+              }`}>
                 LOADER VERIFICATION
               </p>
-              <p className="text-base font-bold" style={{ color: '#0E1A17' }}>Amila (Loader)</p>
+              <p className={`text-base font-bold ${darkMode ? 'text-white' : 'text-[#0E1A17]'}`}>
+                Amila (Loader)
+              </p>
             </div>
             <span
-              className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide"
-              style={{ background: '#E8F5EF', color: '#0F9D6C', border: '1px solid #C6E8D9' }}
+              className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide border ${
+                darkMode 
+                  ? 'bg-[#10382E] text-[#34D399] border-[#185344]' 
+                  : 'bg-[#E8F5EF] text-[#0F9D6C] border-[#C6E8D9]'
+              }`}
             >
               AMILA (LOADER)
             </span>
           </div>
 
           {/* Items table */}
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #E2ECE7' }}>
+          <div className={`rounded-xl overflow-hidden border ${
+            darkMode ? 'border-[#1F3D35]' : 'border-[#E2ECE7]'
+          }`}>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: '#F4F8F6' }}>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: '#5B6B66' }}>Item</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: '#5B6B66' }}>Units</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: '#5B6B66' }}>Status</th>
+                <tr className={darkMode ? 'bg-[#16332B]' : 'bg-[#F4F8F6]'}>
+                  <th className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide ${
+                    darkMode ? 'text-gray-300' : 'text-[#5B6B66]'
+                  }`}>Item</th>
+                  <th className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide ${
+                    darkMode ? 'text-gray-300' : 'text-[#5B6B66]'
+                  }`}>Units</th>
+                  <th className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide ${
+                    darkMode ? 'text-gray-300' : 'text-[#5B6B66]'
+                  }`}>Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={darkMode ? 'divide-y divide-[#1F3D35]' : 'divide-y divide-[#E2ECE7]'}>
                 {loaderItems.map((item) => (
                   <tr
                     key={item.name}
-                    style={{
-                      background: item.status === 'warn' ? '#FFF4DB' : 'transparent',
-                      borderTop: '1px solid #E2ECE7',
-                    }}
+                    className={`transition-colors ${
+                      item.status === 'warn'
+                        ? darkMode ? 'bg-[#2A1E0E]/40' : 'bg-[#FFF4DB]'
+                        : darkMode ? 'hover:bg-[#16332B]/50' : 'hover:bg-gray-50/50'
+                    }`}
                   >
-                    <td className="px-4 py-3 font-medium" style={{ color: '#0E1A17' }}>{item.name}</td>
-                    <td className="px-4 py-3 font-mono tabular-nums" style={{ color: '#5B6B66' }}>{item.units}</td>
+                    <td className={`px-4 py-3 font-medium ${darkMode ? 'text-white' : 'text-[#0E1A17]'}`}>
+                      {item.name}
+                    </td>
+                    <td className={`px-4 py-3 font-mono tabular-nums ${darkMode ? 'text-gray-300' : 'text-[#5B6B66]'}`}>
+                      {item.units}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold"
                         style={
                           item.status === 'ok'
-                            ? { background: '#E6F6EC', color: '#16A34A' }
-                            : { background: '#FFF4DB', color: '#B45309', border: '1px solid #FDE68A' }
+                            ? darkMode
+                              ? { background: '#10382E', color: '#34D399', border: '1px solid #185344' }
+                              : { background: '#E6F6EC', color: '#16A34A', border: '1px solid #bbf7d0' }
+                            : darkMode
+                              ? { background: '#2A1E0E', color: '#FCD34D', border: '1px solid #4A3416' }
+                              : { background: '#FFF4DB', color: '#B45309', border: '1px solid #FDE68A' }
                         }
                       >
                         {item.status === 'ok' ? <Check size={11} /> : <AlertTriangle size={11} />}
@@ -90,41 +121,54 @@ export default function Screen03Checklist({ onConfirm }) {
 
           {/* Shortfall note */}
           <div
-            className="mt-4 rounded-xl p-4 flex items-start gap-3"
-            style={{ background: '#FFF4DB', border: '1px solid #FDE68A' }}
+            className={`mt-4 rounded-xl p-4 flex items-start gap-3 border ${
+              darkMode 
+                ? 'bg-[#2A1E0E] border-[#4A3416] text-amber-200' 
+                : 'bg-[#FFF4DB] border-[#FDE68A] text-[#78350F]'
+            }`}
           >
-            <AlertTriangle size={16} style={{ color: '#F59E0B', flexShrink: 0, marginTop: 1 }} />
-            <p className="text-xs" style={{ color: '#78350F' }}>
-              Loader flagged: <strong>8 units missing (damaged in warehouse).</strong>
+            <AlertTriangle size={16} className="text-[#F59E0B] flex-shrink-0 mt-0.5" />
+            <p className="text-xs">
+              Loader flagged: <strong className={darkMode ? 'text-amber-100 font-bold' : ''}>8 units missing (damaged in warehouse).</strong>
             </p>
           </div>
         </div>
 
         {/* Right: Vehicle & temp checks (2/5) */}
         <div
-          className="lg:col-span-2 rounded-[20px] p-6"
-          style={{ background: '#FFFFFF', border: '1px solid #E2ECE7', boxShadow: '0 8px 24px rgba(11,61,51,0.08)' }}
+          className={`lg:col-span-2 rounded-[20px] p-6 border transition-all ${
+            darkMode 
+              ? 'bg-[#122822] border-[#1F3D35] shadow-lg' 
+              : 'bg-white border-[#E2ECE7] shadow-sm'
+          }`}
         >
-          <p className="text-[11px] uppercase tracking-widest font-semibold mb-4" style={{ color: '#5B6B66' }}>
+          <p className={`text-[11px] uppercase tracking-widest font-semibold mb-4 ${
+            darkMode ? 'text-gray-400' : 'text-[#5B6B66]'
+          }`}>
             VEHICLE &amp; TEMP CHECKS
           </p>
           <div className="flex flex-col gap-3">
             {vehicleChecks.map(({ label, value, ok }) => (
               <div
                 key={label}
-                className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: '#F4F8F6', border: '1px solid #E2ECE7' }}
+                className={`flex items-center justify-between rounded-xl px-4 py-3 border ${
+                  darkMode ? 'bg-[#16332B] border-[#1F3D35]' : 'bg-[#F4F8F6] border-[#E2ECE7]'
+                }`}
               >
                 <div className="flex items-center gap-2.5">
                   <div
                     className="w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ background: '#E6F6EC' }}
+                    style={{ background: darkMode ? '#10382E' : '#E6F6EC' }}
                   >
-                    <Check size={13} style={{ color: '#16A34A' }} />
+                    <Check size={13} style={{ color: darkMode ? '#34D399' : '#16A34A' }} />
                   </div>
-                  <span className="text-xs font-medium" style={{ color: '#5B6B66' }}>{label}</span>
+                  <span className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-[#5B6B66]'}`}>
+                    {label}
+                  </span>
                 </div>
-                <span className="text-sm font-bold tabular-nums" style={{ color: '#0B3D33' }}>{value}</span>
+                <span className={`text-sm font-bold tabular-nums ${darkMode ? 'text-emerald-300' : 'text-[#0B3D33]'}`}>
+                  {value}
+                </span>
               </div>
             ))}
           </div>
@@ -133,27 +177,30 @@ export default function Screen03Checklist({ onConfirm }) {
 
       {/* Summary banner */}
       <div
-        className="rounded-[20px] p-5 mb-5"
-        style={{ background: '#E8F5EF', border: '1px solid #C6E8D9' }}
+        className={`rounded-[20px] p-5 mb-5 border transition-all ${
+          darkMode 
+            ? 'bg-[#10382E] border-[#185344] text-emerald-200' 
+            : 'bg-[#E8F5EF] border-[#C6E8D9] text-[#0B3D33]'
+        }`}
       >
-        <p className="text-sm font-semibold" style={{ color: '#0B3D33' }}>
+        <p className="text-sm font-semibold">
           412 of 420 units loaded — 8 units short (flagged by loader). Reefer temp stable at 4°C.
         </p>
       </div>
 
       {/* CTA + Footer note */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
         <button
           onClick={onConfirm}
-          className="flex-1 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: '#0F9D6C', height: 64, boxShadow: '0 4px 14px rgba(15,157,108,0.35)' }}
+          className="w-full sm:flex-1 px-6 py-4 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.98] cursor-pointer shadow-md hover:shadow-lg"
+          style={{ background: '#0F9D6C', minHeight: 56 }}
           onMouseEnter={e => (e.currentTarget.style.background = '#0B7F57')}
           onMouseLeave={e => (e.currentTarget.style.background = '#0F9D6C')}
         >
           <CheckCircle size={18} />
-          ✓ CONFIRM DEPARTURE
+          <span>✓ CONFIRM DEPARTURE</span>
         </button>
-        <p className="text-xs text-center sm:text-right" style={{ color: '#5B6B66', maxWidth: 260 }}>
+        <p className={`text-xs text-center sm:text-right ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`} style={{ maxWidth: 260 }}>
           Shortfall has been reported to dispatcher.
         </p>
       </div>

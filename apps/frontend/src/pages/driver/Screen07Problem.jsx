@@ -10,19 +10,19 @@ const reasons = [
   { id: 'other', icon: '•••', label: 'Other Issues' },
 ];
 
-export default function Screen07Problem({ onSubmit }) {
+export default function Screen07Problem({ onSubmit, darkMode = false }) {
   const [selectedReason, setSelectedReason] = useState('flood');
   const [photoAdded, setPhotoAdded] = useState(false);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8" style={{ background: '#F4F8F6', minHeight: 'calc(100vh - 64px)' }}>
+    <div className={`w-full transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
 
       {/* Page header */}
       <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#5B6B66' }}>
+        <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>
           REPORT A PROBLEM
         </p>
-        <h1 className="text-2xl font-bold" style={{ color: '#0B3D33' }}>
+        <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-[#0B3D33]'}`}>
           OUT027 Cargills Food City
         </h1>
       </div>
@@ -32,10 +32,15 @@ export default function Screen07Problem({ onSubmit }) {
 
         {/* Left: Reason grid (3/5) */}
         <div
-          className="lg:col-span-3 rounded-[20px] p-6"
-          style={{ background: '#FFFFFF', border: '1px solid #E2ECE7', boxShadow: '0 8px 24px rgba(11,61,51,0.08)' }}
+          className={`lg:col-span-3 rounded-[20px] p-6 border transition-all ${
+            darkMode 
+              ? 'bg-[#122822] border-[#1F3D35] shadow-lg' 
+              : 'bg-white border-[#E2ECE7] shadow-sm'
+          }`}
         >
-          <p className="text-[11px] uppercase tracking-widest font-semibold mb-4" style={{ color: '#5B6B66' }}>
+          <p className={`text-[11px] uppercase tracking-widest font-semibold mb-4 ${
+            darkMode ? 'text-gray-400' : 'text-[#5B6B66]'
+          }`}>
             SELECT EXCLUSION REASON
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -45,12 +50,12 @@ export default function Screen07Problem({ onSubmit }) {
                 <button
                   key={r.id}
                   onClick={() => setSelectedReason(r.id)}
-                  className="flex flex-col items-center justify-center gap-2 rounded-2xl p-4 transition-all cursor-pointer relative"
-                  style={{
-                    background: isSel ? '#E8F5EF' : '#F4F8F6',
-                    border: isSel ? '2px solid #0F9D6C' : '1px solid #E2ECE7',
-                    minHeight: 100,
-                  }}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-2xl p-4 transition-all cursor-pointer relative border-2 ${
+                    isSel 
+                      ? darkMode ? 'bg-[#10382E] border-[#0F9D6C]' : 'bg-[#E8F5EF] border-[#0F9D6C]'
+                      : darkMode ? 'bg-[#16332B] border-[#1F3D35] hover:bg-[#1A3D34]' : 'bg-[#F4F8F6] border-[#E2ECE7] hover:bg-gray-100'
+                  }`}
+                  style={{ minHeight: 100 }}
                 >
                   {isSel && (
                     <div
@@ -64,8 +69,11 @@ export default function Screen07Problem({ onSubmit }) {
                   )}
                   <span className="text-2xl">{r.icon}</span>
                   <span
-                    className="text-xs font-semibold text-center leading-tight"
-                    style={{ color: isSel ? '#0B3D33' : '#5B6B66' }}
+                    className={`text-xs font-semibold text-center leading-tight ${
+                      isSel 
+                        ? darkMode ? 'text-white font-bold' : 'text-[#0B3D33] font-bold'
+                        : darkMode ? 'text-gray-300' : 'text-[#5B6B66]'
+                    }`}
                   >
                     {r.label}
                   </span>
@@ -80,23 +88,30 @@ export default function Screen07Problem({ onSubmit }) {
 
           {/* Photo evidence */}
           <div
-            className="rounded-[20px] p-5"
-            style={{ background: '#FFFFFF', border: '1px solid #E2ECE7', boxShadow: '0 8px 24px rgba(11,61,51,0.08)' }}
+            className={`rounded-[20px] p-5 border transition-all ${
+              darkMode 
+                ? 'bg-[#122822] border-[#1F3D35] shadow-sm' 
+                : 'bg-white border-[#E2ECE7] shadow-xs'
+            }`}
           >
-            <p className="text-[11px] uppercase tracking-widest font-semibold mb-3" style={{ color: '#5B6B66' }}>
+            <p className={`text-[11px] uppercase tracking-widest font-semibold mb-3 ${
+              darkMode ? 'text-gray-400' : 'text-[#5B6B66]'
+            }`}>
               EVIDENCE PHOTOS
             </p>
             <button
               onClick={() => setPhotoAdded(true)}
-              className="w-full rounded-xl flex items-center justify-center gap-3 transition-all cursor-pointer"
-              style={{
-                height: 90,
-                background: photoAdded ? '#E8F0FF' : '#F4F8F6',
-                border: photoAdded ? '2px solid #3B82F6' : '2px dashed #CBD5E1',
-              }}
+              className={`w-full rounded-xl flex items-center justify-center gap-3 transition-all cursor-pointer border-2 ${
+                photoAdded 
+                  ? darkMode ? 'bg-[#1E3A8A]/30 border-[#3B82F6]' : 'bg-[#E8F0FF] border-[#3B82F6]'
+                  : darkMode ? 'bg-[#16332B] border-dashed border-[#1F3D35] hover:border-[#0F9D6C]' : 'bg-[#F4F8F6] border-dashed border-[#CBD5E1] hover:border-[#0F9D6C]'
+              }`}
+              style={{ height: 90 }}
             >
-              <Camera size={20} style={{ color: photoAdded ? '#3B82F6' : '#CBD5E1' }} />
-              <span className="text-sm font-medium" style={{ color: photoAdded ? '#3B82F6' : '#5B6B66' }}>
+              <Camera size={20} style={{ color: photoAdded ? '#3B82F6' : darkMode ? '#94A3B8' : '#CBD5E1' }} />
+              <span className={`text-sm font-medium ${
+                photoAdded ? 'text-[#3B82F6]' : darkMode ? 'text-gray-300' : 'text-[#5B6B66]'
+              }`}>
                 {photoAdded ? '✓ Photo added' : '📷 Add Photo Evidence'}
               </span>
             </button>
@@ -104,24 +119,26 @@ export default function Screen07Problem({ onSubmit }) {
 
           {/* Explanation note */}
           <div
-            className="rounded-[20px] p-5 flex-1"
-            style={{ background: '#FFFFFF', border: '1px solid #E2ECE7', boxShadow: '0 8px 24px rgba(11,61,51,0.08)' }}
+            className={`rounded-[20px] p-5 flex-1 border transition-all ${
+              darkMode 
+                ? 'bg-[#122822] border-[#1F3D35] shadow-sm' 
+                : 'bg-white border-[#E2ECE7] shadow-xs'
+            }`}
           >
-            <p className="text-[11px] uppercase tracking-widest font-semibold mb-2" style={{ color: '#5B6B66' }}>
+            <p className={`text-[11px] uppercase tracking-widest font-semibold mb-2 ${
+              darkMode ? 'text-gray-400' : 'text-[#5B6B66]'
+            }`}>
               EXPLANATION NOTE
             </p>
             <textarea
               defaultValue="Road block due to morning flooding. Authorities redirecting heavy traffic."
               rows={4}
-              className="w-full rounded-xl p-3 text-sm resize-none outline-none"
-              style={{
-                background: '#F4F8F6',
-                border: '1px solid #E2ECE7',
-                color: '#0E1A17',
-                lineHeight: '1.6',
-              }}
-              onFocus={e => (e.currentTarget.style.borderColor = '#0F9D6C')}
-              onBlur={e => (e.currentTarget.style.borderColor = '#E2ECE7')}
+              className={`w-full rounded-xl p-3 text-sm resize-none outline-none border transition-colors ${
+                darkMode 
+                  ? 'bg-[#16332B] border-[#1F3D35] text-white focus:border-[#0F9D6C]' 
+                  : 'bg-[#F4F8F6] border-[#E2ECE7] text-[#0E1A17] focus:border-[#0F9D6C]'
+              }`}
+              style={{ lineHeight: '1.6' }}
             />
           </div>
         </div>
@@ -131,15 +148,15 @@ export default function Screen07Problem({ onSubmit }) {
       <div className="flex flex-col gap-3">
         <button
           onClick={onSubmit}
-          className="w-full flex items-center justify-center gap-3 rounded-2xl text-base font-bold text-white transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: '#E5484D', height: 64, boxShadow: '0 4px 14px rgba(229,72,77,0.3)' }}
+          className="w-full px-6 py-4 flex items-center justify-center gap-3 rounded-2xl text-base font-bold text-white transition-all active:scale-[0.98] cursor-pointer shadow-md hover:shadow-lg"
+          style={{ background: '#E5484D', minHeight: 56 }}
           onMouseEnter={e => (e.currentTarget.style.background = '#C0393E')}
           onMouseLeave={e => (e.currentTarget.style.background = '#E5484D')}
         >
           <Clock3 size={18} />
-          ⏱ SUBMIT PROBLEM REPORT
+          <span>⏱ SUBMIT PROBLEM REPORT</span>
         </button>
-        <p className="text-xs text-center" style={{ color: '#5B6B66' }}>
+        <p className={`text-xs text-center ${darkMode ? 'text-gray-400' : 'text-[#5B6B66]'}`}>
           OUT027 manager &amp; dispatcher will be alerted immediately.
         </p>
       </div>
