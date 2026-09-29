@@ -16,15 +16,22 @@ import {
   LOADING_REASONS,
   type LoadingReason,
 } from "@/driver/data/labels";
+import {
+  TRIP_1_STOPS,
+  TRIP_2_STOPS,
+} from "@/driver/data/driverContent";
 import { formatUnits } from "@/lib/derive";
 import { cn } from "@/lib/cn";
 
 export function LoadConfirmScreen() {
-  const { push } = useNavigator();
-  const { connection, startTrip1 } = useDriverState();
+  const { route, push } = useNavigator();
+  const { connection, startTrip1, startTrip2, activeTripId } = useDriverState();
+  const isTrip2 = route.params.trip === "2" || activeTripId === 2;
   const offline = connection === "offline";
 
-  const [rows, setRows] = useState<LoadRow[]>(() => buildLoadRows());
+  const [rows, setRows] = useState<LoadRow[]>(() =>
+    buildLoadRows(isTrip2 ? TRIP_2_STOPS : TRIP_1_STOPS),
+  );
   const [editing, setEditing] = useState<LoadRow | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
 
@@ -70,7 +77,9 @@ export function LoadConfirmScreen() {
   return (
     <div className="flex min-h-full flex-col px-4 pb-6 pt-2 max-w-[430px] mx-auto">
       <h1 className="text-2xl font-bold text-ink">Load confirmation</h1>
-      <p className="mt-1 text-sm text-ink-muted">Trip 1 · Fresh · Kandy</p>
+      <p className="mt-1 text-sm text-ink-muted">
+        {isTrip2 ? "Trip 2 · Style · Kandy" : "Trip 1 · Fresh · Kandy"}
+      </p>
       <p className="mt-3 rounded-card border border-line bg-surface p-3 text-sm text-ink">
         Match the van to the manifest. Tap a stop to confirm it matches, or flag anything short, extra or damaged.
       </p>
@@ -205,7 +214,11 @@ export function LoadConfirmScreen() {
           fullWidth
           disabled={!canDepart}
           onClick={() => {
-            startTrip1();
+            if (isTrip2) {
+              startTrip2();
+            } else {
+              startTrip1();
+            }
             push("active-trip");
           }}
         >

@@ -11,6 +11,7 @@ export type ScenarioId =
   | "errors-location"
   | "errors-sync-failed"
   | "no-trips"
+  | "vehicle-breakdown"
   // Legacy/alias fallbacks
   | "default"
   | "load-confirm"
@@ -32,10 +33,14 @@ export interface ScenarioState {
   photoState?: string;
   locationDenied?: boolean;
   trip2Unlocked?: boolean;
+  trip1Completed?: boolean;
+  trip2Started?: boolean;
+  activeTripId?: 1 | 2;
   emptyTrips?: boolean;
   syncReviewOutletId?: string;
   syncReviewForwarded: boolean;
   routeUpdateAccepted: boolean;
+  vehicleBreakdown?: boolean;
 }
 
 const DEFAULT_SEQUENCE = [
@@ -102,8 +107,23 @@ export const SCENARIO_INITIAL: Record<ScenarioId, ScenarioState> = {
     routeSequence: [...DEFAULT_SEQUENCE],
     completedStopIds: ["OUT042", "OUT047", "OUT049"],
     flaggedStopIds: [],
-    failedStopIds: ["OUT052"],
+    failedStopIds: [],
     photoState: "pending",
+    syncReviewForwarded: false,
+    routeUpdateAccepted: false,
+  },
+  "vehicle-breakdown": {
+    tripStarted: true,
+    loadConfirmed: true,
+    connection: "online",
+    syncState: "pending",
+    currentStopId: "OUT049",
+    currentStopIndex: 2,
+    routeSequence: [...DEFAULT_SEQUENCE],
+    completedStopIds: ["OUT042", "OUT047"],
+    flaggedStopIds: [],
+    failedStopIds: [],
+    vehicleBreakdown: true,
     syncReviewForwarded: false,
     routeUpdateAccepted: false,
   },

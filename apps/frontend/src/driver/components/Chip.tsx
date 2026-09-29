@@ -17,7 +17,13 @@ export type ChipProps =
     }
   | {
       kind: "capability";
-      label: "CHILLED REEFER" | "AMBIENT" | "VAN ONLY" | "LOCKED";
+      label:
+        | "CHILLED REEFER"
+        | "AMBIENT"
+        | "VAN ONLY"
+        | "LOCKED"
+        | "COMPLETED"
+        | "ACTIVE · AMBIENT";
       className?: string;
     }
   | {
@@ -65,17 +71,23 @@ export function Chip(props: ChipProps) {
 
   if (props.kind === "capability") {
     const isLocked = props.label === "LOCKED";
+    const isCompleted = props.label === "COMPLETED";
     return (
       <span
         className={cn(
           baseStyles,
           isLocked
             ? "bg-raised text-ink-muted border border-line"
-            : "bg-green-fill text-green border border-green/20 font-semibold",
+            : isCompleted
+              ? "bg-slate-100 text-slate-600 border border-slate-200"
+              : "bg-green-fill text-green border border-green/20 font-semibold",
           props.className,
         )}
       >
-        <AppIcon name={isLocked ? "lock" : "snowflake"} size={12} />
+        <AppIcon
+          name={isLocked ? "lock" : isCompleted ? "check" : "snowflake"}
+          size={12}
+        />
         <span>{props.label}</span>
       </span>
     );
