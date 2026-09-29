@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import waypointLogo from '../../../assets/icons/waypoint_logo.png';
-import { Bell, ChevronDown, LogOut } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../../theme/useTheme';
 
 const NAV_TABS = [
   { id: 'overview',  label: 'Overview'              },
@@ -16,12 +17,13 @@ const NAV_TABS = [
  * Mobile: compact header + scrollable tab bar below.
  */
 export default function SMLayout({ activeTab, setActiveTab, onLogout, children, basketCount = 0, user, outlet }) {
+  const { isDark, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [hasNotifications, setHasNotifications] = useState(true);
   const [showChangePin, setShowChangePin] = useState(false);
 
   return (
-    <div className="h-[100dvh] bg-[#F8FAF9] font-sans antialiased text-slate-900 flex flex-col relative">
+    <div className="h-[100dvh] bg-[#F8FAF9] dark:bg-[#0B0F17] font-sans antialiased text-slate-900 dark:text-[#F8FAFC] flex flex-col relative transition-colors duration-200">
 
       {showChangePin && (
         <ChangePinModal 
@@ -31,13 +33,13 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
       )}
 
       {/* ── Desktop Header ── */}
-      <header className="hidden md:block sticky top-0 z-30 bg-white border-b border-slate-200">
+      <header className="hidden md:block sticky top-0 z-30 bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-slate-800 transition-colors">
         <div className="max-w-screen-xl mx-auto px-6 h-14 flex items-center justify-between gap-6">
 
           {/* Brand */}
           <div className="flex items-center gap-2.5 shrink-0">
             <img src={waypointLogo} alt="Waypoint Style" className="w-6 h-6 object-contain rounded-md" />
-            <span className="text-[17px] font-bold text-[#0B2019] tracking-tight">Waypoint Style</span>
+            <span className="text-[17px] font-bold text-[#0B2019] dark:text-[#F8FAFC] tracking-tight">Waypoint Style</span>
           </div>
 
           {/* Tabs */}
@@ -49,10 +51,10 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap ${
+                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
                     isActive
-                      ? 'bg-brand-50 text-brand-700 font-semibold'
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                      ? 'bg-brand-50 dark:bg-emerald-950/50 text-brand-700 dark:text-emerald-400 font-semibold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                   }`}
                 >
                   {tab.label}
@@ -68,9 +70,19 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
 
           {/* Right actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Theme Toggle Button */}
             <button
               type="button"
-              className="h-8 px-3 rounded-full border border-slate-200 text-[13px] text-slate-600 font-medium flex items-center gap-1.5 hover:border-slate-300 transition-colors"
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-emerald-400 hover:text-slate-800 dark:hover:text-emerald-300 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
+            </button>
+
+            <button
+              type="button"
+              className="h-8 px-3 rounded-full border border-slate-200 dark:border-slate-700 text-[13px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1.5 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
             >
               Nugegoda <ChevronDown size={12} className="text-slate-400" />
             </button>
@@ -78,7 +90,7 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
             <button
               type="button"
               onClick={() => setHasNotifications(false)}
-              className="relative w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors"
+              className="relative w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer"
             >
               <Bell size={15} strokeWidth={2} />
               {hasNotifications && (

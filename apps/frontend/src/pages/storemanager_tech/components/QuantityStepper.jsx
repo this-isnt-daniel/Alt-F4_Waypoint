@@ -85,7 +85,7 @@ export default function QuantityStepper({
         type="button"
         onClick={onIncrement}
         aria-label="Add to order"
-        className={`${btnBase} ${s.btn} border-brand-600 text-brand-600 hover:bg-brand-50 active:bg-brand-100`}
+        className={`${btnBase} ${s.btn} border-brand-600 dark:border-emerald-500 text-brand-600 dark:text-emerald-400 hover:bg-brand-50 dark:hover:bg-emerald-950/40 active:bg-brand-100 cursor-pointer`}
       >
         <Plus size={s.icon} strokeWidth={2.2} />
       </button>
@@ -99,7 +99,7 @@ export default function QuantityStepper({
         onClick={onDecrement}
         disabled={qty <= min}
         aria-label="Decrease quantity"
-        className={`${btnBase} ${s.btn} border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed`}
+        className={`${btnBase} ${s.btn} border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
       >
         <Minus size={s.icon} strokeWidth={2.2} />
       </button>
@@ -112,12 +112,12 @@ export default function QuantityStepper({
           onChange={(e) => setInputValue(e.target.value)}
           onBlur={handleBlurOrSubmit}
           onKeyDown={handleKeyDown}
-          className={`${s.textWidth} ${s.textSize} h-8 px-1 text-center font-bold text-brand-700 bg-brand-50 border border-brand-300 rounded-md outline-none focus:ring-2 focus:ring-brand-500`}
+          className={`${s.textWidth} ${s.textSize} h-8 px-1 text-center font-bold text-brand-700 dark:text-emerald-300 bg-brand-50 dark:bg-emerald-950/50 border border-brand-300 dark:border-emerald-700 rounded-md outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-emerald-500`}
         />
       ) : (
         <span
           onClick={handleDisplayClick}
-          className={`${s.textWidth} ${s.textSize} text-center font-bold text-slate-900 tabular-nums cursor-text hover:bg-slate-100 rounded px-1 transition-colors`}
+          className={`${s.textWidth} ${s.textSize} text-center font-bold text-slate-900 dark:text-[#F8FAFC] tabular-nums cursor-text hover:bg-slate-100 dark:hover:bg-slate-800 rounded px-1 transition-colors`}
           aria-label={`Quantity: ${formatQuantity(qty, quantityType, unit)}`}
         >
           {formatQuantity(qty, quantityType, unit)}
@@ -128,7 +128,7 @@ export default function QuantityStepper({
         type="button"
         onClick={onIncrement}
         aria-label="Increase quantity"
-        className={`${btnBase} ${s.btn} border-brand-600 text-brand-600 hover:bg-brand-50 active:bg-brand-100`}
+        className={`${btnBase} ${s.btn} border-brand-600 dark:border-emerald-500 text-brand-600 dark:text-emerald-400 hover:bg-brand-50 dark:hover:bg-emerald-950/40 active:bg-brand-100 cursor-pointer`}
       >
         <Plus size={s.icon} strokeWidth={2.2} />
       </button>

@@ -38,20 +38,20 @@ export default function GlobalSearch({ basket, onSetQty, placeholder = "Search b
   return (
     <div className="relative w-full z-20" ref={wrapperRef}>
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => { if (query.trim()) setIsOpen(true); }}
           placeholder={placeholder}
-          className="w-full h-10 pl-10 pr-10 text-[14px] font-medium text-slate-900 bg-white border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all shadow-sm"
+          className="w-full h-10 pl-10 pr-10 text-[14px] font-medium text-slate-900 dark:text-[#F8FAFC] bg-white dark:bg-[#111827] border border-slate-300 dark:border-slate-800 rounded-md placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
         />
         {query && (
           <button
             type="button"
             onClick={() => { setQuery(''); setIsOpen(false); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1.5"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 cursor-pointer"
           >
             <X size={15} />
           </button>
@@ -59,15 +59,15 @@ export default function GlobalSearch({ basket, onSetQty, placeholder = "Search b
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-xl rounded-md overflow-hidden max-h-[60vh] flex flex-col">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 shadow-xl rounded-md overflow-hidden max-h-[60vh] flex flex-col z-30">
           {results.length === 0 ? (
             <div className="py-8 text-center px-4">
-              <p className="text-[14px] font-medium text-slate-600">No products found for "{query}"</p>
-              <p className="text-[12px] text-slate-400 mt-1">Try searching for generic terms like "oil" or "rice"</p>
+              <p className="text-[14px] font-medium text-slate-600 dark:text-slate-300">No products found for "{query}"</p>
+              <p className="text-[12px] text-slate-400 dark:text-slate-500 mt-1">Try searching for generic terms like "oil" or "rice"</p>
             </div>
           ) : (
             <div className="overflow-y-auto p-2 space-y-1">
-              <div className="px-3 py-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="px-3 py-2 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 {results.length} result{results.length !== 1 ? 's' : ''}
               </div>
               {results.map((product) => {
@@ -79,16 +79,16 @@ export default function GlobalSearch({ basket, onSetQty, placeholder = "Search b
                 return (
                   <div
                     key={key}
-                    className="flex items-center justify-between p-3 border-b last:border-b-0 border-slate-100 hover:bg-slate-50 transition-colors group"
+                    className="flex items-center justify-between p-3 border-b last:border-b-0 border-slate-100 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
                   >
                     <div className="flex-1 min-w-0 pr-4">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{product.id}</span>
-                        <span className="text-[11px] font-medium text-brand-600 tracking-wide">
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{product.id}</span>
+                        <span className="text-[11px] font-medium text-brand-600 dark:text-emerald-400 tracking-wide">
                           {product.categoryName}
                         </span>
                       </div>
-                      <p className="text-[14px] font-bold text-slate-900 truncate">
+                      <p className="text-[14px] font-bold text-slate-900 dark:text-[#F8FAFC] truncate">
                         {product.name} {product.variant ? ` · ${product.variant}` : ''}
                       </p>
                     </div>

@@ -71,7 +71,7 @@ export default function DeliveryDateSelector({ orderDate, setOrderDate, onDateSe
       <div className="w-full">
         <div className="grid grid-cols-7 gap-1 mb-2 text-center">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
-            <div key={d} className={`text-[12px] font-semibold py-1 ${i === 0 ? 'text-slate-300' : 'text-slate-500'}`}>
+            <div key={d} className={`text-[12px] font-semibold py-1 ${i === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-500 dark:text-slate-400'}`}>
               {d}
             </div>
           ))}
@@ -107,10 +107,10 @@ export default function DeliveryDateSelector({ orderDate, setOrderDate, onDateSe
                     onClick={() => handleSelectDate(day, isOctMonth)}
                     className={`
                       h-10 rounded-lg text-[14px] font-medium transition-colors flex flex-col items-center justify-center cursor-pointer
-                      ${isDisabled ? 'text-slate-300 cursor-not-allowed' : ''}
-                      ${!isDisabled && !isSelected ? 'text-slate-700 hover:bg-slate-100' : ''}
-                      ${isSelected ? 'bg-brand-600 text-white shadow-sm font-bold' : ''}
-                      ${isToday ? 'border border-slate-200' : ''}
+                      ${isDisabled ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : ''}
+                      ${!isDisabled && !isSelected ? 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800' : ''}
+                      ${isSelected ? 'bg-brand-600 dark:bg-emerald-600 text-white shadow-sm font-bold' : ''}
+                      ${isToday ? 'border border-slate-200 dark:border-slate-700' : ''}
                     `}
                   >
                     <span>{day}</span>
@@ -129,27 +129,27 @@ export default function DeliveryDateSelector({ orderDate, setOrderDate, onDateSe
     <div className="max-w-sm mx-auto px-1 w-full">
       {!hideHeader && (
         <div className="text-center mb-4">
-          <h2 className="text-[18px] font-bold text-slate-900 mb-1">Delivery Date</h2>
-          <p className="text-[13px] text-slate-500">When should this order be delivered?</p>
+          <h2 className="text-[18px] font-bold text-slate-900 dark:text-[#F8FAFC] mb-1">Delivery Date</h2>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">When should this order be delivered?</p>
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
           <button 
             type="button"
             disabled={!isOct}
             onClick={handlePrevMonth}
-            className={`p-1.5 rounded-md transition-colors ${!isOct ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`p-1.5 rounded-md transition-colors ${!isOct ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           >
             <ChevronLeft size={18} />
           </button>
-          <p className="text-[14px] font-bold text-slate-900">{currentMonth}</p>
+          <p className="text-[14px] font-bold text-slate-900 dark:text-[#F8FAFC]">{currentMonth}</p>
           <button 
             type="button"
             disabled={isOct}
             onClick={handleNextMonth}
-            className={`p-1.5 rounded-md transition-colors ${isOct ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`p-1.5 rounded-md transition-colors ${isOct ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           >
             <ChevronRight size={18} />
           </button>

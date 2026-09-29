@@ -89,9 +89,12 @@ import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import VerifyDispatchPlanModal from './VerifyDispatchPlanModal';
 import RouteAllocationBoard from './RouteAllocationBoard';
 import RecoveryPlanModal from './RecoveryPlanModal';
+import { useTheme } from '../../theme/useTheme';
 import { 
   Moon, 
+  Sun,
   ChevronDown, 
+
   ChevronUp,
   ChevronRight,
   Bell, 
@@ -120,6 +123,7 @@ import {
 } from 'lucide-react';
 
 export default function DispatcherRoster({ onLogout }) {
+  const { isDark, toggleTheme } = useTheme();
   // Navigation & Sub-tabs (Reset for Fleet Allocation Demo Video)
   const [activeNav, setActiveNav] = useState('Overview');
   const [activeSubTab, setActiveSubTab] = useState('Fleet Availability');
@@ -1663,10 +1667,11 @@ export default function DispatcherRoster({ onLogout }) {
             {/* Dark Mode Icon Button */}
             <button
               type="button"
-              className="w-8 h-8 rounded-full border border-gray-200 hover:border-gray-300 bg-white flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-              title="Theme Toggle"
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-full border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center text-gray-600 dark:text-emerald-400 hover:text-gray-900 dark:hover:text-emerald-300 transition-colors cursor-pointer"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
-              <Moon size={15} strokeWidth={2} />
+              {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
             </button>
 
             {/* Date Picker Selector */}
