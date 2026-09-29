@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import waypointLogo from '../../../assets/icons/waypoint_logo.png';
-import { Bell, ChevronDown, LogOut, Truck, KeyRound, Check } from 'lucide-react';
-import DeliveryOtpModal from './DeliveryOtpModal';
+import { Bell, ChevronDown, LogOut } from 'lucide-react';
 
 const NAV_TABS = [
   { id: 'overview',  label: 'Overview'              },
@@ -16,22 +15,9 @@ const NAV_TABS = [
  * Desktop: full top nav bar with logo + tabs + right actions.
  * Mobile: compact header + scrollable tab bar below.
  */
-export default function SMLayout({ 
-  activeTab, 
-  setActiveTab, 
-  onLogout, 
-  children, 
-  basketCount = 0, 
-  user, 
-  outlet,
-  deliveryArrived = true,
-  deliveryOtp = '482 910',
-  showOtpModal = false,
-  setShowOtpModal,
-  onConfirmDelivery
-}) {
+export default function SMLayout({ activeTab, setActiveTab, onLogout, children, basketCount = 0, user, outlet }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [hasNotifications, setHasNotifications] = useState(true);
   const [showChangePin, setShowChangePin] = useState(false);
 
   return (
@@ -50,8 +36,8 @@ export default function SMLayout({
 
           {/* Brand */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <img src={waypointLogo} alt="Waypoint Fresh" className="w-6 h-6 object-contain rounded-md" />
-            <span className="text-[17px] font-bold text-[#0B2019] tracking-tight">Waypoint Fresh</span>
+            <img src={waypointLogo} alt="Waypoint Tech" className="w-6 h-6 object-contain rounded-md" />
+            <span className="text-[17px] font-bold text-[#0B2019] tracking-tight">Waypoint Tech</span>
           </div>
 
           {/* Tabs */}
@@ -89,90 +75,16 @@ export default function SMLayout({
               Nugegoda <ChevronDown size={12} className="text-slate-400" />
             </button>
 
-            {/* Notification Bell with Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors cursor-pointer"
-                title="Notifications"
-              >
-                <Bell size={15} strokeWidth={2} />
-                {deliveryArrived && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white animate-pulse" />
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-88 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-bold text-slate-900">Notifications</span>
-                      {deliveryArrived && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                          1 New
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowNotifications(false)}
-                      className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 cursor-pointer"
-                    >
-                      Close
-                    </button>
-                  </div>
-
-                  <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                    {deliveryArrived ? (
-                      <div className="p-3.5 bg-emerald-50/40 hover:bg-emerald-50/70 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                            <Truck size={16} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="text-[12px] font-bold text-emerald-950 truncate">Delivery Arrived!</span>
-                              <span className="text-[10px] font-medium text-emerald-700 shrink-0">Just now</span>
-                            </div>
-                            <p className="text-[12px] text-slate-600 leading-snug mb-2.5">
-                              Order <span className="font-semibold text-slate-800">#ORD-2026-0929</span> is at the loading bay. Driver Kamal Perera is waiting for confirmation OTP.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowNotifications(false);
-                                setShowOtpModal?.(true);
-                              }}
-                              className="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                            >
-                              <KeyRound size={13} />
-                              <span>View OTP &amp; Confirm Handover</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-slate-400 text-[12px]">
-                        No active arrival alerts
-                      </div>
-                    )}
-
-                    <div className="p-3.5 opacity-70">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 mt-0.5">
-                          <Check size={16} />
-                        </div>
-                        <div>
-                          <p className="text-[12px] font-semibold text-slate-800">Order #ORD-2026-0928 Verified</p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">All items received in good condition · Yesterday</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <button
+              type="button"
+              onClick={() => setHasNotifications(false)}
+              className="relative w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors"
+            >
+              <Bell size={15} strokeWidth={2} />
+              {hasNotifications && (
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand-600 rounded-full ring-1 ring-white" />
               )}
-            </div>
+            </button>
 
             <div className="relative">
               <button
@@ -211,8 +123,8 @@ export default function SMLayout({
       <header className="md:hidden sticky top-0 z-30 bg-white border-b border-slate-200">
         <div className="px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={waypointLogo} alt="Waypoint Fresh" className="w-7 h-7 object-contain rounded-md" />
-            <span className="text-[17px] font-bold text-[#0B2019] tracking-tight">Waypoint Fresh</span>
+            <img src={waypointLogo} alt="Waypoint Tech" className="w-7 h-7 object-contain rounded-md" />
+            <span className="text-[17px] font-bold text-[#0B2019] tracking-tight">Waypoint Tech</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -221,56 +133,16 @@ export default function SMLayout({
             >
               Nugegoda <ChevronDown size={11} className="text-slate-400" />
             </button>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500"
-              >
-                <Bell size={15} strokeWidth={2} />
-                {deliveryArrived && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white animate-pulse" />
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-slate-900">Notifications</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowNotifications(false)}
-                      className="text-[11px] font-semibold text-slate-400 hover:text-slate-600"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  <div className="p-3">
-                    {deliveryArrived ? (
-                      <div className="p-2.5 bg-emerald-50/70 rounded-xl">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Truck size={15} className="text-emerald-700" />
-                          <span className="text-[12px] font-bold text-emerald-950">Delivery Arrived!</span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 mb-2">Order #ORD-2026-0929 arrived at loading bay.</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowNotifications(false);
-                            setShowOtpModal?.(true);
-                          }}
-                          className="w-full py-1.5 px-3 bg-emerald-600 text-white text-[11px] font-bold rounded-lg shadow-xs cursor-pointer"
-                        >
-                          Provide OTP to Driver
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-center text-[12px] text-slate-400 py-2">No active notifications</p>
-                    )}
-                  </div>
-                </div>
+            <button
+              type="button"
+              onClick={() => setHasNotifications(false)}
+              className="relative w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500"
+            >
+              <Bell size={15} strokeWidth={2} />
+              {hasNotifications && (
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand-600 rounded-full ring-1 ring-white" />
               )}
-            </div>
+            </button>
             <div className="relative">
               <button
                 type="button"
@@ -334,15 +206,6 @@ export default function SMLayout({
       <main className="flex-1 overflow-hidden">
         {children}
       </main>
-
-      {/* ── Delivery OTP Handover Modal ── */}
-      <DeliveryOtpModal
-        isOpen={showOtpModal}
-        onClose={() => setShowOtpModal?.(false)}
-        otp={deliveryOtp}
-        outletName={outlet?.name ?? 'Nugegoda Outlet'}
-        onConfirmHandover={onConfirmDelivery}
-      />
     </div>
   );
 }

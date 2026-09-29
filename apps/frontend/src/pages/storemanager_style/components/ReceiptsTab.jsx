@@ -16,7 +16,7 @@ const ISSUE_TYPES = [
   { id: 'other',   label: 'Other'          },
 ];
 
-export default function ReceiptsTab({ isConfirmed }) {
+export default function ReceiptsTab() {
   const [expandedId, setExpandedId]       = useState(null);
   const [reportingId, setReportingId]     = useState(null);
 
@@ -26,31 +26,6 @@ export default function ReceiptsTab({ isConfirmed }) {
     <div className="h-full overflow-y-auto">
       <div className="max-w-screen-md mx-auto px-4 md:px-6 py-5 space-y-5 pb-10">
         <h2 className="text-[19px] font-bold text-slate-900">Receipts &amp; Deferrals</h2>
-
-        {/* ── Today's Confirmed Receipt Banner ── */}
-        {isConfirmed && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <Check size={18} strokeWidth={2.5} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-[14px] font-bold text-emerald-950">Today's Delivery Confirmed</p>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Handover Verified
-                  </span>
-                </div>
-                <p className="text-[12px] text-emerald-700 mt-0.5">
-                  Order #ORD-2026-0929 verified via Driver OTP. Goods received at loading dock.
-                </p>
-              </div>
-            </div>
-            <span className="text-[12px] font-semibold text-emerald-800 hidden sm:inline">
-              Today · Just now
-            </span>
-          </div>
-        )}
 
         {/* ── Pending receipt confirmation ── */}
         {ORDER_HISTORY.filter((o) => o.receipt === 'partial').length > 0 && (

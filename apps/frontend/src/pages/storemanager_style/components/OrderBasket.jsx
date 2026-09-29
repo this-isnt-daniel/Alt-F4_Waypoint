@@ -93,6 +93,7 @@ export default function OrderBasket({
               <div className="text-[13px] text-slate-900 space-y-0.5 mb-3">
                 <p className="font-bold">Delivery</p>
                 <p>{orderDate || 'Tomorrow · 30 Sep'}</p>
+                <p className="text-[12px] text-slate-500">Expected 7:40 AM</p>
               </div>
               {!isEmpty && (
                 <div className="pt-3 border-t border-slate-100">
@@ -218,6 +219,7 @@ export default function OrderBasket({
                   <div className="text-[13px] text-slate-900 space-y-0.5 mb-3">
                     <p className="font-bold">Delivery</p>
                     <p>{orderDate || 'Tomorrow · 30 Sep'}</p>
+                    <p className="text-[12px] text-slate-500">Expected 7:40 AM</p>
                   </div>
                   <div className="pt-3 border-t border-slate-200 w-full">
                     <p className="text-[12px] font-semibold text-slate-600">{totalItems} products</p>

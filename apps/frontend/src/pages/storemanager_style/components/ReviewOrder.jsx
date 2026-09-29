@@ -160,6 +160,8 @@ export default function ReviewOrder({ basket, onBack, onConfirm, onNavigateToPro
                 </span>
               </div>
 
+              <p className="text-slate-600 text-[12px]">Expected arrival · <span className="font-medium text-slate-800">{ORDER_CUTOFF.nextDelivery.split(' · ')[1]}</span></p>
+              
               {orderDate?.includes('Tomorrow') && (
                 <p className="text-[12px] text-slate-500 mt-2 border-t border-slate-100 pt-2">
                   Order closes today · {ORDER_CUTOFF.label}

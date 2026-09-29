@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, Check, Truck, KeyRound, ArrowRight } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 import { ACTIVE_ORDERS, DEFERRED_ORDERS } from '../data/orders';
 
 const STATUS_CONFIG = {
@@ -10,7 +10,7 @@ const STATUS_CONFIG = {
   'delivered':        { label: 'Delivered',        dot: 'bg-brand-500',  text: 'text-brand-700',  bg: 'bg-brand-50',  border: 'border-brand-200' },
 };
 
-export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, deliveryArrived = true, onOpenOtpModal }) {
+export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed }) {
   const todayOrders = ACTIVE_ORDERS.filter(o => o.deliveryDate === 'today');
   const upcomingOrders = ACTIVE_ORDERS.filter(o => o.deliveryDate !== 'today');
   
@@ -24,40 +24,7 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-screen-md mx-auto px-4 md:px-6 py-8 space-y-8 pb-24 md:pb-16">
-
-        {/* ── Order Arrived Alert Banner ── */}
-        {deliveryArrived && (
-          <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl p-4 md:p-5 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-300">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/20">
-                <Truck size={22} className="text-white animate-bounce" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-white/25 px-2 py-0.5 rounded-full text-white">
-                    Delivery Arrived
-                  </span>
-                  <span className="text-[11px] font-medium text-emerald-200">Loading Bay</span>
-                </div>
-                <h2 className="text-[16px] font-bold text-white tracking-tight">
-                  Order #ORD-2026-0929 has arrived!
-                </h2>
-                <p className="text-[13px] text-emerald-100 mt-0.5">
-                  Vehicle WP-CAD-8921 is at the loading dock. Provide the OTP to the driver to complete handover.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onOpenOtpModal}
-              className="px-4 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 text-[13px] font-bold rounded-lg transition-all shrink-0 shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-            >
-              <KeyRound size={16} className="text-emerald-700" />
-              <span>Provide OTP to Driver</span>
-            </button>
-          </div>
-        )}
+      <div className="max-w-screen-md mx-auto px-4 md:px-6 py-8 space-y-12 pb-24 md:pb-16">
 
         {/* ── SECTION 1: TODAY ── */}
         <section>
@@ -80,21 +47,10 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
                           <div>
                             <p className="text-[18px] font-bold text-slate-900 mb-1">{order.id}</p>
                             <div className="flex items-center gap-2">
-                              {deliveryArrived ? (
-                                <>
-                                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                                  <p className="text-[14px] font-bold text-emerald-700">
-                                    Arrived at Bay · Awaiting OTP
-                                  </p>
-                                </>
-                              ) : (
-                                <>
-                                  {order.status === 'out-for-delivery' && <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />}
-                                  <p className="text-[14px] font-semibold text-brand-700">
-                                    {STATUS_CONFIG[order.status]?.label || order.status}
-                                  </p>
-                                </>
-                              )}
+                              {order.status === 'out-for-delivery' && <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />}
+                              <p className="text-[14px] font-semibold text-brand-700">
+                                {STATUS_CONFIG[order.status]?.label || order.status}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -105,54 +61,37 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
                         
                         {/* Primary Action */}
                         <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                          {isConfirmed ? (
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700">
-                                <Check size={16} strokeWidth={2.5} /> Receipt confirmed via Driver OTP
+                          {order.status === 'out-for-delivery' ? (
+                            isConfirmed ? (
+                              <div className="flex items-center gap-1.5 text-[13px] font-semibold text-brand-700">
+                                <Check size={16} /> Receipt confirmed
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => onNavigate('receipts')}
-                                className="text-[12px] font-bold text-brand-600 hover:text-brand-800 flex items-center gap-1"
-                              >
-                                View in Receipts <ArrowRight size={13} />
-                              </button>
-                            </div>
-                          ) : deliveryArrived ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={onOpenOtpModal}
-                                className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
-                              >
-                                <KeyRound size={15} />
-                                <span>Provide OTP to Driver</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onNavigate('progress', order.id)}
-                                className="h-9 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-semibold transition-colors"
-                              >
-                                Track delivery
-                              </button>
-                            </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsConfirmed(true)}
+                                  className="h-9 px-4 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-[13px] font-semibold transition-colors shadow-sm"
+                                >
+                                  Confirm receipt
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigate('progress', order.id)}
+                                  className="h-9 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-semibold transition-colors"
+                                >
+                                  Track delivery
+                                </button>
+                              </>
+                            )
                           ) : (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => setIsConfirmed(true)}
-                                className="h-9 px-4 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-[13px] font-semibold transition-colors shadow-sm"
-                              >
-                                Confirm receipt
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onNavigate('progress', order.id)}
-                                className="h-9 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-semibold transition-colors"
-                              >
-                                Track delivery
-                              </button>
-                            </>
+                            <button
+                              type="button"
+                              onClick={() => onNavigate('progress', order.id)}
+                              className="h-9 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-semibold transition-colors"
+                            >
+                              View delivery
+                            </button>
                           )}
                         </div>
                       </div>
