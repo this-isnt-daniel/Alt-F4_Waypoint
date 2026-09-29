@@ -3,10 +3,10 @@ import waypointLogo from '../../../assets/icons/waypoint_logo.png';
 import { Bell, ChevronDown, LogOut } from 'lucide-react';
 
 const NAV_TABS = [
-  { id: 'overview',  label: 'Overview'              },
-  { id: 'order',     label: 'Place Order'            },
-  { id: 'progress',  label: 'Orders in Progress'     },
-  { id: 'receipts',  label: 'Receipts & Deferrals'  },
+  { id: 'overview', label: 'Overview' },
+  { id: 'order', label: 'Place Order' },
+  { id: 'progress', label: 'Orders in Progress' },
+  { id: 'receipts', label: 'Receipts & Deferrals' },
 ];
 
 /**
@@ -24,9 +24,9 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
     <div className="h-[100dvh] bg-[#F8FAF9] font-sans antialiased text-slate-900 flex flex-col relative">
 
       {showChangePin && (
-        <ChangePinModal 
-          user={user} 
-          onClose={() => setShowChangePin(false)} 
+        <ChangePinModal
+          user={user}
+          onClose={() => setShowChangePin(false)}
         />
       )}
 
@@ -49,11 +49,10 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap ${
-                    isActive
+                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap ${isActive
                       ? 'bg-brand-50 text-brand-700 font-semibold'
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {tab.label}
                   {tab.id === 'order' && basketCount > 0 && (
@@ -92,7 +91,7 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="w-8 h-8 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-[11px] font-bold flex items-center justify-center hover:bg-brand-100 transition-colors"
               >
-                {user ? user.name.split(' ').map(n => n[0]).join('').substring(0,2) : 'DP'}
+                {user ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'DP'}
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50">
@@ -149,12 +148,12 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="w-8 h-8 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-[11px] font-bold flex items-center justify-center"
               >
-                {user ? user.name.split(' ').map(n => n[0]).join('').substring(0,2) : 'JV'}
+                {user ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'DP'}
               </button>
               {showUserMenu && (
-                <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-1.5 w-40 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50">
                   <div className="px-3 py-2.5 border-b border-slate-100">
-                    <p className="text-[12px] font-semibold text-slate-900">{user?.name || 'Joseph Vijay - Store Manager'}</p>
+                    <p className="text-[12px] font-semibold text-slate-900">Store Manager</p>
                     <p className="text-[11px] text-slate-400">{outlet?.id ?? 'OUT-0043'}</p>
                   </div>
                   <button
@@ -184,11 +183,10 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 py-2.5 text-[12px] font-semibold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-                  isActive
+                className={`shrink-0 px-4 py-2.5 text-[12px] font-semibold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${isActive
                     ? 'border-brand-600 text-brand-700'
                     : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
+                  }`}
               >
                 {tab.label}
                 {tab.id === 'order' && basketCount > 0 && (
@@ -214,7 +212,7 @@ function ChangePinModal({ user, onClose }) {
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
-  
+
   const [currentPinError, setCurrentPinError] = useState(null);
   const [newPinError, setNewPinError] = useState(null);
   const [confirmPinError, setConfirmPinError] = useState(null);
@@ -227,7 +225,7 @@ function ChangePinModal({ user, onClose }) {
     setConfirmPinError(null);
 
     let isValid = true;
-    
+
     // Mock user.pin (in real app, this would be a backend check)
     // If we're mocking, we can either pass the auth object, or simulate:
     // Just for the sake of the mock, assume we have user.pin if passed, else just mock check it
@@ -271,7 +269,7 @@ function ChangePinModal({ user, onClose }) {
         <div className="px-5 pt-5 pb-4 border-b border-slate-100">
           <h2 className="text-[15px] font-bold text-slate-900 tracking-wide">CHANGE PIN</h2>
         </div>
-        
+
         {success ? (
           <div className="px-5 py-8 flex flex-col items-center justify-center text-center">
             <div className="w-12 h-12 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mb-3">
@@ -294,9 +292,8 @@ function ChangePinModal({ user, onClose }) {
                   value={currentPin}
                   onChange={(e) => handlePinInput(e.target.value, setCurrentPin)}
                   placeholder="• • • • • •"
-                  className={`w-full h-10 px-3 text-[18px] tracking-[0.2em] border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all ${
-                    currentPinError ? 'border-red-300 ring-1 ring-red-300' : 'border-slate-300'
-                  }`}
+                  className={`w-full h-10 px-3 text-[18px] tracking-[0.2em] border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all ${currentPinError ? 'border-red-300 ring-1 ring-red-300' : 'border-slate-300'
+                    }`}
                   autoFocus
                 />
                 {currentPinError && <p className="text-[11px] text-red-500 mt-1 font-medium">{currentPinError}</p>}
@@ -312,9 +309,8 @@ function ChangePinModal({ user, onClose }) {
                   value={newPin}
                   onChange={(e) => handlePinInput(e.target.value, setNewPin)}
                   placeholder="• • • • • •"
-                  className={`w-full h-10 px-3 text-[18px] tracking-[0.2em] border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all ${
-                    newPinError ? 'border-red-300 ring-1 ring-red-300' : 'border-slate-300'
-                  }`}
+                  className={`w-full h-10 px-3 text-[18px] tracking-[0.2em] border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all ${newPinError ? 'border-red-300 ring-1 ring-red-300' : 'border-slate-300'
+                    }`}
                 />
                 {newPinError && <p className="text-[11px] text-red-500 mt-1 font-medium">{newPinError}</p>}
               </div>
@@ -329,14 +325,13 @@ function ChangePinModal({ user, onClose }) {
                   value={confirmPin}
                   onChange={(e) => handlePinInput(e.target.value, setConfirmPin)}
                   placeholder="• • • • • •"
-                  className={`w-full h-10 px-3 text-[18px] tracking-[0.2em] border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all ${
-                    confirmPinError ? 'border-red-300 ring-1 ring-red-300' : 'border-slate-300'
-                  }`}
+                  className={`w-full h-10 px-3 text-[18px] tracking-[0.2em] border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all ${confirmPinError ? 'border-red-300 ring-1 ring-red-300' : 'border-slate-300'
+                    }`}
                 />
                 {confirmPinError && <p className="text-[11px] text-red-500 mt-1 font-medium">{confirmPinError}</p>}
               </div>
             </div>
-            
+
             <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 flex items-center gap-3">
               <button
                 type="button"

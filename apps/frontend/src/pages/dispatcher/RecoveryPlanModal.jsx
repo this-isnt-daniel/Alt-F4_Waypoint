@@ -62,11 +62,11 @@ export default function RecoveryPlanModal({
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 w-full max-w-[700px] overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
@@ -173,9 +173,9 @@ export default function RecoveryPlanModal({
                       </p>
                     </div>
                     <div className="text-left sm:text-right flex-shrink-0">
-                      <span className="text-xs text-slate-500 block">Delivery attempted but shop closed</span>
+                      <span className="text-xs text-slate-500 block">Cold-chain breach en-route; quarantined</span>
                       <div className="sm:text-right mt-0.5">
-                        <span className="text-xs font-bold text-slate-700">Shop Closed</span>
+                        <span className="text-xs font-bold text-slate-700">Quarantined</span>
                       </div>
                     </div>
                   </div>
