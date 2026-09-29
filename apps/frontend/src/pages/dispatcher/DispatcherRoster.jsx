@@ -1556,55 +1556,55 @@ export default function DispatcherRoster({ onLogout }) {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-6 py-5 flex flex-col gap-4">
-        {activeNav === 'Overview' ? (
-          <div className="flex flex-col gap-4">
-            {/* Top Depot Header & Metrics Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-              {/* Left: Depot Switcher & Inline KPI Metrics */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Peliyagoda Depot Dropdown */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowOverviewDepotMenu(!showOverviewDepotMenu)}
-                    className="inline-flex items-center gap-1.5 text-lg font-bold text-slate-900 hover:text-slate-700 transition cursor-pointer"
-                  >
-                    <span>{overviewDepot}</span>
-                    <ChevronDown size={18} className="text-slate-600 mt-0.5" />
-                  </button>
+        {/* Universal Top Depot Header & Metrics Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+          {/* Left: Depot Switcher & Inline KPI Metrics */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Depot Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowOverviewDepotMenu(!showOverviewDepotMenu)}
+                className="inline-flex items-center gap-1.5 text-lg font-bold text-slate-900 hover:text-slate-700 transition cursor-pointer"
+              >
+                <span>{overviewDepot}</span>
+                <ChevronDown size={18} className="text-slate-600 mt-0.5" />
+              </button>
 
-                  {showOverviewDepotMenu && (
-                    <div className="absolute left-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-30">
-                      {['Peliyagoda Depot', 'Kandy Regional Hub', 'Galle Hub'].map((depot) => (
-                        <button
-                          key={depot}
-                          type="button"
-                          onClick={() => {
-                            setOverviewDepot(depot);
-                            setShowOverviewDepotMenu(false);
-                          }}
-                          className={`w-full text-left px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 transition cursor-pointer ${
-                            overviewDepot === depot ? 'text-[#059669] bg-emerald-50/50' : 'text-slate-700'
-                          }`}
-                        >
-                          {depot}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              {showOverviewDepotMenu && (
+                <div className="absolute left-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-30">
+                  {['Peliyagoda Depot', 'Kandy Regional Hub'].map((depot) => (
+                    <button
+                      key={depot}
+                      type="button"
+                      onClick={() => {
+                        setOverviewDepot(depot);
+                        setShowOverviewDepotMenu(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 transition cursor-pointer ${
+                        overviewDepot === depot ? 'text-[#059669] bg-emerald-50/50' : 'text-slate-700'
+                      }`}
+                    >
+                      {depot}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Metric Chips with separators */}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {/* Fleet Utilization Chip */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
-                    <span className="text-slate-500 font-medium">Fleet Utilization</span>
-                    <span className="font-bold text-[#059669]">34 / 60 Active</span>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
+            {/* Metric Chips with separators */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {/* Fleet Utilization Chip */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white shadow-2xs">
+                <span className="text-slate-500 font-medium">Fleet Utilization</span>
+                <span className="font-bold text-[#059669]">34 / 60 Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {activeNav === 'Overview' ? (
+          <div className="flex flex-col gap-4">
             {/* Schematic Map Container */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
               {/* Map Header: Title & Vehicle/Route Search */}
