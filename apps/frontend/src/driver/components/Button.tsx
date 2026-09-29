@@ -1,5 +1,6 @@
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { AppIcon } from "./AppIcon";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "locked";
@@ -19,15 +20,15 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center font-semibold rounded-btn transition-colors focus-visible:outline-2 focus-visible:outline-green focus-visible:outline-offset-2 active:scale-[0.99]";
+    "inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-green focus-visible:outline-offset-2";
 
   const sizeStyles = {
-    md: "min-h-[48px] px-4 text-sm",
-    lg: "min-h-[56px] px-6 text-base",
+    md: "min-h-[48px] px-4 text-[13px]",
+    lg: "min-h-[56px] px-6 text-[13px]",
   };
 
   const variantStyles = {
-    primary: "bg-green text-green-ink hover:opacity-95 shadow-1",
+    primary: "bg-green text-white hover:opacity-95",
     secondary: "bg-raised text-ink border border-line hover:bg-surface",
     ghost: "bg-transparent text-green hover:bg-raised",
     danger: "bg-danger-fill text-danger border border-danger/20 hover:opacity-95",
@@ -45,12 +46,14 @@ export function Button({
         sizeStyles[size],
         variantStyles[variant],
         fullWidth && "w-full",
-        isLocked && "opacity-70 cursor-not-allowed active:scale-100",
+        isLocked && "opacity-70 cursor-not-allowed",
         className,
       )}
       {...props}
     >
-      {variant === "locked" && <span className="mr-2" aria-hidden="true">🔒</span>}
+      {variant === "locked" && (
+        <AppIcon name="lock" size={14} className="mr-2 opacity-70" />
+      )}
       {children}
     </button>
   );

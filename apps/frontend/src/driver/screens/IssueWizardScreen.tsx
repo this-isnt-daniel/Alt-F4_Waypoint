@@ -2,47 +2,26 @@ import { useState } from "react";
 import { useNavigator } from "@/router/navigator";
 import { Button } from "@/driver/components/Button";
 import { Card } from "@/driver/components/Card";
-import { ChoiceList, type ChoiceOption } from "@/driver/components/ChoiceList";
-import { KeyValueRow } from "@/driver/components/KeyValueRow";
-import { PhotoTile } from "@/driver/components/PhotoTile";
-import { Stepper } from "@/driver/components/Stepper";
-import { TRIP_1_STOPS } from "@/driver/data/driverContent";
+import { AppIcon } from "@/driver/components/AppIcon";
 import { useDriverState } from "@/driver/state/useDriverState";
 
 export function IssueWizardScreen() {
   const { route, push } = useNavigator();
   const { addSyncRecord, connection } = useDriverState();
-
   const outletId = route.params.outletId ?? "OUT058";
-  const stop = TRIP_1_STOPS.find((s) => s.outletId === outletId) ?? TRIP_1_STOPS[5]!;
 
-  const [step, setStep] = useState<number>(1);
-  const [category, setCategory] = useState<string | null>("Access problem");
-  const [detail, setDetail] = useState<string | null>("Mall bay unavailable");
-  const [hasPhoto, setHasPhoto] = useState<boolean>(false);
+  const [step, setStep] = useState(1);
+  const [category, setCategory] = useState<string | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
+  const [hasPhoto, setHasPhoto] = useState(false);
 
-  const categoryOptions: ChoiceOption[] = [
-    { id: "Item problem", label: "Item problem", description: "Damaged or missing crates" },
-    { id: "Access problem", label: "Access problem", description: "Bay closed or parking blocked" },
-    { id: "Temperature concern", label: "Temperature concern", description: "Reefer threshold variance" },
-    { id: "Receiver problem", label: "Receiver problem", description: "Manager absent or uncooperative" },
-    { id: "Vehicle problem", label: "Vehicle problem", description: "Mechanical or tire issue" },
-    { id: "Other", label: "Other", description: "General exception report" },
-  ];
-
-  const detailOptions: ChoiceOption[] = [
-    { id: "Outlet closed", label: "Outlet closed" },
-    { id: "Mall bay unavailable", label: "Mall bay unavailable" },
-    { id: "Unsafe unloading area", label: "Unsafe unloading area" },
-    { id: "Parking blocked", label: "Parking blocked" },
-    { id: "Access code failed", label: "Access code failed" },
-    { id: "Other access issue", label: "Other access issue" },
-  ];
+  const categories = ["Item problem", "Access problem", "Temperature concern", "Receiver problem", "Vehicle problem", "Other"];
+  const details = ["Outlet closed", "Mall bay unavailable", "Unsafe unloading area", "Parking blocked", "Access code failed", "Other access issue"];
 
   const handleSaveAndSend = () => {
     addSyncRecord({
       type: "issue",
-      outletId: stop.outletId,
+      outletId,
       state: connection === "online" ? "synced" : "pending",
       hasPhoto,
       pinVerified: false,
@@ -51,44 +30,46 @@ export function IssueWizardScreen() {
   };
 
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8">
-      <Stepper currentStep={step} totalSteps={4} label={`Step ${step} of 4`} />
+    <div className="p-4 space-y-4 max-w-[430px] mx-auto">
+      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Step {step} of 4</div>
 
       {step === 1 && (
         <div className="space-y-4">
           <div>
-            <h1 className="text-xl font-extrabold text-ink">What happened?</h1>
-            <p className="text-xs text-ink-muted">Select issue category for {stop.outletId}</p>
+            <h1 className="text-lg font-bold text-slate-900">What happened?</h1>
+            <p className="text-[13px] text-slate-500">Select issue category for {outletId}</p>
           </div>
-          <ChoiceList
-            options={categoryOptions}
-            selectedId={category}
-            onSelect={(id) => setCategory(id)}
-          />
-          <Button variant="primary" size="lg" disabled={!category} onClick={() => setStep(2)}>
-            Next: Specific detail
-          </Button>
+          <div className="space-y-2">
+            {categories.map((c) => (
+              <button key={c} type="button" onClick={() => setCategory(c)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${category === c ? "border-green/30 bg-green-fill" : "border-slate-200 bg-white"}`}>
+                <span className="text-[13px] font-medium text-slate-900">{c}</span>
+                {category === c && <AppIcon name="check" size={18} className="text-green" />}
+              </button>
+            ))}
+          </div>
+          <Button variant="primary" size="lg" disabled={!category} onClick={() => setStep(2)}>Next</Button>
         </div>
       )}
 
       {step === 2 && (
         <div className="space-y-4">
           <div>
-            <h1 className="text-xl font-extrabold text-ink">Which access problem?</h1>
-            <p className="text-xs text-ink-muted">Specify details for dispatch</p>
+            <h1 className="text-lg font-bold text-slate-900">Which {category?.toLowerCase()}?</h1>
+            <p className="text-[13px] text-slate-500">Specify details for dispatch</p>
           </div>
-          <ChoiceList
-            options={detailOptions}
-            selectedId={detail}
-            onSelect={(id) => setDetail(id)}
-          />
+          <div className="space-y-2">
+            {details.map((d) => (
+              <button key={d} type="button" onClick={() => setDetail(d)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${detail === d ? "border-green/30 bg-green-fill" : "border-slate-200 bg-white"}`}>
+                <span className="text-[13px] font-medium text-slate-900">{d}</span>
+                {detail === d && <AppIcon name="check" size={18} className="text-green" />}
+              </button>
+            ))}
+          </div>
           <div className="flex gap-2">
-            <Button variant="secondary" size="lg" onClick={() => setStep(1)}>
-              Back
-            </Button>
-            <Button variant="primary" size="lg" disabled={!detail} onClick={() => setStep(3)}>
-              Next: Evidence
-            </Button>
+            <Button variant="secondary" size="lg" fullWidth={false} className="flex-1" onClick={() => setStep(1)}>Back</Button>
+            <Button variant="primary" size="lg" fullWidth={false} className="flex-[2]" disabled={!detail} onClick={() => setStep(3)}>Next</Button>
           </div>
         </div>
       )}
@@ -96,22 +77,28 @@ export function IssueWizardScreen() {
       {step === 3 && (
         <div className="space-y-4">
           <div>
-            <h1 className="text-xl font-extrabold text-ink">Add evidence</h1>
-            <p className="text-xs text-ink-muted">
-              Evidence is optional, but helps dispatch resolve the issue faster.
-            </p>
+            <h1 className="text-lg font-bold text-slate-900">Add evidence</h1>
+            <p className="text-[13px] text-slate-500">Evidence is optional, but helps dispatch resolve the issue faster.</p>
           </div>
-          <PhotoTile
-            onPhotoCaptured={() => setHasPhoto(true)}
-            savedOfflineNote={connection === "offline"}
-          />
+          <div
+            className="w-full aspect-[4/3] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-green/40 transition-colors"
+            onClick={() => setHasPhoto(true)}
+          >
+            {hasPhoto ? (
+              <>
+                <AppIcon name="check-circle" size={40} className="text-green" />
+                <span className="text-[13px] font-medium text-green">Photo captured</span>
+              </>
+            ) : (
+              <>
+                <AppIcon name="camera" size={40} className="text-slate-300" />
+                <span className="text-[13px] text-slate-400">Tap to capture</span>
+              </>
+            )}
+          </div>
           <div className="flex gap-2">
-            <Button variant="secondary" size="lg" onClick={() => setStep(2)}>
-              Back
-            </Button>
-            <Button variant="primary" size="lg" onClick={() => setStep(4)}>
-              Review issue
-            </Button>
+            <Button variant="secondary" size="lg" fullWidth={false} className="flex-1" onClick={() => setStep(2)}>Back</Button>
+            <Button variant="primary" size="lg" fullWidth={false} className="flex-[2]" onClick={() => setStep(4)}>Review issue</Button>
           </div>
         </div>
       )}
@@ -119,30 +106,18 @@ export function IssueWizardScreen() {
       {step === 4 && (
         <div className="space-y-4">
           <div>
-            <h1 className="text-xl font-extrabold text-ink">Review issue</h1>
-            <p className="text-xs text-ink-muted">Confirm report details before filing</p>
+            <h1 className="text-lg font-bold text-slate-900">Review issue</h1>
+            <p className="text-[13px] text-slate-500">Confirm report details before filing</p>
           </div>
-
           <Card variant="surface" className="space-y-2">
-            <KeyValueRow label="Outlet" value={`${stop.outletId} · ${stop.name}`} />
-            <KeyValueRow label="Category" value={category ?? "Access problem"} />
-            <KeyValueRow label="Detail" value={detail ?? "Mall bay unavailable"} emphasis="strong" />
-            <KeyValueRow label="Evidence" value={hasPhoto ? "1 photo attached" : "None"} />
-            <KeyValueRow label="Time recorded" value="07:12" />
+            <div className="flex justify-between text-[13px]"><span className="text-slate-500">Outlet</span><span className="font-medium text-slate-900">{outletId}</span></div>
+            <div className="flex justify-between text-[13px]"><span className="text-slate-500">Category</span><span className="font-medium text-slate-900">{category}</span></div>
+            <div className="flex justify-between text-[13px]"><span className="text-slate-500">Detail</span><span className="font-medium text-slate-900">{detail}</span></div>
+            <div className="flex justify-between text-[13px]"><span className="text-slate-500">Evidence</span><span className="font-medium text-slate-900">{hasPhoto ? "1 photo attached" : "None"}</span></div>
           </Card>
-
-          <Card variant="raised" className="text-xs text-ink-muted leading-relaxed">
-            <span className="font-bold text-ink block mb-0.5">Offline-safe report:</span>
-            You can leave this screen after saving. The report remains on this phone until synced.
-          </Card>
-
           <div className="space-y-2 pt-2">
-            <Button variant="primary" size="lg" onClick={handleSaveAndSend}>
-              Save and send
-            </Button>
-            <Button variant="secondary" size="md" onClick={() => setStep(1)}>
-              Edit details
-            </Button>
+            <Button variant="primary" size="lg" onClick={handleSaveAndSend}>Save and send</Button>
+            <Button variant="secondary" size="md" onClick={() => setStep(1)}>Edit details</Button>
           </div>
         </div>
       )}

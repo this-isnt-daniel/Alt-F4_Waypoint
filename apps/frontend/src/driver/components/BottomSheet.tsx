@@ -1,148 +1,221 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { type DriverStop } from "@/driver/data/driverContent";
 import { Button } from "./Button";
 import { Chip } from "./Chip";
+import { AppIcon, type AppIconName } from "./AppIcon";
 import { cn } from "@/lib/cn";
-import { useNavigator } from "@/router/navigator";
 
-export interface BottomSheetProps {
+export interface StopBottomSheetProps {
   stop: DriverStop;
-  etaMin?: number;
-  windowClosingMin?: number;
+  etaMin: number;
+  windowClosingMin: number;
   onMarkArrived: () => void;
-  className?: string;
+  onChat?: () => void;
+  onCall?: () => void;
+  onDetails?: () => void;
+  open?: never;
+  onClose?: never;
+  title?: never;
+  subtitle?: never;
+  children?: never;
 }
 
-export function BottomSheet({
-  stop,
-  etaMin = 12,
-  windowClosingMin = 43,
-  onMarkArrived,
-  className,
-}: BottomSheetProps) {
-  const [expanded, setExpanded] = useState<boolean>(false);
-  const { push } = useNavigator();
+export interface ModalBottomSheetProps {
+  open?: boolean;
+  onClose: () => void;
+  title?: string;
+  subtitle?: string;
+  children?: ReactNode;
+  stop?: never;
+  etaMin?: never;
+  windowClosingMin?: never;
+  onMarkArrived?: never;
+  onChat?: never;
+  onCall?: never;
+  onDetails?: never;
+}
+
+export type BottomSheetProps = StopBottomSheetProps | ModalBottomSheetProps;
+
+export function BottomSheet(props: BottomSheetProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Modal variant for forms / confirmation sheets
+  if ("onClose" in props || "open" in props) {
+    if (!props.open) return null;
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+        onClick={props.onClose}
+      >
+        <div
+          className="max-h-[85vh] w-full max-w-[430px] overflow-y-auto rounded-t-2xl border-t border-line bg-surface p-4 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between pb-2 border-b border-line mb-3">
+            <div>
+              {props.title && (
+                <h3 className="text-base font-bold text-ink">{props.title}</h3>
+              )}
+              {props.subtitle && (
+                <p className="text-xs text-ink-muted">{props.subtitle}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={props.onClose}
+              className="p-1 rounded-lg text-ink-muted hover:bg-raised"
+              aria-label="Close"
+            >
+              <AppIcon name="x" size={18} />
+            </button>
+          </div>
+          <div>{props.children}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Active Trip Stop Bottom Sheet variant
+  if (!("stop" in props) || !props.stop) {
+    return null;
+  }
+
+  const {
+    stop,
+    etaMin,
+    windowClosingMin,
+    onMarkArrived,
+    onChat,
+    onCall,
+    onDetails,
+  } = props as StopBottomSheetProps;
+
+  const tempIcon: AppIconName = stop.temp.includes("Chilled")
+    ? "snowflake"
+    : "package";
+  const dockIcon: AppIconName =
+    stop.dock === "Mall bay" ? "building" : "package";
+  const parkingIcon: AppIconName =
+    stop.parking === "Van only" || stop.parking === "Mall dock"
+      ? "truck"
+      : "pin";
 
   return (
-    <div
-      className={cn(
-        "fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-surface border-t border-line rounded-t-[24px] shadow-2 z-40 transition-all duration-300",
-        expanded ? "max-h-[85vh] overflow-y-auto" : "max-h-[320px]",
-        className,
-      )}
-    >
-      {/* Handle bar */}
-      <button
-        type="button"
-        onClick={() => setExpanded((prev) => !prev)}
-        aria-label={expanded ? "Collapse stop details" : "Expand stop details"}
-        className="w-full py-2.5 flex items-center justify-center cursor-pointer hover:opacity-80 focus:outline-none"
-      >
-        <div className="h-1.5 w-12 rounded-pill bg-line" />
-      </button>
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40">
+      <div className="bg-white border-t border-slate-200 rounded-t-2xl shadow-lg px-4 pt-3 pb-6">
+        {/* Handle */}
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="w-full flex justify-center pb-2"
+          aria-label={expanded ? "Collapse details" : "Expand details"}
+        >
+          <div className="w-10 h-1 rounded-full bg-slate-300" />
+        </button>
 
-      <div className="px-5 pb-6 space-y-4">
-        {/* Header line */}
-        <div className="flex items-center justify-between">
-          <span className="text-2xs font-extrabold tracking-wider text-green uppercase">
-            NEXT · {stop.outletId}
-          </span>
-          <Chip
-            kind="status"
-            tone={windowClosingMin <= 15 ? "windowClosing" : "onTime"}
-            label={`Closes in ${windowClosingMin} min`}
-          />
-        </div>
-
-        {/* Title & Address */}
-        <div>
-          <h2 className="text-lg font-bold text-ink leading-tight">{stop.name}</h2>
-          <p className="text-xs text-ink-muted mt-0.5">{stop.address}</p>
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <span className="text-[10px] font-bold tracking-wider uppercase text-green">
+              NEXT
+            </span>
+            <div className="text-[15px] font-bold text-slate-900">
+              {stop.outletId}
+            </div>
+            <div className="text-[13px] text-slate-500">{stop.name}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[12px] font-semibold text-slate-900">
+              ETA {etaMin} min
+            </div>
+            <div className="text-[11px] text-amber-600">
+              Closes in {windowClosingMin} min
+            </div>
+          </div>
         </div>
 
         {/* Restriction chips */}
-        <div className="flex flex-wrap gap-2">
-          <Chip kind="restriction" category="dock" label={stop.dock} glyph="🚛" />
-          <Chip kind="restriction" category="access" label={stop.parking} glyph="🅿" />
-          <Chip kind="restriction" category="temperature" label={stop.temp} glyph="❄" />
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          <Chip
+            kind="restriction"
+            category="temperature"
+            label={stop.temp}
+            icon={tempIcon}
+          />
+          <Chip
+            kind="restriction"
+            category="dock"
+            label={stop.dock}
+            icon={dockIcon}
+          />
+          {stop.parking !== "Normal" && (
+            <Chip
+              kind="restriction"
+              category="access"
+              label={stop.parking}
+              icon={parkingIcon}
+            />
+          )}
         </div>
 
-        {/* Primary CTA */}
-        <div className="pt-1">
-          <Button variant="primary" size="lg" onClick={onMarkArrived}>
-            Mark arrived
-          </Button>
-        </div>
-
-        {/* Secondary actions */}
-        <div className="grid grid-cols-3 gap-2">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={() => push("chat", { outletId: stop.outletId })}
-          >
-            💬 Chat
-          </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={() => push("call-overlay", { outletId: stop.outletId })}
-          >
-            📞 Call
-          </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={() => push("stop-detail", { seq: String(stop.seq) })}
-          >
-            📋 Details
-          </Button>
-        </div>
-
-        {/* Expanded Content */}
+        {/* Expanded content */}
         {expanded && (
-          <div className="pt-4 border-t border-line space-y-3.5 text-sm">
-            <div className="bg-raised p-3.5 rounded-btn space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-ink-muted">Dock Detail:</span>
-                <span className="font-semibold text-ink">{stop.dockDetail ?? stop.dock}</span>
+          <div className="space-y-2 mb-3 py-3 border-t border-slate-100">
+            {stop.dockDetail && (
+              <div className="text-[12px] text-slate-500">
+                Dock: {stop.dock} · {stop.dockDetail}
               </div>
-              {stop.mallWindow && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-ink-muted">Mall Access Window:</span>
-                  <span className="font-semibold text-ink">{stop.mallWindow}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-xs">
-                <span className="text-ink-muted">Expected Service Time:</span>
-                <span className="font-semibold text-ink">{stop.serviceMin} min</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-ink-muted">Remaining Route:</span>
-                <span className="font-semibold text-ink">6 stops · 96 km left</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-ink-muted">Fuel Quota:</span>
-                <span className="font-semibold text-ink">39 L remaining</span>
-              </div>
-            </div>
-
+            )}
             {stop.instructions && (
-              <div className="p-3 bg-surface border border-line rounded-btn text-xs text-ink leading-relaxed">
-                <span className="font-bold block text-ink-muted mb-1">Special Instructions:</span>
+              <div className="text-[12px] text-slate-700">
                 {stop.instructions}
               </div>
             )}
-
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => push("issue-wizard", { outletId: stop.outletId })}
-            >
-              ⚠️ Report Issue / Delay
-            </Button>
+            <div className="text-[12px] text-slate-500">
+              Window: {stop.window}
+            </div>
           </div>
         )}
+
+        {/* Actions */}
+        <Button variant="primary" size="lg" onClick={onMarkArrived}>
+          Mark arrived
+        </Button>
+
+        {/* Secondary action row */}
+        <div className="flex items-center justify-center gap-6 mt-3">
+          {onChat && (
+            <button
+              type="button"
+              onClick={onChat}
+              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green"
+            >
+              <AppIcon name="message" size={20} />
+              <span className="text-[10px]">Chat</span>
+            </button>
+          )}
+          {onCall && (
+            <button
+              type="button"
+              onClick={onCall}
+              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green"
+            >
+              <AppIcon name="phone" size={20} />
+              <span className="text-[10px]">Call</span>
+            </button>
+          )}
+          {onDetails && (
+            <button
+              type="button"
+              onClick={onDetails}
+              className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-green"
+            >
+              <AppIcon name="list" size={20} />
+              <span className="text-[10px]">Details</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

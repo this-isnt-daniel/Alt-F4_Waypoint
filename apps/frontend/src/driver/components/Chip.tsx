@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { AppIcon, type AppIconName } from "./AppIcon";
 
 export type ChipProps =
   | {
@@ -11,7 +12,7 @@ export type ChipProps =
       kind: "restriction";
       category: "temperature" | "access" | "dock";
       label: string;
-      glyph: string;
+      icon: AppIconName;
       className?: string;
     }
   | {
@@ -45,7 +46,7 @@ export type ChipProps =
 
 export function Chip(props: ChipProps) {
   const baseStyles =
-    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium tracking-wide uppercase";
+    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase";
 
   if (props.kind === "restriction") {
     return (
@@ -56,7 +57,7 @@ export function Chip(props: ChipProps) {
           props.className,
         )}
       >
-        <span aria-hidden="true">{props.glyph}</span>
+        <AppIcon name={props.icon} size={12} />
         <span>{props.label}</span>
       </span>
     );
@@ -69,12 +70,12 @@ export function Chip(props: ChipProps) {
         className={cn(
           baseStyles,
           isLocked
-            ? "bg-offline-fill text-offline border border-line"
-            : "bg-green-fill text-green-ink border border-green/30 font-semibold",
+            ? "bg-raised text-ink-muted border border-line"
+            : "bg-green-fill text-green border border-green/20 font-semibold",
           props.className,
         )}
       >
-        <span aria-hidden="true">{isLocked ? "🔒" : "❄"}</span>
+        <AppIcon name={isLocked ? "lock" : "snowflake"} size={12} />
         <span>{props.label}</span>
       </span>
     );
@@ -99,30 +100,30 @@ export function Chip(props: ChipProps) {
     const isFailedZero = props.tone === "failed" && (props.count === 0 || props.count === undefined);
 
     let toneStyle = "bg-success-fill text-success border border-success/30";
-    let glyph = "✓";
+    let iconName: AppIconName = "check";
 
     if (props.tone === "partial") {
       toneStyle = "bg-warning-fill text-warning border border-warning/30";
-      glyph = "⚠";
+      iconName = "alert";
     } else if (props.tone === "failed") {
       if (isFailedZero) {
-        toneStyle = "bg-offline-fill text-offline border border-line";
-        glyph = "•";
+        toneStyle = "bg-raised text-ink-muted border border-line";
+        iconName = "dot";
       } else {
         toneStyle = "bg-danger-fill text-danger border border-danger/30";
-        glyph = "✕";
+        iconName = "x";
       }
     } else if (props.tone === "returned") {
-      toneStyle = "bg-offline-fill text-offline border border-line";
-      glyph = "↩";
+      toneStyle = "bg-raised text-ink-muted border border-line";
+      iconName = "refresh";
     } else if (props.tone === "tripComplete" || props.tone === "complete") {
       toneStyle = "bg-success-fill text-success border border-success/30";
-      glyph = "★";
+      iconName = "check-circle";
     }
 
     return (
       <span className={cn(baseStyles, toneStyle, props.className)}>
-        <span aria-hidden="true">{glyph}</span>
+        <AppIcon name={iconName} size={12} />
         <span>{props.label}</span>
       </span>
     );
@@ -131,20 +132,27 @@ export function Chip(props: ChipProps) {
   if (props.kind === "sync") {
     const toneStyles: Record<string, string> = {
       online: "bg-success-fill text-success border border-success/30",
-      offline: "bg-offline-fill text-offline border border-line",
-      saving: "bg-warning-fill text-warning border border-warning/30",
-      pending: "bg-offline-fill text-offline border border-line",
-      syncing: "bg-offline-fill text-offline border border-line animate-pulse",
+      offline: "bg-raised text-ink-muted border border-line",
+      saving: "bg-raised text-ink-muted border border-line",
+      pending: "bg-raised text-ink-muted border border-line",
+      syncing: "bg-raised text-ink-muted border border-line animate-pulse",
       success: "bg-success-fill text-success border border-success/30",
       failed: "bg-danger-fill text-danger border border-danger/30",
       inReview: "bg-warning-fill text-warning border border-warning/30",
-      routeUpdated: "bg-warning-fill text-warning border border-warning/30",
-      forwarded: "bg-offline-fill text-offline border border-line",
+      routeUpdated: "bg-raised text-ink-muted border border-line",
+      forwarded: "bg-raised text-ink-muted border border-line",
+    };
+
+    const iconMap: Record<string, AppIconName> = {
+      online: "wifi", offline: "wifi-off", saving: "refresh",
+      pending: "clock", syncing: "refresh", success: "check",
+      failed: "alert", inReview: "eye", routeUpdated: "route",
+      forwarded: "send",
     };
 
     return (
       <span className={cn(baseStyles, toneStyles[props.tone] ?? toneStyles.offline, props.className)}>
-        <span aria-hidden="true">●</span>
+        <AppIcon name={iconMap[props.tone] ?? "dot"} size={12} />
         <span>{props.label}</span>
       </span>
     );

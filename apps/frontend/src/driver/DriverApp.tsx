@@ -1,7 +1,10 @@
-import { type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { NavigatorProvider, useNavigator, type ScreenId } from "@/router/navigator";
 import { DriverStateProvider } from "@/driver/state/DriverStateProvider";
 import { PreTripBar, ActiveTripBar } from "@/driver/components/TopBar";
+import { useDemoMode } from "@/driver/state/useDemoMode";
+import { ScenarioPanel } from "@/driver/components/ScenarioPanel";
+import { ListChecks } from "lucide-react";
 
 // Import all screens
 import { SignInScreen } from "./screens/SignInScreen";
@@ -87,6 +90,9 @@ const PRE_TRIP_SCREENS: ScreenId[] = [
 
 function DriverContent() {
   const { route } = useNavigator();
+  const demo = useDemoMode();
+  const [scenOpen, setScenOpen] = useState(false);
+
   const Screen = SCREEN_MAP[route.id] ?? SignInScreen;
   const isPreTrip = PRE_TRIP_SCREENS.includes(route.id);
 
@@ -100,7 +106,22 @@ function DriverContent() {
       </a>
 
       {/* Container wrapper */}
-      <div className="max-w-[430px] mx-auto min-h-screen bg-canvas flex flex-col shadow-2">
+      <div className="max-w-[430px] mx-auto min-h-screen bg-canvas flex flex-col shadow-2 relative">
+        {/* Demo mode quick button if ?demo=1 */}
+        {demo && (
+          <div className="bg-slate-900 text-white px-4 py-1.5 flex items-center justify-between text-xs">
+            <span className="font-semibold text-emerald-400">Judge / Demo Mode</span>
+            <button
+              type="button"
+              onClick={() => setScenOpen(true)}
+              className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-medium"
+            >
+              <ListChecks size={13} />
+              <span>Scenarios</span>
+            </button>
+          </div>
+        )}
+
         {isPreTrip ? (
           <PreTripBar />
         ) : (
@@ -110,6 +131,10 @@ function DriverContent() {
         <main id="driver-main" className="flex-1">
           <Screen />
         </main>
+
+        {demo && (
+          <ScenarioPanel open={scenOpen} onClose={() => setScenOpen(false)} />
+        )}
       </div>
     </div>
   );

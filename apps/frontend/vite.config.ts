@@ -9,7 +9,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      "react": path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "node_modules/react/jsx-runtime"),
     },
+    dedupe: ["react", "react-dom"],
   },
   server: {
     port: 5173,
@@ -28,5 +32,10 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
+    server: {
+      deps: {
+        inline: ["lucide-react"],
+      },
+    },
   },
 });

@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { AppIcon, type AppIconName } from "./AppIcon";
 
 export interface BannerProps {
   tone?: "warning" | "info" | "success" | "danger";
@@ -23,11 +24,11 @@ export function Banner({
     danger: "bg-danger-fill text-ink border-danger/30",
   };
 
-  const iconGlyphs = {
-    warning: "⚠",
-    info: "ℹ",
-    success: "✓",
-    danger: "✕",
+  const icons: Record<string, AppIconName> = {
+    warning: "alert",
+    info: "dot",
+    success: "check",
+    danger: "x",
   };
 
   return (
@@ -39,8 +40,8 @@ export function Banner({
       )}
       role="alert"
     >
-      <span className="text-base shrink-0 font-bold" aria-hidden="true">
-        {iconGlyphs[tone]}
+      <span className="shrink-0 pt-0.5" aria-hidden="true">
+        <AppIcon name={icons[tone] ?? "alert"} size={16} />
       </span>
       <div className="min-w-0 flex-1">
         {title && <div className="font-bold text-ink mb-0.5">{title}</div>}
