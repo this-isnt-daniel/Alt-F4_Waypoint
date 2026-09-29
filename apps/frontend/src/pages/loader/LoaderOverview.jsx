@@ -17,7 +17,7 @@ export default function LoaderOverview({ onLogout }) {
           <div className="flex items-center gap-3">
             <img src={waypointLogo} alt="Logo" className="w-10 h-10 object-contain rounded-full bg-black p-1" />
             <div>
-              <h1 className="text-[19px] font-bold text-slate-900 leading-tight">Peliyagoda Central Depot</h1>
+              <h1 className="text-[19px] font-bold text-slate-900 leading-tight">Kasun Kalhara - Loader</h1>
               <p className="text-[13px] text-slate-500">Peliyagoda Central Hub · Bay Lead A</p>
             </div>
           </div>
