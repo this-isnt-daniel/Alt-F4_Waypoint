@@ -23,6 +23,16 @@ def get_messages(
     db: sqlite3.Connection = Depends(get_db),
 ):
     cur = db.cursor()
+    driver_id = driver["sub"]
+    cur.execute("""
+        SELECT s.id
+        FROM stops s
+        JOIN trips t ON s.trip_id = t.id
+        WHERE s.id = ? AND t.driver_id = ?
+    """, (stop_id, driver_id))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Stop not found or not assigned to driver")
+
     cur.execute("""
         SELECT id, stop_id, sender_role, sender_id, body, client_event_id, quick_reply, created_at
         FROM messages
@@ -53,6 +63,16 @@ def send_message(
     db: sqlite3.Connection = Depends(get_db),
 ):
     cur = db.cursor()
+    driver_id = driver["sub"]
+
+    cur.execute("""
+        SELECT s.id
+        FROM stops s
+        JOIN trips t ON s.trip_id = t.id
+        WHERE s.id = ? AND t.driver_id = ?
+    """, (stop_id, driver_id))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Stop not found or not assigned to driver")
 
     cur.execute("SELECT id FROM messages WHERE client_event_id = ?", (request.client_event_id,))
     existing = cur.fetchone()
@@ -65,7 +85,7 @@ def send_message(
     cur.execute("""
         INSERT INTO messages (id, stop_id, sender_role, sender_id, body, client_event_id, quick_reply, created_at)
         VALUES (?, ?, 'driver', ?, ?, ?, ?, ?)
-    """, (msg_id, stop_id, driver["sub"], request.body, request.client_event_id, 1 if request.quick_reply else 0, now_iso))
+    """, (msg_id, stop_id, driver_id, request.body, request.client_event_id, 1 if request.quick_reply else 0, now_iso))
 
     db.commit()
     return SendMessageResponse(status="sent", message_id=msg_id)
@@ -79,8 +99,17 @@ def call_intent(
     db: sqlite3.Connection = Depends(get_db),
 ):
     cur = db.cursor()
-    cur.execute("SELECT manager_phone_masked FROM stops WHERE id = ?", (stop_id,))
+    driver_id = driver["sub"]
+
+    cur.execute("""
+        SELECT s.id, s.manager_phone_masked
+        FROM stops s
+        JOIN trips t ON s.trip_id = t.id
+        WHERE s.id = ? AND t.driver_id = ?
+    """, (stop_id, driver_id))
     row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Stop not found or not assigned to driver")
 
     masked_num = row["manager_phone_masked"] if row and row["manager_phone_masked"] else "+94 11 700 0042"
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()

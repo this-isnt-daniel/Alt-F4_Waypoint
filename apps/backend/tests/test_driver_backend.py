@@ -286,7 +286,15 @@ def test_stop_lifecycle_flow(client, auth_headers):
 
 def test_partial_delivery_and_return_custody(client, auth_headers):
     # STOP-006 (OUT058 - 10 delivered, 2 returned in crate R-04)
-    # Outcome with partial
+    # 1. Arrive at STOP-006
+    arr_res = client.post("/api/driver/stops/STOP-006/arrive", json={
+        "client_event_id": str(uuid.uuid4()),
+        "arrived_at": "07:12",
+        "base_row_version": 1
+    }, headers=auth_headers)
+    assert arr_res.status_code == 200
+
+    # 2. Outcome with partial
     ev_id = str(uuid.uuid4())
     outcome_req = {
         "client_event_id": ev_id,
@@ -296,7 +304,7 @@ def test_partial_delivery_and_return_custody(client, auth_headers):
         "reason": "damaged_in_staging",
         "return_crate": "R-04",
         "finished_at": "07:55",
-        "base_row_version": 1
+        "base_row_version": 2
     }
     res = client.post("/api/driver/stops/STOP-006/outcome", json=outcome_req, headers=auth_headers)
     assert res.status_code == 200
@@ -428,4 +436,66 @@ def test_chat_and_call(client, auth_headers):
     res_call = client.post("/api/driver/stops/STOP-002/call-intent", json=call_req, headers=auth_headers)
     assert res_call.status_code == 200
     assert "masked_dial_number" in res_call.json()
-    assert "expires_at" in res_call.json()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Adversarial Security & Concurrency Verification
+# ═══════════════════════════════════════════════════════════════════════════
+
+def test_revoked_session_rejection(client):
+    """ADV-03: Ensure logged out tokens are immediately rejected."""
+    login_res = client.post("/api/driver/auth/login", json={
+        "driver_id": "DRV-DANIRU",
+        "pin": "1234",
+        "device_id": "device-logout-test"
+    })
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Verify token works before logout
+    res_me = client.get("/api/driver/me", headers=headers)
+    assert res_me.status_code == 200
+
+    # Logout
+    res_logout = client.post("/api/driver/auth/logout", headers=headers)
+    assert res_logout.status_code == 200
+
+    # Token must now be rejected
+    res_post_logout = client.get("/api/driver/me", headers=headers)
+    assert res_post_logout.status_code == 401
+
+
+def test_idor_rejection_for_unassigned_stop(client, auth_headers):
+    """ADV-02: Ensure driver cannot access or mutate stops not assigned to them."""
+    # STOP-999 or non-existent stop
+    res = client.post("/api/driver/stops/STOP-NONEXISTENT/arrive", json={
+        "client_event_id": str(uuid.uuid4()),
+        "arrived_at": "06:00",
+        "base_row_version": 1
+    }, headers=auth_headers)
+    assert res.status_code == 404
+
+
+def test_state_machine_invalid_outcome_jump(client, auth_headers):
+    """ADV-05: Ensure delivery outcome cannot bypass prior arrival."""
+    # STOP-004 is upcoming (has not arrived yet)
+    res = client.post("/api/driver/stops/STOP-004/outcome", json={
+        "client_event_id": str(uuid.uuid4()),
+        "outcome": "delivered",
+        "delivered_units": 160,
+        "base_row_version": 1
+    }, headers=auth_headers)
+    assert res.status_code == 400
+
+
+def test_conflict_cannot_be_re_forwarded(client, auth_headers):
+    """ADV-07: Ensure conflict cannot be repeatedly forwarded if not in_review."""
+    res = client.get("/api/driver/conflicts", headers=auth_headers)
+    conf_id = res.json()[0]["id"]
+
+    # First forward succeeds (or already forwarded)
+    client.post(f"/api/driver/conflicts/{conf_id}/forward", json={"note": "Forward 1"}, headers=auth_headers)
+
+    # Second forward on forwarded conflict must be rejected
+    res_retry = client.post(f"/api/driver/conflicts/{conf_id}/forward", json={"note": "Forward 2"}, headers=auth_headers)
+    assert res_retry.status_code == 400

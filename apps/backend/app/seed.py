@@ -14,7 +14,7 @@ Run:  python -m app.seed
 
 import json
 import uuid
-from app.database import init_db, get_db
+from app.database import init_db, get_db_connection
 from app.middleware.auth_middleware import hash_pin
 
 
@@ -24,11 +24,12 @@ def _id() -> str:
 
 def seed():
     init_db()
-    db = get_db()
+    db = get_db_connection()
 
     # Check if already seeded
     row = db.execute("SELECT COUNT(*) as c FROM drivers").fetchone()
     if row["c"] > 0:
+        db.close()
         print("Database already seeded. Drop waypoint_driver.db to re-seed.")
         return
 
@@ -218,6 +219,7 @@ def seed():
     )
 
     db.commit()
+    db.close()
     print("[OK] Database seeded successfully.")
     print(f"  Driver: {driver_id} (PIN: 1234)")
     print(f"  Trip 1: {trip1_id} -- Fresh Kandy, 8 stops")

@@ -1,4 +1,4 @@
-"""Module D -- Stop lifecycle events API."""
+"""Module D -- Stop lifecycle events API with adversarial hardening."""
 
 import uuid
 import json
@@ -25,6 +25,23 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _get_stop_for_driver(cur, stop_id: str, driver_id: str):
+    """Verify stop exists AND belongs to the authenticated driver (Fix for ADV-02)."""
+    cur.execute("""
+        SELECT s.id, s.trip_id, s.row_version, s.status, s.window_open, s.window_close
+        FROM stops s
+        JOIN trips t ON s.trip_id = t.id
+        WHERE s.id = ? AND t.driver_id = ?
+    """, (stop_id, driver_id))
+    stop = cur.fetchone()
+    if not stop:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Stop not found or not assigned to driver"
+        )
+    return stop
+
+
 # ── POST /{stop_id}/arrive ───────────────────────────────────────────────
 
 @router.post("/{stop_id}/arrive", response_model=ArriveResponse)
@@ -43,13 +60,18 @@ def stop_arrive(
     if existing:
         return ArriveResponse(status="already_applied", server_event_id=existing["id"])
 
-    # 2. Verify stop exists
-    cur.execute("SELECT id, trip_id, row_version, window_open, window_close FROM stops WHERE id = ?", (stop_id,))
-    stop = cur.fetchone()
-    if not stop:
-        raise HTTPException(status_code=404, detail="Stop not found")
+    # 2. Verify stop ownership (Fix for ADV-02)
+    stop = _get_stop_for_driver(cur, stop_id, driver_id)
 
-    # 3. Check optimistic concurrency
+    # 3. State machine guard (Fix for ADV-05)
+    if stop["status"] in ["delivered", "returned"]:
+        return ArriveResponse(
+            status="already_applied",
+            new_row_version=stop["row_version"],
+            window_status="on_time",
+        )
+
+    # 4. Check optimistic concurrency
     if stop["row_version"] != request.base_row_version:
         conflict_id = str(uuid.uuid4())
         driver_record = {"stop_id": stop_id, "arrived_at": request.arrived_at, "base_row_version": request.base_row_version}
@@ -61,7 +83,7 @@ def stop_arrive(
         db.commit()
         return ArriveResponse(status="conflict")
 
-    # 4. Window status calculation
+    # 5. Window status calculation
     window_status = "on_time"
     if stop["window_open"] and stop["window_close"]:
         arr_time = request.arrived_at.split("T")[-1][:5] if "T" in request.arrived_at else request.arrived_at[:5]
@@ -85,7 +107,7 @@ def stop_arrive(
     event_id = str(uuid.uuid4())
     gps_dict = request.gps.model_dump() if request.gps else None
 
-    # 5. Insert into driver_events
+    # 6. Insert into driver_events
     cur.execute("""
         INSERT INTO driver_events (
             id, driver_id, client_event_id, kind, stop_id, trip_id,
@@ -99,7 +121,7 @@ def stop_arrive(
         stop["row_version"], stop["row_version"] + 1
     ))
 
-    # 6. Update stop
+    # 7. Update stop
     new_version = stop["row_version"] + 1
     cur.execute("UPDATE stops SET status = 'arrived', row_version = ? WHERE id = ?", (new_version, stop_id))
     db.commit()
@@ -129,10 +151,20 @@ def submit_checklist(
     if existing:
         return ChecklistResponse(status="already_applied", server_event_id=existing["id"])
 
-    cur.execute("SELECT id, trip_id, row_version FROM stops WHERE id = ?", (stop_id,))
-    stop = cur.fetchone()
-    if not stop:
-        raise HTTPException(status_code=404, detail="Stop not found")
+    # Verify stop ownership (Fix for ADV-02)
+    stop = _get_stop_for_driver(cur, stop_id, driver_id)
+
+    # State machine guard (Fix for ADV-05)
+    if stop["status"] == "upcoming":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot submit checklist before recording stop arrival"
+        )
+    if stop["status"] in ["delivered", "failed", "returned"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Checklist cannot be modified after delivery finalization"
+        )
 
     if stop["row_version"] != request.base_row_version:
         conflict_id = str(uuid.uuid4())
@@ -189,9 +221,8 @@ def photo_intent(
     driver: dict = Depends(get_current_driver),
 ):
     cur = db.cursor()
-    cur.execute("SELECT id FROM stops WHERE id = ?", (stop_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="Stop not found")
+    driver_id = driver["sub"]
+    _get_stop_for_driver(cur, stop_id, driver_id)
 
     obj_key = f"pod/{stop_id}/{uuid.uuid4()}.jpg"
     upload_url = f"http://localhost:8000/uploads/{obj_key}"
@@ -225,10 +256,7 @@ def photo_complete(
     if existing:
         return PhotoCompleteResponse(status="already_applied", server_event_id=existing["id"])
 
-    cur.execute("SELECT id, trip_id, row_version FROM stops WHERE id = ?", (stop_id,))
-    stop = cur.fetchone()
-    if not stop:
-        raise HTTPException(status_code=404, detail="Stop not found")
+    stop = _get_stop_for_driver(cur, stop_id, driver_id)
 
     if stop["row_version"] != request.base_row_version:
         conflict_id = str(uuid.uuid4())
@@ -296,10 +324,7 @@ def submit_pin(
     if existing:
         return PinResponse(status="already_applied", server_event_id=existing["id"], pin_state="verified")
 
-    cur.execute("SELECT id, trip_id, row_version FROM stops WHERE id = ?", (stop_id,))
-    stop = cur.fetchone()
-    if not stop:
-        raise HTTPException(status_code=404, detail="Stop not found")
+    stop = _get_stop_for_driver(cur, stop_id, driver_id)
 
     now_iso = _now_iso()
     event_id = str(uuid.uuid4())
@@ -354,10 +379,15 @@ def submit_outcome(
     if existing:
         return OutcomeResponse(status="already_applied", server_event_id=existing["id"])
 
-    cur.execute("SELECT id, trip_id, row_version FROM stops WHERE id = ?", (stop_id,))
-    stop = cur.fetchone()
-    if not stop:
-        raise HTTPException(status_code=404, detail="Stop not found")
+    stop = _get_stop_for_driver(cur, stop_id, driver_id)
+
+    # State machine transition validation (Fix for ADV-05)
+    if request.outcome in ["delivered", "partial"]:
+        if stop["status"] not in ["arrived", "in_progress"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot record '{request.outcome}' outcome from stop status '{stop['status']}' without prior arrival"
+            )
 
     if stop["row_version"] != request.base_row_version:
         conflict_id = str(uuid.uuid4())
@@ -432,10 +462,7 @@ def submit_return(
     if existing:
         return ReturnResponse(status="already_applied", server_event_id=existing["id"])
 
-    cur.execute("SELECT id, trip_id, row_version FROM stops WHERE id = ?", (stop_id,))
-    stop = cur.fetchone()
-    if not stop:
-        raise HTTPException(status_code=404, detail="Stop not found")
+    stop = _get_stop_for_driver(cur, stop_id, driver_id)
 
     now_iso = _now_iso()
     event_id = str(uuid.uuid4())

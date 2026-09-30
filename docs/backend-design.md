@@ -614,7 +614,7 @@ Run: `npm run test`, `npm run typecheck`, `npm run build`
 
 ---
 
-## 14. Automated Test Verification (16/16 Passed)
+## 14. Automated Test Verification (20/20 Passed)
 
 The driver backend includes a full integration test suite at `apps/backend/tests/test_driver_backend.py`.
 
@@ -642,6 +642,11 @@ pytest tests/test_driver_backend.py -v
 14. `test_get_changes_and_acknowledge`: Dispatcher delta cursor fetching (`route.resequenced`), and driver acknowledgment applying the new stop sequence.
 15. `test_list_and_forward_conflict`: Driver conflict list inspection and conflict forwarding (`POST /api/driver/conflicts/:id/forward`) for dispatcher review.
 16. `test_chat_and_call`: Store manager chat messaging and masked dial intent generation with 15-minute TTL.
+17. `test_revoked_session_rejection`: **[ADV-03]** Calling logout marks session revoked in database; subsequent requests with revoked token are rejected with 401.
+18. `test_idor_rejection_for_unassigned_stop`: **[ADV-02]** Driver cannot access, arrive at, or mutate stops not assigned to them via BOLA/IDOR; returns 404.
+19. `test_state_machine_invalid_outcome_jump`: **[ADV-05]** Delivery outcome cannot jump directly from `upcoming` without recording prior stop arrival; returns 400.
+20. `test_conflict_cannot_be_re_forwarded`: **[ADV-07]** Driver cannot repeatedly forward an already processed/resolved conflict; returns 400.
+
 
 ---
 

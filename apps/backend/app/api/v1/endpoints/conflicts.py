@@ -63,13 +63,19 @@ def forward_conflict(
     if not row:
         raise HTTPException(status_code=404, detail="Conflict not found")
 
+    if row["status"] != "in_review":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot forward conflict with status '{row['status']}' — already processed or resolved"
+        )
+
     now_iso = datetime.now(timezone.utc).isoformat()
     note = request.note if request else None
 
     cur.execute("""
         UPDATE conflicts
         SET status = 'forwarded', forwarded_at = ?, resolution_note = ?
-        WHERE id = ?
+        WHERE id = ? AND status = 'in_review'
     """, (now_iso, note, conflict_id))
 
     # Audit log

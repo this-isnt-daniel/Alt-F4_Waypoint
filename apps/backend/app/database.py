@@ -19,36 +19,41 @@ def _make_connection() -> sqlite3.Connection:
     return conn
 
 
-_conn: sqlite3.Connection | None = None
+def get_db_connection() -> sqlite3.Connection:
+    """Return a new standalone connection."""
+    return _make_connection()
 
 
-def get_db() -> sqlite3.Connection:
-    """Return a module-level connection (re-used across requests)."""
-    global _conn
-    if _conn is None:
-        _conn = _make_connection()
-    return _conn
+def get_db():
+    """FastAPI dependency yielding a thread-isolated connection per request."""
+    conn = _make_connection()
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 @contextmanager
 def get_db_tx():
     """Context manager that yields a connection and commits on success."""
-    db = get_db()
+    conn = _make_connection()
     try:
-        yield db
-        db.commit()
+        yield conn
+        conn.commit()
     except Exception:
-        db.rollback()
+        conn.rollback()
         raise
+    finally:
+        conn.close()
 
 
 # ── Schema creation ──────────────────────────────────────────────────────
 
 def init_db():
     """Create all tables if they don't exist."""
-    db = get_db()
-
-    db.executescript("""
+    conn = _make_connection()
+    try:
+        conn.executescript("""
 
     -- ═══════════════════════════════════════════════════════════════════
     -- Module A: Driver auth + device session
@@ -342,5 +347,6 @@ def init_db():
     );
 
     """)
-
-    db.commit()
+        conn.commit()
+    finally:
+        conn.close()
