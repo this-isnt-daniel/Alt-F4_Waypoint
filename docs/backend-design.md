@@ -1,7 +1,8 @@
-# Driver Backend — Design Choices & Architecture
+# Waypoint Backend — Design Choices, Architecture & Implementation Guide
 
-> **Living document** — updated as the backend is built.  
-> Last updated: 2026-09-30T19:29 IST
+> **Living document** — reference for all models and developers extending the Waypoint backend.  
+> Last updated: 2026-09-30T20:01 IST
+
 
 ---
 
@@ -610,4 +611,54 @@ Run: `npm run test`, `npm run typecheck`, `npm run build`
 | No real routing engine | Polyline/distance from seed data | Integrate OSRM or Google Maps API |
 | No rate limiting | Auth endpoints unprotected | Add slowapi or similar |
 | docker-compose.yml empty | No containerized deployment | Add services: api, postgres, minio |
+
+---
+
+## 14. Automated Test Verification (16/16 Passed)
+
+The driver backend includes a full integration test suite at `apps/backend/tests/test_driver_backend.py`.
+
+### How to Run Tests:
+```powershell
+cd apps/backend
+$env:PYTHONPATH="."
+pytest tests/test_driver_backend.py -v
+```
+
+### Verified Test Cases:
+1. `test_login_success`: Driver ID + PIN validation, token issuance.
+2. `test_login_invalid_pin`: 401 Unauthorized for bad PIN.
+3. `test_driver_me`: Resolves driver profile from JWT token via `/api/driver/me` and `/api/driver/auth/me`.
+4. `test_token_refresh`: Generates fresh access token from refresh token.
+5. `test_logout`: Session revocation.
+6. `test_get_today_trips`: Returns 2 trips (Trip 1 active Fresh 8 stops, Trip 2 locked Style 5 stops).
+7. `test_get_trip_detail`: Retrieves single trip details.
+8. `test_get_trip_briefing`: Pre-departure briefing identifying flagged stops (OUT058).
+9. `test_get_trip_manifest`: Loader manifest + pre-flagged lines + route legs.
+10. `test_depart_trip_with_flag`: Pre-departure load confirmation with shortfall flagging, trip status update to `departed`, audit log generation, and idempotent re-submission verification.
+11. `test_stop_lifecycle_flow`: Stop arrival window calculation (`early`, `on_time`, `late_risk`, `missed`), checklist submission, photo-intent presigning, photo-complete metadata storage, PIN submission, and successful delivery outcome with optimistic `row_version` progression.
+12. `test_partial_delivery_and_return_custody`: Partial delivery outcome with return crate `R-04`, return custody creation, and subsequent depot officer confirmation (`Kasun Kalhara`, seal intact).
+13. `test_offline_sync_and_conflict`: Batch offline sync of events, automatic conflict generation upon version mismatch (`row_version_mismatch`), and preserved field evidence in the `conflicts` table.
+14. `test_get_changes_and_acknowledge`: Dispatcher delta cursor fetching (`route.resequenced`), and driver acknowledgment applying the new stop sequence.
+15. `test_list_and_forward_conflict`: Driver conflict list inspection and conflict forwarding (`POST /api/driver/conflicts/:id/forward`) for dispatcher review.
+16. `test_chat_and_call`: Store manager chat messaging and masked dial intent generation with 15-minute TTL.
+
+---
+
+## 15. Extension Guide for Subsequent Models & Portals
+
+When building out the remaining portals (**Dispatcher**, **Store Manager**, **Loader**), follow these conventions:
+
+### 15.1 Shared Database Tables
+- **`trips` & `stops`**: Created and managed by Dispatcher. Consumed by Driver and Loader.
+- **`manifest_lines`**: Staged by Loader (`pre_flagged=1`, `return_crate`, `loader_note`). Consumed during Driver pre-departure load confirmation.
+- **`driver_events`**: Append-only ledger written by Driver. Dispatcher and Store Manager build real-time progress views (`arrived`, `delivered`, `partial`) by querying this table.
+- **`conflicts`**: Created when driver sync detects state divergence. Dispatcher and Store Manager review and resolve via dispatcher-facing endpoints.
+
+### 15.2 Database Switching (SQLite -> Postgres)
+The service uses standard SQL compatible with both SQLite and PostgreSQL. To switch for production deployment:
+1. In `apps/backend/app/config.py`, point `DATABASE_PATH` to `DATABASE_URL` (e.g. `postgresql://user:pass@localhost:5432/waypoint`).
+2. Replace `sqlite3` connection factory in `apps/backend/app/database.py` with `psycopg2` or `asyncpg`.
+3. Change `PRAGMA foreign_keys = ON` and `PRAGMA journal_mode = WAL` to standard Postgres transaction isolation.
+
 
