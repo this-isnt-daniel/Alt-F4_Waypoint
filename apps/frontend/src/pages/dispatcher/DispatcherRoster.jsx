@@ -1592,7 +1592,8 @@ export default function DispatcherRoster({ onLogout }) {
           setTimeout(() => {
             setShowConfirmToast(false);
           }, 4000);
-          setActiveNav('Overview');
+          setActiveNav('Route Allocation & Capacity');
+          setActiveSubTab('Allocation Workbench');
         }}
       />
     );
@@ -2506,30 +2507,6 @@ export default function DispatcherRoster({ onLogout }) {
                     )}
 
                     {/* Hub Selector */}
-                    <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Peliyagoda')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                          selectedHub === 'Peliyagoda'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Peliyagoda Hub
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Kandy')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          selectedHub === 'Kandy'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Kandy Hub
-                      </button>
-                    </div>
 
                     {/* Workbench Segment Bar: View by Vehicle / View by Outlet / Deferrals */}
                     <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
@@ -3292,31 +3269,6 @@ export default function DispatcherRoster({ onLogout }) {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
                   {/* Left: Hub Pills, Bulk Helpers, and Category Filters */}
                   <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                    {/* Hub Selector */}
-                    <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Peliyagoda')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          selectedHub === 'Peliyagoda'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Peliyagoda Hub (42)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Kandy')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          selectedHub === 'Kandy'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Kandy Hub (18)
-                      </button>
-                    </div>
 
                     {/* Quick Bulk Action Helpers */}
                     <div className="inline-flex items-center gap-1 bg-slate-100/80 px-2 py-1 rounded-lg border border-slate-200/60 text-xs font-medium text-slate-600">

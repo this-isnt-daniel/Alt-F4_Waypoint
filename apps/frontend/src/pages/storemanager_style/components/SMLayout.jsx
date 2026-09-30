@@ -71,7 +71,7 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
               type="button"
               className="h-8 px-3 rounded-full border border-slate-200 text-[13px] text-slate-600 font-medium flex items-center gap-1.5 hover:border-slate-300 transition-colors"
             >
-              Nugegoda <ChevronDown size={12} className="text-slate-400" />
+              Nugegoda
             </button>
 
             <button
@@ -130,7 +130,7 @@ export default function SMLayout({ activeTab, setActiveTab, onLogout, children, 
               type="button"
               className="h-7 px-2.5 rounded-full border border-slate-200 text-[12px] text-slate-600 font-medium flex items-center gap-1"
             >
-              Nugegoda <ChevronDown size={11} className="text-slate-400" />
+              Nugegoda
             </button>
             <button
               type="button"

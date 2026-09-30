@@ -123,6 +123,7 @@ export default function OrderBasket({
                             onChange={(newQty) => onChangeQty(item.key, newQty)}
                             onDecrement={() => onChangeQty(item.key, Math.max(0, item.qty - step))}
                             onIncrement={() => onChangeQty(item.key, item.qty + step)}
+                            onRemove={() => onRemoveItem(item.key)}
                           />
                         );
                       })}
@@ -251,6 +252,7 @@ export default function OrderBasket({
                               onChange={(newQty) => onChangeQty(item.key, newQty)}
                               onDecrement={() => onChangeQty(item.key, Math.max(0, item.qty - step))}
                               onIncrement={() => onChangeQty(item.key, item.qty + step)}
+                              onRemove={() => onRemoveItem(item.key)}
                             />
                           );
                         })}
@@ -339,15 +341,23 @@ export default function OrderBasket({
   );
 }
 
-function SummaryRow({ item, onChange, onDecrement, onIncrement }) {
+function SummaryRow({ item, onChange, onDecrement, onIncrement, onRemove }) {
   return (
-    <div className="flex items-start justify-between px-2 md:px-3 py-2 hover:bg-slate-50 transition-colors">
-      <div className="flex-1 min-w-0 pr-2 pt-0.5">
+    <div className="flex items-center justify-between px-2 md:px-3 py-2 hover:bg-slate-50 transition-colors group">
+      <div className="flex-1 min-w-0 pr-2">
         <p className="text-[12px] font-medium text-slate-900 truncate">
           {item.productName}{item.variant ? ` · ${item.variant}` : ''}
         </p>
       </div>
-      <div className="shrink-0">
+      <div className="shrink-0 flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100"
+          title="Remove item"
+        >
+          <X size={14} strokeWidth={2.5} />
+        </button>
         <QuantityStepper
           qty={item.qty}
           quantityType={item.quantityType}
