@@ -58,4 +58,7 @@ Thumbs.db
 !*submission*.csv
 !submission_task*.csv
 !**/submission*/**
-.ven/
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache/
