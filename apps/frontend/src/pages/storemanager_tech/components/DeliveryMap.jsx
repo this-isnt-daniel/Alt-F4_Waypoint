@@ -11,43 +11,38 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Create custom DivIcons for our 3 points
 const depotIcon = L.divIcon({
-  className: 'bg-transparent',
+  className: 'bg-transparent border-none',
   html: `
-    <div class="relative flex flex-col items-center">
-      <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-white shadow-md z-10"></div>
-      <div class="mt-1 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 text-[10px] font-bold text-slate-700 whitespace-nowrap">Peliyagoda Depot</div>
-    </div>
-  `,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-});
-
-const outletIcon = L.divIcon({
-  className: 'bg-transparent',
-  html: `
-    <div class="relative flex flex-col items-center">
-      <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-white shadow-md z-10"></div>
-      <div class="mt-1 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 text-[10px] font-bold text-slate-700 whitespace-nowrap">Nugegoda Outlet</div>
-    </div>
-  `,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-});
-
-const createVehicleIcon = (id) => L.divIcon({
-  className: 'bg-transparent',
-  html: `
-    <div class="relative flex flex-col items-center">
-      <div class="w-7 h-7 rounded-full bg-brand-600 border-2 border-white shadow-md flex items-center justify-center text-[12px] z-20">
-        🚚
-      </div>
-      <div class="mt-1 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 text-[10px] font-bold text-brand-700 whitespace-nowrap">${id}</div>
+    <div class="flex items-center justify-center w-7 h-7 rounded-lg border-2 border-slate-200 bg-white shadow-sm">
+      <div class="w-2.5 h-2.5 rounded-[3px] bg-[#00A36C]"></div>
     </div>
   `,
   iconSize: [28, 28],
   iconAnchor: [14, 14],
+});
+
+const outletIcon = L.divIcon({
+  className: 'bg-transparent border-none',
+  html: `
+    <div class="flex items-center justify-center w-[34px] h-[34px] rounded-full border-2 border-[#00A36C] bg-[#E5F6F0] text-[#00A36C] font-bold text-[13px] shadow-[0_0_0_4px_rgba(0,163,108,0.22)]">
+      1
+    </div>
+  `,
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+});
+
+const createVehicleIcon = (id) => L.divIcon({
+  className: 'bg-transparent border-none',
+  html: `
+    <div class="relative flex flex-col items-center">
+      <div class="w-[18px] h-[18px] rounded-full bg-[#00A36C] border-[3px] border-white shadow-[0_0_0_4px_rgba(0,163,108,0.24)]"></div>
+      <div class="mt-2 bg-white px-1.5 py-0.5 rounded shadow-sm border border-slate-200 text-[9px] font-bold text-slate-700 whitespace-nowrap uppercase tracking-wider">${id}</div>
+    </div>
+  `,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
 });
 
 // A component to automatically fit the map bounds to our markers
@@ -95,14 +90,14 @@ export default function DeliveryMap({ order }) {
         className="w-full h-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/">HOT</a>'
+          url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
         />
         
         {/* Route Line */}
         <Polyline 
           positions={routeCoords} 
-          pathOptions={{ color: '#0ea5e9', weight: 4, opacity: 0.8 }} // using a nice brand accent
+          pathOptions={{ color: '#64748b', weight: 3, dashArray: '6, 6', opacity: 0.6 }} 
         />
 
         {/* Markers */}

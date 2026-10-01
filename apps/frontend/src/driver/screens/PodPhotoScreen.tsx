@@ -47,17 +47,19 @@ export function PodPhotoScreen() {
   };
 
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-8">
+    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-white px-5 py-6">
       {/* Stepper with single source of truth */}
-      <div className="flex items-center justify-between border-b border-line pb-2">
-        <span className="text-[12px] font-semibold text-slate-500">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-6">
+        <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">
           Step 1 of 2
         </span>
-        <span className="text-[12px] font-bold text-slate-900">Photo</span>
+        <span className="text-[13px] font-bold text-slate-900 uppercase tracking-wider">
+          Photo
+        </span>
       </div>
 
-      <div>
-        <h1 className="text-lg font-bold text-slate-900">
+      <div className="mb-6">
+        <h1 className="text-[24px] font-bold text-slate-900">
           Photograph the handover
         </h1>
       </div>
