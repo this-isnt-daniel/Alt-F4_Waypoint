@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.schemas.order import CreateOrderRequest
+
 from app.api.v1.router import api_router
 from app.config import CORS_ORIGINS
 from app.database import init_db
@@ -41,3 +43,8 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/api/v1/demo/orders")
+def demo_create_order(order: CreateOrderRequest):
+    return order
