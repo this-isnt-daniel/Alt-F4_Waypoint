@@ -40,7 +40,7 @@ export function ScenarioPanel({
       onClick={onClose}
     >
       <div
-        className="max-h-[82vh] w-full max-w-[430px] overflow-y-auto rounded-t-2xl border-t border-line bg-surface p-4 shadow-xl"
+        className="max-h-[82vh] w-full overflow-y-auto rounded-t-2xl border-t border-line bg-surface p-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-2 border-b border-line">
