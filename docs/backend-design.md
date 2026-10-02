@@ -734,4 +734,23 @@ export async function buildRoadGeometry(sequence: string[]): Promise<[number,num
 ```
 This replaces the old per-leg fetch in `DriverMap.tsx` and eliminates network latency on every re-render.
 
+### 16.5 Sequential Route Closeness & Visual Topology
+To provide an optimal mobile driver experience where the entire delivery sequence is immediately discernible without extreme zoom-outs across provincial mountain ranges:
+1. **Topological Sequence Over Raw Distance**: Stop geographic coordinates are clustered tightly within Kandy central municipality ($\approx 250\,\text{m} - 1.5\,\text{km}$ radius from Kandy Hub Depot at `[7.2906, 80.6337]`), arranged sequentially along real connected municipal thoroughfares (William Gopallawa Mawatha, Clock Tower, Dalada Veediya, Kandy City Centre, Lake Victoria Drive, Sangharaja Mawatha, Peradeniya Road).
+2. **Compact Synthetic Coordinates**: For arbitrary outlet sequences, synthetic coordinates are generated within a tight $0.4\,\text{km} - 1.9\,\text{km}$ radius:
+   $$\text{radius\_km} = 0.4 + \left((\text{num} \times 3 + (h \pmod 7)) \pmod{10}\right) \times 0.15$$
+3. **OSRM Batch Street Routing**: High-fidelity driving geometries are retrieved in single batch calls via `/api/v1/driver/road-geometry/sequence`, ensuring all stops in the active trip sequence form an unbroken, interconnected road route with no redundant dead-ends.
+
+### 16.6 Route Rendering: Solid Green Line
+In `apps/frontend/src/driver/components/DriverMap.tsx`:
+- Replaced previous dashed slate polyline (`dashArray: '6, 6'`, `#64748b`) with a **solid emerald green polyline** (`color: '#059669'`, `weight: 5`, `opacity: 0.9`).
+- While road geometry is asynchronously fetched from database cache or API, immediate sequential waypoints are rendered, seamlessly upgrading to exact road polylines upon resolution.
+- Dynamic bounds fitting (`map.fitBounds(latLngs, { padding: [36, 36], maxZoom: 16 })`) ensures the route fills the mobile viewport with clear stop visibility.
+
+### 16.7 Mobile Layout & Dimensions Integrity
+- **Mobile Container Shell**: Strict mobile viewport confinement (`max-w-[430px] mx-auto min-h-screen bg-canvas shadow-2 relative`) prevents UI stretching on tablet or desktop screens.
+- **Dedicated Driver Screens**: Preserves clean individual mobile screens for departure verification, stop arrival, checklist, proof-of-delivery (PIN/photo), and depot return reconciliation.
+- **Docked Active Trip Navigation**: Persistent bottom sheet provides single-tap access to call/chat with store managers, sequential stop progression, and turn-by-turn context.
+
+
 
