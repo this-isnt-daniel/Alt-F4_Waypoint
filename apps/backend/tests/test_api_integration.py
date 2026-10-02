@@ -38,7 +38,7 @@ def override_db():
     db.add_all(depots)
     
     outlets = [
-        Outlet(outlet_id="OUT1", name="Test Outlet", brand="fresh", lat=0.0, lng=0.0)
+        Outlet(outlet_id="OUT1", name="Test Outlet", brand="fresh", depot_id="DEP1", lat=0.0, lng=0.0)
     ]
     db.add_all(outlets)
     
@@ -60,6 +60,8 @@ def override_db():
     
     db.commit()
     
+    previous_get_db = app.dependency_overrides.get(get_db)
+
     def _override_get_db():
         try:
             yield db
@@ -68,7 +70,10 @@ def override_db():
             
     app.dependency_overrides[get_db] = _override_get_db
     yield db
-    app.dependency_overrides.clear()
+    if previous_get_db is None:
+        app.dependency_overrides.pop(get_db, None)
+    else:
+        app.dependency_overrides[get_db] = previous_get_db
     Base.metadata.drop_all(bind=engine)
     db.close()
 
@@ -138,13 +143,16 @@ def test_integration_flow(client, override_db):
     assert order_db.status == "planned"
     trip_id = order_db.trip_id
     assert trip_id is not None
+    from app.models.order import OrderLine
+    line = override_db.query(OrderLine).filter(OrderLine.order_id == order_id).first()
+    assert line is not None
     
     # FLOW 4: Loader loads
     load_headers = {"Authorization": f"Bearer {loader_token}"}
     res = client.post(f"/api/v1/loader/trips/{trip_id}/load", headers=load_headers, json={
         "client_op_id": "load1",
         "items": [
-            {"product_id": "P1", "expected_qty": 10, "loaded_qty": 10, "status": "ok"}
+            {"line_item_id": line.line_item_id, "loaded_qty": 10, "status": "verified"}
         ]
     })
     assert res.status_code == 200
