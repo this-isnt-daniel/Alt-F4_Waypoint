@@ -42,24 +42,34 @@ if (precomputedData && typeof precomputedData === "object") {
  * Returns the [lat, lng] center coordinates for an outlet or depot identifier.
  */
 export function centroid(id: string): [number, number] {
-  if (id === "DEPOT:KANDY_HUB" || id === "DEPOT" || id === "KANDY_HUB") {
+  const cleanId = String(id).trim();
+  if (
+    cleanId === "DEPOT:KANDY_HUB" ||
+    cleanId === "DEPOT" ||
+    cleanId === "KANDY_HUB"
+  ) {
     return [KANDY_HUB_COORDS.lat, KANDY_HUB_COORDS.lng];
   }
-  const stop = STOP_COORDS[id];
+  const stop = STOP_COORDS[cleanId];
   if (stop) {
     return [stop.lat, stop.lng];
   }
-  // Deterministic calculation for arbitrary outlets with distance from depot
+  // Synthesize realistic coordinates for arbitrary outlet numbers
+  const digits = cleanId.replace(/\D/g, "");
+  const num = digits ? parseInt(digits, 10) : 0;
   let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash << 5) - hash + id.charCodeAt(i);
+  for (let i = 0; i < cleanId.length; i++) {
+    hash = (hash << 5) - hash + cleanId.charCodeAt(i);
     hash |= 0;
   }
-  const bearingRad = (Math.abs(hash) % 360) * (Math.PI / 180.0);
-  const distKm = 10.0;
-  const latOffset = (distKm / 111.0) * Math.cos(bearingRad);
+  const absH = Math.abs(hash);
+  const radiusKm = 2.5 + ((num * 7 + (absH % 19)) % 16) * 1.25;
+  const bearingDeg = (absH ^ (num * 37)) % 360;
+  const bearingRad = (bearingDeg * Math.PI) / 180.0;
+
+  const latOffset = (radiusKm / 111.0) * Math.cos(bearingRad);
   const lngOffset =
-    (distKm / (111.0 * Math.cos((KANDY_HUB_COORDS.lat * Math.PI) / 180.0))) *
+    (radiusKm / (111.0 * Math.cos((KANDY_HUB_COORDS.lat * Math.PI) / 180.0))) *
     Math.sin(bearingRad);
   return [
     Number((KANDY_HUB_COORDS.lat + latOffset).toFixed(4)),

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import { KANDY_HUB_COORDS, STOP_COORDS, VEHICLE, type GeoPoint } from "@/driver/data/driverContent";
-import { buildRoadGeometry } from "@/driver/lib/roadGeometry";
+import { buildRoadGeometry, centroid } from "@/driver/lib/roadGeometry";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from "@/theme/useTheme";
@@ -30,11 +30,10 @@ export interface DriverMapProps {
   className?: string;
 }
 
-// Fallback for getting stop coords if getStopCoords is not exported
+// Resilient coordinates for any outlet ID (known or synthesized)
 function getStopCoords(outletId: string): GeoPoint {
-  const coords = STOP_COORDS[outletId as keyof typeof STOP_COORDS];
-  if (!coords) throw new Error(`Missing coords for ${outletId}`);
-  return coords;
+  const [lat, lng] = centroid(outletId);
+  return { lat, lng };
 }
 
 function FitBounds({ bounds, selectedStopId }: { bounds: L.LatLngBounds | null, selectedStopId?: string }) {

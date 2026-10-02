@@ -135,3 +135,23 @@ def test_road_geometry_api_single_edge(client):
     assert data["from_id"] == "DEPOT:KANDY_HUB"
     assert data["to_id"] == "OUT042"
     assert len(data["coords"]) > 0
+
+
+def test_road_sequence_endpoint_arbitrary_outlets(client):
+    """Test POST /api/v1/driver/road-geometry/sequence with arbitrary outlet numbers."""
+    payload = {
+        "sequence": ["DEPOT", "OUT101", "OUT102", "OUT103"],
+        "coord_version": 1,
+    }
+    res = client.post("/api/v1/driver/road-geometry/sequence", json=payload)
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["sequence"] == payload["sequence"]
+    assert len(data["edges"]) == 3
+    assert len(data["polyline"]) > 10
+    assert data["total_distance_meters"] > 0
+    # Edges should be stored in road_geometry DB
+    edge0 = data["edges"][0]
+    assert edge0["from_id"] == "DEPOT"
+    assert edge0["to_id"] == "OUT101"
+

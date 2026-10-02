@@ -449,3 +449,17 @@ class RoadGeometryQueryRequest(BaseModel):
 class RoadGeometryQueryResponse(BaseModel):
     rows: list[RoadGeometryRow]
 
+
+class RoadSequenceRequest(BaseModel):
+    sequence: list[str]  # e.g. ["DEPOT", "OUT001", "OUT002", ...]
+    coord_version: int = 1
+
+
+class RoadSequenceResponse(BaseModel):
+    sequence: list[str]
+    polyline: list[list[float]]  # stitched [lat, lng]
+    edges: list[RoadGeometryRow]
+    total_distance_meters: float
+    total_duration_seconds: float
+
+
