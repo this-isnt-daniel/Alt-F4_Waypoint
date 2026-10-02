@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -26,6 +27,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+@app.exception_handler(IntegrityError)
+async def sqlalchemy_integrity_handler(request: Request, exc: IntegrityError):
+    # This translates DB unique/foreign-key violations to 409 Conflict
+    return JSONResponse(
+        status_code=409,
+        content={"detail": "Resource conflict or duplicate operation"}
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -34,6 +43,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.api.v1.endpoints import platform_auth
+
+app.include_router(platform_auth.router, prefix="/api/v1/auth", tags=["Platform Auth"])
 app.include_router(api_router, prefix="/api")
 app.include_router(api_router, prefix="/api/v1")
 
@@ -74,13 +86,8 @@ def demo_create_order(request: CreateOrderRequest, db: Session = Depends(get_db)
         created_lines.append(line)
         
     # 3. Save to Database
-    try:
-        db.commit()
-        db.refresh(new_order)
-    except IntegrityError as e:
-        db.rollback()
-        # Catch DB constraint violations (like UniqueConstraint on outlet/date/temp)
-        raise HTTPException(status_code=400, detail="Database integrity error (Possible duplicate order or missing foreign keys)")
+    db.commit()
+    db.refresh(new_order)
         
     new_order.items = created_lines
     return new_order
