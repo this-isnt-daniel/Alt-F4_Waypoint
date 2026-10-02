@@ -4,6 +4,7 @@ import OverviewTab from './components/OverviewTab';
 import PlaceOrderTab from './components/PlaceOrderTab';
 import OrdersTab from './components/OrdersTab';
 import ReceiptsTab from './components/ReceiptsTab';
+import ReceiptsHistoryTab from './components/ReceiptsHistoryTab';
 
 /**
  * StoreManagerOverview
@@ -116,7 +117,14 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
 
         {activeTab === 'progress' && <OrdersTab selectedOrderId={activeTabParams} />}
 
-        {activeTab === 'receipts' && <ReceiptsTab isConfirmed={isConfirmed} />}
+        {activeTab === 'receipts' && <ReceiptsTab isConfirmed={isConfirmed} onNavigate={navigate} />}
+
+        {activeTab.startsWith('history-') && (
+          <ReceiptsHistoryTab
+            type={activeTab.replace('history-', '')}
+            onNavigate={navigate}
+          />
+        )}
       </div>
     </SMLayout>
   );

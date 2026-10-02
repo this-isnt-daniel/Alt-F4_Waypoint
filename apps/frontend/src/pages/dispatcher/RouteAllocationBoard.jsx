@@ -59,7 +59,7 @@ const buildInitialRows = () => [
     vehicleId: 'VEH009', tripLabel: 'Trip 2 of 2', refrigeration: 'Reefer',
     capacityKg: 6000, capacityM3: 18.5, fuelPct: 40,
     cards: [
-      { id: 'c5', orderId: 'ORD-4471', stop: 1, stopName: 'Wattala', product: 'Anchor Full Cream Milk 1L', qty: '180 bottles', weightKg: 185, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
+      { id: 'c5', orderId: 'ORD-4472', stop: 1, stopName: 'Wattala', product: 'Anchor Full Cream Milk 1L', qty: '180 bottles', weightKg: 185, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
       { id: 'c6', orderId: 'ORD-5102', stop: 2, stopName: 'Ja-Ela',  product: 'Yogurt Cups 500g',         qty: '60 pots',     weightKg: 60,  brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
     ],
   },
@@ -67,7 +67,7 @@ const buildInitialRows = () => [
     vehicleId: 'VEH001', tripLabel: 'Trip 1 of 2', refrigeration: 'Reefer',
     capacityKg: 6000, capacityM3: 18.5, fuelPct: 62,
     cards: [
-      { id: 'c7', orderId: 'ORD-3390', stop: 1, stopName: 'Negombo',    product: 'Pasteurized Whole Milk 1L',     qty: '240 units', weightKg: 240, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
+      { id: 'c7', orderId: 'ORD-3391', stop: 1, stopName: 'Negombo',    product: 'Pasteurized Whole Milk 1L',     qty: '240 units', weightKg: 240, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
       { id: 'c8', orderId: 'ORD-6601', stop: 2, stopName: 'Katunayake', product: 'Chilled Chicken Portions 500g', qty: '250 packs', weightKg: 250, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
     ],
   },
@@ -75,24 +75,24 @@ const buildInitialRows = () => [
     vehicleId: 'VEH041', tripLabel: 'Trip 1 of 2', refrigeration: 'Ambient',
     capacityKg: 4500, capacityM3: 12.0, fuelPct: 88,
     cards: [
-      { id: 'c9',  orderId: 'ORD-5102', stop: 1, stopName: 'Pettah', product: 'Basmati Rice 5kg Master Bags', qty: '25 bags',    weightKg: 125, brand: 'Waypoint Style', refrigeration: 'Ambient' },
-      { id: 'c10', orderId: 'ORD-1188', stop: 2, stopName: 'Fort',   product: 'Ceylon BOPF Tea Cartons',      qty: '15 cartons', weightKg: 90,  brand: 'Waypoint Style', refrigeration: 'Ambient' },
+      { id: 'c9',  orderId: 'ORD-5103', stop: 1, stopName: 'Pettah', product: 'Basmati Rice 5kg Master Bags', qty: '25 bags',    weightKg: 125, brand: 'Waypoint Style', refrigeration: 'Ambient' },
+      { id: 'c10', orderId: 'ORD-1191', stop: 2, stopName: 'Fort',   product: 'Ceylon BOPF Tea Cartons',      qty: '15 cartons', weightKg: 90,  brand: 'Waypoint Style', refrigeration: 'Ambient' },
     ],
   },
   {
     vehicleId: 'VEH004', tripLabel: 'Trip 1 of 1', refrigeration: 'Ambient',
     capacityKg: 1500, capacityM3: 6.0, fuelPct: 72,
     cards: [
-      { id: 'c11', orderId: 'ORD-1188', stop: 1, stopName: 'Wellawatte', product: 'Red Split Lentils Dhal 1kg', qty: '150 kg', weightKg: 150, brand: 'Waypoint Style', refrigeration: 'Ambient' },
+      { id: 'c11', orderId: 'ORD-1189', stop: 1, stopName: 'Wellawatte', product: 'Red Split Lentils Dhal 1kg', qty: '150 kg', weightKg: 150, brand: 'Waypoint Style', refrigeration: 'Ambient' },
     ],
   },
 ];
 
 const INITIAL_TRAY = [
-  { id: 't1', orderId: 'ORD-3390', stop: 3, stopName: 'Ja-Ela Central',  product: 'Cream Cheese Philadelphia 200g', qty: 'x30', weightKg: 15, brand: 'Waypoint Fresh', refrigeration: 'Reefer'   },
-  { id: 't2', orderId: 'ORD-5102', stop: 2, stopName: 'Kandana Express', product: 'Denim Jackets Assorted Men',     qty: 'x12', weightKg: 12, brand: 'Waypoint Style', refrigeration: 'Ambient'  },
-  { id: 't3', orderId: 'ORD-1188', stop: 1, stopName: 'Colombo South',   product: 'Blender Unit Compact 600W',     qty: 'x1',  weightKg: 4,  brand: 'Waypoint Tech',  refrigeration: 'Ambient'  },
-  { id: 't4', orderId: 'ORD-6601', stop: 3, stopName: 'Negombo Express', product: 'Bairaha Chicken Breast 500g',   qty: 'x80', weightKg: 40, brand: 'Waypoint Fresh', refrigeration: 'Reefer'   },
+  { id: 't1', orderId: 'ORD-3392', stop: 3, stopName: 'Ja-Ela Central',  product: 'Cream Cheese Philadelphia 200g', qty: 'x30', weightKg: 15, brand: 'Waypoint Fresh', refrigeration: 'Reefer'   },
+  { id: 't2', orderId: 'ORD-5104', stop: 2, stopName: 'Kandana Express', product: 'Denim Jackets Assorted Men',     qty: 'x12', weightKg: 12, brand: 'Waypoint Style', refrigeration: 'Ambient'  },
+  { id: 't3', orderId: 'ORD-1190', stop: 1, stopName: 'Colombo South',   product: 'Blender Unit Compact 600W',     qty: 'x1',  weightKg: 4,  brand: 'Waypoint Tech',  refrigeration: 'Ambient'  },
+  { id: 't4', orderId: 'ORD-6602', stop: 3, stopName: 'Negombo Express', product: 'Bairaha Chicken Breast 500g',   qty: 'x80', weightKg: 40, brand: 'Waypoint Fresh', refrigeration: 'Reefer'   },
   { id: 't5', orderId: 'ORD-7720', stop: 1, stopName: 'Kollupitiya',     product: 'Smart LED Bulbs 9W Pack 4',     qty: 'x24', weightKg: 6,  brand: 'Waypoint Tech',  refrigeration: 'Ambient'  },
 ];
 
@@ -103,36 +103,33 @@ const canAccept    = (row, card) => row.refrigeration === card.refrigeration;
 const barColour    = (pct) => pct < 75 ? C.primary : pct < 90 ? '#F59E0B' : '#EF4444';
 
 // ─── OrderTag ─────────────────────────────────────────────────────────────────
-function OrderTag({ orderId, isSplit, isDraggingSameOrder, onClick }) {
+function OrderTag({ orderId }) {
   const col = orderColour(orderId);
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
       style={{ background: col.bg, color: col.text, border: `1px solid ${col.border}` }}
-      className="group inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap"
     >
       {orderId}
-      {isSplit && (
-        <span style={{ color: C.dark }} className={`${isDraggingSameOrder ? 'inline' : 'hidden group-hover:inline'}`}>
-          · split
-        </span>
-      )}
-    </button>
+    </div>
   );
 }
 
 // ─── ProductCard ─────────────────────────────────────────────────────────────
-function ProductCard({ card, isDragging, isSplit, isDraggingSameOrder, onOrderTagClick }) {
+function ProductCard({ card, isDragging, isDraggingSameOrder }) {
   return (
     <div
       className={`relative flex-shrink-0 w-36 rounded-xl px-[12px] py-[10px] select-none transition-all ${
         isDragging ? 'bg-white shadow-sm border border-[#DCEEE1]' : 'bg-[#FAFBFA] border border-transparent'
       }`}
-      style={{ opacity: isDragging ? 0.4 : 1 }}
+      style={{
+        opacity: isDragging ? 0.4 : 1,
+        transform: isDraggingSameOrder ? 'translateY(-2px)' : 'none',
+        boxShadow: isDraggingSameOrder ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
+      }}
     >
       <div className="mb-1.5">
-        <OrderTag orderId={card.orderId} isSplit={isSplit} isDraggingSameOrder={isDraggingSameOrder} onClick={() => onOrderTagClick(card.orderId)} />
+        <OrderTag orderId={card.orderId} />
       </div>
       <p className="text-[10px] text-gray-400 mb-0.5 truncate">Stop {card.stop} - {card.stopName}</p>
       <p className="text-[11px] font-semibold text-[#0B2019] leading-tight line-clamp-2">{card.product}</p>
@@ -195,36 +192,7 @@ function CapacityBar({ label, value, max }) {
   );
 }
 
-// ─── SplitPopover ────────────────────────────────────────────────────────────
-function SplitPopover({ orderId, rows, onClose }) {
-  const involved = rows.flatMap(row =>
-    row.cards.filter(c => c.orderId === orderId).map(c => ({ vehicleId: row.vehicleId, stop: c.stopName }))
-  );
-  const vehicleCount = new Set(involved.map(i => i.vehicleId)).size;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-72" onClick={e => e.stopPropagation()}>
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <p className="text-xs font-bold text-[#0B2019]">{orderId}</p>
-            <p className="text-[10px] text-gray-500">{involved.length} item{involved.length > 1 ? 's' : ''} placed - arriving on {vehicleCount} vehicle{vehicleCount > 1 ? 's' : ''}</p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 cursor-pointer"><X size={14} /></button>
-        </div>
-        <div className="space-y-1.5">
-          {involved.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 text-[10px] bg-gray-50 rounded-lg px-2.5 py-1.5">
-              <Truck size={11} className="text-gray-400 flex-shrink-0" />
-              <span className="font-semibold text-[#0B2019]">{item.vehicleId}</span>
-              <span className="text-gray-400 mx-0.5">to</span>
-              <span className="text-gray-600 truncate">{item.stop}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── SplitPopover Removed ───────────────────────────────────────────────────
 
 // ─── AllocationConfirmModal (two-step) ───────────────────────────────────────
 function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocation, onFinalConfirm }) {
@@ -398,7 +366,6 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   const [dragCard, setDragCard]     = useState(null);
   const [notifications, setNotifications] = useState(true);
   const [showUserMenu, setShowUserMenu]   = useState(false);
-  const [splitPopover, setSplitPopover]   = useState(null);
   const [confirmed, setConfirmed]         = useState(false);
   const [showToast, setShowToast]         = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -426,16 +393,6 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
     document.body.style.cursor = 'row-resize';
   }, [trayHeight]);
 
-  // Detect split orders (same orderId on 2+ vehicles)
-  const splitOrderIds = (() => {
-    const map = {};
-    rows.forEach(row => row.cards.forEach(c => {
-      if (!map[c.orderId]) map[c.orderId] = new Set();
-      map[c.orderId].add(row.vehicleId);
-    }));
-    return new Set(Object.entries(map).filter(([, v]) => v.size > 1).map(([k]) => k));
-  })();
-
   const allPlaced = tray.length === 0;
 
   const handleDragStart = useCallback((card, sourceType, sourceVehicleId = null) => {
@@ -444,25 +401,38 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
 
   const handleDropOnRow = useCallback((targetVehicleId) => {
     if (!dragCard) return;
-    const { card, sourceType, sourceVehicleId } = dragCard;
+    const { card } = dragCard;
+    const orderId = card.orderId;
     const targetRow = rows.find(r => r.vehicleId === targetVehicleId);
     if (!targetRow || !canAccept(targetRow, card)) { setDragCard(null); return; }
-    if (sourceType === 'tray') {
-      setTray(prev => prev.filter(c => c.id !== card.id));
-    } else if (sourceType === 'row' && sourceVehicleId) {
-      setRows(prev => prev.map(r => r.vehicleId === sourceVehicleId ? { ...r, cards: r.cards.filter(c => c.id !== card.id) } : r));
-    }
-    setRows(prev => prev.map(r => r.vehicleId === targetVehicleId ? { ...r, cards: [...r.cards, card] } : r));
+
+    const cardsToMove = [
+      ...tray.filter(c => c.orderId === orderId),
+      ...rows.flatMap(r => r.cards.filter(c => c.orderId === orderId))
+    ];
+
+    setTray(prev => prev.filter(c => c.orderId !== orderId));
+    setRows(prev => prev.map(r => ({ ...r, cards: r.cards.filter(c => c.orderId !== orderId) })));
+    setRows(prev => prev.map(r => r.vehicleId === targetVehicleId ? { ...r, cards: [...r.cards, ...cardsToMove] } : r));
+    
     setDragCard(null);
-  }, [dragCard, rows]);
+  }, [dragCard, rows, tray]);
 
   const handleDropOnTray = useCallback(() => {
     if (!dragCard || dragCard.sourceType === 'tray') { setDragCard(null); return; }
-    const { card, sourceVehicleId } = dragCard;
-    setRows(prev => prev.map(r => r.vehicleId === sourceVehicleId ? { ...r, cards: r.cards.filter(c => c.id !== card.id) } : r));
-    setTray(prev => [...prev, card]);
+    const { card } = dragCard;
+    const orderId = card.orderId;
+
+    const cardsToMove = [
+      ...tray.filter(c => c.orderId === orderId),
+      ...rows.flatMap(r => r.cards.filter(c => c.orderId === orderId))
+    ];
+
+    setRows(prev => prev.map(r => ({ ...r, cards: r.cards.filter(c => c.orderId !== orderId) })));
+    setTray(prev => [...prev.filter(c => c.orderId !== orderId), ...cardsToMove]);
+    
     setDragCard(null);
-  }, [dragCard]);
+  }, [dragCard, rows, tray]);
 
   const sortedRows = [...rows].sort((a, b) => {
     if (sortBy === 'vehicleId') return a.vehicleId.localeCompare(b.vehicleId);
@@ -707,9 +677,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
                                 <ProductCard
                                   card={card}
                                   isDragging={dragCard?.card?.id === card.id}
-                                  isSplit={splitOrderIds.has(card.orderId)}
                                   isDraggingSameOrder={dragCard?.card?.orderId === card.orderId}
-                                  onOrderTagClick={id => setSplitPopover(splitOrderIds.has(id) ? id : null)}
                                 />
                               </div>
                             ))}
@@ -778,9 +746,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
                   <ProductCard
                     card={card}
                     isDragging={dragCard?.card?.id === card.id}
-                    isSplit={splitOrderIds.has(card.orderId)}
                     isDraggingSameOrder={dragCard?.card?.orderId === card.orderId}
-                    onOrderTagClick={id => setSplitPopover(splitOrderIds.has(id) ? id : null)}
                   />
                 </div>
               ))
@@ -789,10 +755,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
         </div>
       </div>
 
-      {/* Split order popover */}
-      {splitPopover && (
-        <SplitPopover orderId={splitPopover} rows={rows} onClose={() => setSplitPopover(null)} />
-      )}
+
 
       {/* Allocation confirmation modal */}
       <AllocationConfirmModal

@@ -524,7 +524,7 @@ function ActiveStop({ stop, progress, itemState, attentionFilter, setAttentionFi
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
             }`}
           >
-            Complete Stop
+            Complete loading
           </button>
         </div>
       )}

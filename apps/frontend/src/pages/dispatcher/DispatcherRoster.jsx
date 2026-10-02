@@ -1,4 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for default Leaflet icon paths in Vite/Webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// Create custom DivIcons for our points
+const createDepotIcon = (name) => L.divIcon({
+  className: 'bg-transparent',
+  html: `
+    <div class="relative flex flex-col items-center">
+      <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-white shadow-md z-10"></div>
+      <div class="mt-1 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 text-[10px] font-bold text-slate-700 whitespace-nowrap">${name}</div>
+    </div>
+  `,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
+const createOutletIcon = (name) => L.divIcon({
+  className: 'bg-transparent',
+  html: `
+    <div class="relative flex flex-col items-center">
+      <div class="w-4 h-4 rounded-full bg-[#059669] border-2 border-white shadow-md z-10"></div>
+      <div class="mt-1 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 text-[10px] font-bold text-slate-700 whitespace-nowrap">${name}</div>
+    </div>
+  `,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
+const createVehicleIcon = (id) => L.divIcon({
+  className: 'bg-transparent',
+  html: `
+    <div class="relative flex flex-col items-center">
+      <div class="w-7 h-7 rounded-full bg-[#059669] border-2 border-white shadow-md flex items-center justify-center text-[12px] z-20">
+        🚚
+      </div>
+      <div class="mt-1 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 text-[10px] font-bold text-[#059669] whitespace-nowrap">${id}</div>
+    </div>
+  `,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
+
+function FitBounds({ bounds }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [40, 40] });
+    }
+  }, [map, bounds]);
+  return null;
+}
+
+function RoadRoutePolyline({ points }) {
+  const [route, setRoute] = useState([]);
+
+  useEffect(() => {
+    if (points.length < 2) return;
+    const coordsStr = points.map(p => `${p[1]},${p[0]}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+    
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (data.routes && data.routes[0]) {
+          const latLngs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+          setRoute(latLngs);
+        }
+      })
+      .catch(console.error);
+  }, [points]);
+
+  if (route.length === 0) {
+     return <Polyline positions={points} pathOptions={{ color: '#0ea5e9', weight: 4, opacity: 0.5, dashArray: '5, 10' }} />;
+  }
+
+  return <Polyline positions={route} pathOptions={{ color: '#0ea5e9', weight: 4, opacity: 0.8 }} />;
+}
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import VerifyDispatchPlanModal from './VerifyDispatchPlanModal';
 import RouteAllocationBoard from './RouteAllocationBoard';
@@ -189,6 +275,59 @@ export default function DispatcherRoster({ onLogout }) {
 
   // Initial Fleet Data for Fleet Availability
   const initialFleet = [
+    { 
+      id: 'VEH102', 
+      depot: 'Kandy', 
+      type: 'Truck', 
+      refrigeration: 'Reefer', 
+      payloadKg: 5000, 
+      volumeM3: 15.0, 
+      fuelQuota: 85, 
+      checked: true,
+      isLockedUnavailable: false
+    },
+    { 
+      id: 'VEH105', 
+      depot: 'Kandy', 
+      type: 'Van', 
+      refrigeration: 'Ambient', 
+      payloadKg: 2000, 
+      volumeM3: 8.0, 
+      fuelQuota: 45, 
+      checked: true,
+      isLockedUnavailable: false
+    },
+    { 
+      id: 'VEH108', 
+      depot: 'Kandy', 
+      type: 'Truck', 
+      refrigeration: 'Reefer', 
+      payloadKg: 5500, 
+      volumeM3: 16.0, 
+      fuelQuota: 30, 
+      checked: false,
+      isLockedUnavailable: true,
+      unavailableSource: 'Driver Portal',
+      unavailableReason: 'Tire puncture reported on A1 highway.',
+      reportedBy: 'K. Bandara',
+      expectedReturn: 'Today, 2:00 PM',
+      maintenanceType: 'Tire Replacement'
+    },
+    { id: 'VEH110', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 4500, volumeM3: 12.0, fuelQuota: 55, checked: true, isLockedUnavailable: false },
+    { id: 'VEH111', depot: 'Kandy', type: 'Van', refrigeration: 'Reefer', payloadKg: 2000, volumeM3: 8.0, fuelQuota: 78, checked: true, isLockedUnavailable: false },
+    { id: 'VEH112', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 6000, volumeM3: 18.0, fuelQuota: 92, checked: true, isLockedUnavailable: false },
+    { id: 'VEH113', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 1500, volumeM3: 6.0, fuelQuota: 45, checked: true, isLockedUnavailable: false },
+    { id: 'VEH114', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 5000, volumeM3: 15.0, fuelQuota: 88, checked: true, isLockedUnavailable: false },
+    { id: 'VEH115', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 2000, volumeM3: 8.0, fuelQuota: 34, checked: true, isLockedUnavailable: false },
+    { id: 'VEH116', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 4500, volumeM3: 12.0, fuelQuota: 61, checked: true, isLockedUnavailable: false },
+    { id: 'VEH117', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 6000, volumeM3: 18.5, fuelQuota: 75, checked: true, isLockedUnavailable: false },
+    { id: 'VEH118', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 1500, volumeM3: 6.0, fuelQuota: 82, checked: true, isLockedUnavailable: false },
+    { id: 'VEH119', depot: 'Kandy', type: 'Van', refrigeration: 'Reefer', payloadKg: 2000, volumeM3: 8.0, fuelQuota: 12, checked: false, isLockedUnavailable: true, unavailableSource: 'Driver Portal', unavailableReason: 'AC compressor failure.', reportedBy: 'M. Silva', expectedReturn: 'Tomorrow, 10:00 AM', maintenanceType: 'AC Repair' },
+    { id: 'VEH120', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 4500, volumeM3: 12.0, fuelQuota: 95, checked: true, isLockedUnavailable: false },
+    { id: 'VEH121', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 5000, volumeM3: 15.0, fuelQuota: 41, checked: true, isLockedUnavailable: false },
+    { id: 'VEH122', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 1500, volumeM3: 6.0, fuelQuota: 28, checked: true, isLockedUnavailable: false },
+    { id: 'VEH123', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 6000, volumeM3: 18.0, fuelQuota: 66, checked: true, isLockedUnavailable: false },
+    { id: 'VEH124', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 5000, volumeM3: 15.0, fuelQuota: 73, checked: true, isLockedUnavailable: false },
     { 
       id: 'VEH001', 
       depot: 'Peliyagoda', 
@@ -1171,14 +1310,20 @@ export default function DispatcherRoster({ onLogout }) {
   const dispatcherExcludedVolume = dispatcherExcluded.reduce((acc, v) => acc + v.volumeM3, 0);
   const dispatcherExcludedWeight = dispatcherExcluded.reduce((acc, v) => acc + v.payloadKg, 0);
 
-  const totalHubVehicles = 42;
-  const totalHubReefers = 14;
-  const activeVehiclesCount = 38 - dispatcherExcluded.length;
-  const activeReefersCount = 12 - dispatcherExcludedReefers;
+  const isKandy = selectedHub === 'Kandy';
+  const totalHubVehicles = isKandy ? 18 : 42;
+  const totalHubReefers = isKandy ? 8 : 14;
+  const baseActiveVehiclesCount = isKandy ? 17 : 38; // 17 active out of 18
+  const baseActiveReefersCount = isKandy ? 8 : 12;   // 8 active reefers out of 8
+  const baseVolume = isKandy ? 210.5 : 420.5;
+  const baseWeight = isKandy ? 45500 : 98400;
+
+  const activeVehiclesCount = baseActiveVehiclesCount - dispatcherExcluded.length;
+  const activeReefersCount = baseActiveReefersCount - dispatcherExcludedReefers;
   const availableAssetsDisplay = `${activeVehiclesCount}/${totalHubVehicles}`;
   const reeferReadinessDisplay = `${activeReefersCount}/${totalHubReefers}`;
-  const totalVolumeM3 = (420.5 - dispatcherExcludedVolume).toFixed(1);
-  const totalPayloadKg = (98400 - dispatcherExcludedWeight).toLocaleString();
+  const totalVolumeM3 = (baseVolume - dispatcherExcludedVolume).toFixed(1);
+  const totalPayloadKg = (baseWeight - dispatcherExcludedWeight).toLocaleString();
 
   // Recovery Vehicle Assignments (Added upon confirming Recovery Plan)
   const recoveryVehicleAssignments = [
@@ -1447,7 +1592,8 @@ export default function DispatcherRoster({ onLogout }) {
           setTimeout(() => {
             setShowConfirmToast(false);
           }, 4000);
-          setActiveNav('Overview');
+          setActiveNav('Route Allocation & Capacity');
+          setActiveSubTab('Allocation Workbench');
         }}
       />
     );
@@ -1497,7 +1643,7 @@ export default function DispatcherRoster({ onLogout }) {
                     onClick={() => {
                       setActiveNav(tab.id);
                       if (tab.id === 'Route Allocation & Capacity') {
-                        setActiveSubTab('Allocation Workbench');
+                        setActiveSubTab('Fleet Availability');
                       }
                     }}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
@@ -1528,10 +1674,9 @@ export default function DispatcherRoster({ onLogout }) {
             <div className="relative">
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:border-gray-300 rounded-full transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:border-gray-300 rounded-full transition-colors cursor-default pointer-events-none"
               >
                 <span>Thu, Oct 1</span>
-                <ChevronDown size={13} className="text-gray-500" />
               </button>
             </div>
 
@@ -1642,9 +1787,9 @@ export default function DispatcherRoster({ onLogout }) {
         </div>
 
         {activeNav === 'Overview' ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col xl:flex-row gap-4 h-[calc(100vh-170px)]">
             {/* Schematic Map Container */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden flex flex-col w-full xl:w-[40%] flex-shrink-0">
               {/* Map Header: Title & Vehicle/Route Search */}
               <div className="px-5 py-3.5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 className="text-sm font-bold text-slate-900 tracking-tight">Depot Hub Schematic</h2>
@@ -1662,93 +1807,53 @@ export default function DispatcherRoster({ onLogout }) {
               </div>
 
               {/* Schematic Visual Canvas */}
-              <div className="relative h-[340px] sm:h-[380px] w-full bg-[#F4F6F4] overflow-hidden select-none">
-                {/* OpenStreetMap Embed */}
-                <iframe
-                  title="OpenStreetMap - Colombo Region"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  scrolling="no"
-                  marginHeight="0"
-                  marginWidth="0"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${overviewDepot === 'Peliyagoda Depot' ? '79.8200%2C6.8800%2C79.9400%2C6.9700' : '80.5900%2C7.2600%2C80.6600%2C7.3200'}&layer=mapnik`}
-                  className="absolute inset-0 z-0"
-                  style={{ border: 0, opacity: 0.9 }}
-                />
+              <div className="relative flex-1 w-full bg-[#F4F6F4] select-none min-h-[300px]">
+                <MapContainer
+                  key={overviewDepot}
+                  center={overviewDepot === 'Peliyagoda Depot' ? [6.9250, 79.8800] : [7.2906, 80.6337]}
+                  zoom={overviewDepot === 'Peliyagoda Depot' ? 12 : 13}
+                  zoomControl={false}
+                  dragging={false}
+                  scrollWheelZoom={false}
+                  doubleClickZoom={false}
+                  className="absolute inset-0 z-0 opacity-90"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  {selectedMapVehicle && (() => {
+                    const seed = selectedMapVehicle.charCodeAt(0) + selectedMapVehicle.charCodeAt(selectedMapVehicle.length - 1);
+                    const latOffset = (seed % 10) * 0.005;
+                    const lngOffset = (seed % 5) * 0.008;
+                    
+                    let coords;
+                    if (overviewDepot === 'Peliyagoda Depot') {
+                      const d = [6.9610, 79.8821];
+                      const v = [6.9110 + latOffset, 79.8720 - lngOffset];
+                      const o = [6.8649 - latOffset, 79.8997 + lngOffset];
+                      coords = { depot: d, vehicle: v, outlet: o, path: [d, [6.9450, 79.8750 - lngOffset], v, [6.8850 + latOffset, 79.8850], o] };
+                    } else {
+                      const d = [7.2906, 80.6337];
+                      const v = [7.2800 - latOffset, 80.6150 + lngOffset];
+                      const o = [7.2700 + latOffset, 80.6000 - lngOffset];
+                      coords = { depot: d, vehicle: v, outlet: o, path: [d, [7.2850, 80.6250], v, [7.2750, 80.6050], o] };
+                    }
+                    
+                    const bounds = L.latLngBounds([coords.depot, coords.outlet, coords.vehicle]);
+                    
+                    return (
+                      <>
+                        <RoadRoutePolyline points={coords.path} />
+                        <Marker position={coords.depot} icon={createDepotIcon(overviewDepot)} />
+                        <Marker position={coords.outlet} icon={createOutletIcon('Target Outlet')} />
+                        <Marker position={coords.vehicle} icon={createVehicleIcon(selectedMapVehicle)} />
+                        <FitBounds bounds={bounds} />
+                      </>
+                    );
+                  })()}
+                </MapContainer>
                 
-                {/* Overlay to dim map slightly and prevent scroll hijacking */}
-                <div className="absolute inset-0 bg-white/20 pointer-events-none z-0" />
-
-                {/* Vehicle Pins */}
-                {/* VEH009 (On Time - Green) */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMapVehicle('VEH009')}
-                  className={`absolute top-32 left-28 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-white shadow-md border cursor-pointer transition-transform hover:scale-105 ${
-                    selectedMapVehicle === 'VEH009' ? 'ring-2 ring-emerald-500 border-emerald-500' : 'border-emerald-300'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-slate-800">VEH009</span>
-                </button>
-
-                {/* VEH014 (Delayed - Amber - Focused/Selected) */}
-                <div className="absolute top-44 left-[28%] z-20 flex flex-col items-center">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMapVehicle('VEH014')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-white shadow-md border cursor-pointer transition-transform hover:scale-105 ${
-                      selectedMapVehicle === 'VEH014' ? 'ring-2 ring-amber-500 border-amber-500' : 'border-amber-300'
-                    }`}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                    <span className="text-slate-900">VEH014</span>
-                  </button>
-
-                  {/* Popover Callout Card for VEH014 matching screenshot */}
-                  {selectedMapVehicle === 'VEH014' && (
-                    <div className="mt-2 w-64 bg-white/95 backdrop-blur-xs rounded-xl border border-amber-400 shadow-xl p-3 text-left animate-in fade-in zoom-in-95 duration-150">
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="text-xs font-bold text-amber-700 font-mono">ORD-30301 · VEH014</span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                          Delayed
-                        </span>
-                      </div>
-                      <p className="text-xs font-bold text-slate-800 leading-snug">
-                        Fresh chilled · 25 cases
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                        ETA: 8:12 AM (Nugegoda window is 8:00 AM)
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* VEH027 (Offline - Slate) */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMapVehicle('VEH027')}
-                  className={`absolute bottom-24 left-[18%] z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-white shadow-md border cursor-pointer transition-transform hover:scale-105 ${
-                    selectedMapVehicle === 'VEH027' ? 'ring-2 ring-slate-500 border-slate-500' : 'border-slate-300'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-slate-500" />
-                  <span className="text-slate-800">VEH027</span>
-                </button>
-
-                {/* VEH032 (On Time - Green) */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMapVehicle('VEH032')}
-                  className={`absolute top-52 left-[41%] z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-white shadow-md border cursor-pointer transition-transform hover:scale-105 ${
-                    selectedMapVehicle === 'VEH032' ? 'ring-2 ring-emerald-500 border-emerald-500' : 'border-emerald-300'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-slate-800">VEH032</span>
-                </button>
-
                 {/* Map Legend (Bottom-Left Overlay) */}
                 <div className="absolute bottom-4 left-4 z-10 bg-white/90 backdrop-blur-xs rounded-lg border border-slate-200 shadow-2xs px-3 py-2 text-left">
                   <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">MAP LEGEND</div>
@@ -1789,7 +1894,7 @@ export default function DispatcherRoster({ onLogout }) {
             </div>
 
             {/* Live Runs Table Container */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col w-full xl:w-[60%] overflow-hidden">
               {/* Filter Tabs & Sort Controls */}
               <div className="px-5 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 {/* Filter Pills */}
@@ -1843,7 +1948,7 @@ export default function DispatcherRoster({ onLogout }) {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto">
+              <div className="flex-1 overflow-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -2077,13 +2182,13 @@ export default function DispatcherRoster({ onLogout }) {
                         >
                           {/* Col 1: Order ID + Incident Vehicle + Refrigeration */}
                           <div className="flex items-center gap-2.5 w-60 flex-shrink-0">
-                            <span className="font-bold text-slate-900 text-sm font-sans tracking-tight">
+                            <span className="font-bold text-slate-900 text-xs font-sans tracking-tight">
                               {order.id}
                             </span>
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700">
                               {order.incidentVehicle} ({order.type})
                             </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                               order.refrigeration === 'Reefer'
                                 ? 'bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD]'
                                 : 'bg-slate-100 text-slate-600 border border-slate-200'
@@ -2094,13 +2199,13 @@ export default function DispatcherRoster({ onLogout }) {
 
                           {/* Col 2: Incident label */}
                           <div className="w-36 flex-shrink-0">
-                            <span className="font-bold text-slate-900 text-sm">
+                            <span className="font-bold text-slate-900 text-xs">
                               {order.tripLabel}
                             </span>
                           </div>
 
                           {/* Col 3: Cargo description */}
-                          <div className="w-52 text-slate-500 text-sm truncate flex-shrink-0">
+                          <div className="w-52 text-slate-500 text-xs truncate flex-shrink-0">
                             {order.cargoLine}
                           </div>
 
@@ -2118,7 +2223,7 @@ export default function DispatcherRoster({ onLogout }) {
 
                           {/* Col 5: Destination */}
                           <div className="w-52 flex-shrink-0">
-                            <span className="font-bold text-slate-900 text-sm">
+                            <span className="font-bold text-slate-900 text-xs">
                               {order.destination}
                             </span>
                           </div>
@@ -2402,30 +2507,6 @@ export default function DispatcherRoster({ onLogout }) {
                     )}
 
                     {/* Hub Selector */}
-                    <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Peliyagoda')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                          selectedHub === 'Peliyagoda'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Peliyagoda Hub
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Kandy')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          selectedHub === 'Kandy'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Kandy Hub
-                      </button>
-                    </div>
 
                     {/* Workbench Segment Bar: View by Vehicle / View by Outlet / Deferrals */}
                     <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
@@ -3188,31 +3269,6 @@ export default function DispatcherRoster({ onLogout }) {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
                   {/* Left: Hub Pills, Bulk Helpers, and Category Filters */}
                   <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                    {/* Hub Selector */}
-                    <div className="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Peliyagoda')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          selectedHub === 'Peliyagoda'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Peliyagoda Hub (42)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedHub('Kandy')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          selectedHub === 'Kandy'
-                            ? 'bg-white text-slate-900 shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Kandy Hub (18)
-                      </button>
-                    </div>
 
                     {/* Quick Bulk Action Helpers */}
                     <div className="inline-flex items-center gap-1 bg-slate-100/80 px-2 py-1 rounded-lg border border-slate-200/60 text-xs font-medium text-slate-600">

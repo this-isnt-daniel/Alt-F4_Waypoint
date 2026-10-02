@@ -1,46 +1,54 @@
+import { useState } from "react";
 import { useNavigator } from "@/router/navigator";
-import { Button } from "@/driver/components/Button";
-import { Card } from "@/driver/components/Card";
-import { AppIcon } from "@/driver/components/AppIcon";
-import { OUTLET_CLOSED } from "@/driver/data/driverContent";
 import { useDriverState } from "@/driver/state/useDriverState";
+import { ChoiceList } from "@/driver/components/ChoiceList";
 
 export function OutletClosedScreen() {
   const { push, route } = useNavigator();
-  const { completeStop } = useDriverState();
-  const outletId = route.params.outletId ?? OUTLET_CLOSED.outletId;
+  const { completeStop, currentStopIndex, currentTripSequence, currentTripStops } = useDriverState();
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const outletId = route.params.outletId ?? currentTripSequence[currentStopIndex] ?? "OUT042";
+
+  const handleContinue = () => {
+    completeStop(outletId, "failed");
+    push("active-trip");
+  };
 
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto">
-      <div>
-        <h1 className="text-lg font-bold text-slate-900">Outlet unavailable</h1>
-        <p className="text-[13px] text-slate-500">{outletId} · {OUTLET_CLOSED.outletName}</p>
+    <div className="flex flex-col flex-1 min-h-0 bg-white px-5 py-6">
+      <div className="flex-1 max-w-sm mx-auto w-full">
+        <h1 className="text-[28px] font-bold text-slate-900 mb-1">
+          OUTLET INACCESSIBLE
+        </h1>
+        <p className="text-[16px] text-slate-500 mb-8">
+          {outletId}
+        </p>
+
+        <h2 className="text-[15px] font-bold text-slate-900 mb-4">
+          What is the issue?
+        </h2>
+
+        <ChoiceList
+          options={[
+            { id: "Store closed", label: "Store closed" },
+            { id: "Road blocked", label: "Road blocked" },
+            { id: "Manager absent", label: "Manager absent" }
+          ]}
+          selectedId={selected}
+          onSelect={(id) => setSelected(id)}
+        />
       </div>
-      <div className="text-[13px] font-medium text-amber-600">{OUTLET_CLOSED.reason}</div>
-      <Card variant="surface" className="space-y-2">
-        {OUTLET_CLOSED.affectedItems.map((item, i) => (
-          <div key={i} className="flex justify-between text-[13px]">
-            <span className="text-slate-900">{item.name} ×{item.quantity}</span>
-            <span className="text-slate-500">{item.action}</span>
-          </div>
-        ))}
-        <div className="text-[12px] text-slate-500 pt-1">Return crate: {OUTLET_CLOSED.returnCrate}</div>
-        <div className="text-[12px] text-slate-500">Destination: {OUTLET_CLOSED.destination}</div>
-      </Card>
-      <div className="space-y-2 pt-2">
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={() => {
-            completeStop(outletId, "failed");
-            push("return-depot", { outletId });
-          }}
+
+      <div className="mt-auto pb-safe">
+        <button
+          type="button"
+          disabled={!selected}
+          onClick={handleContinue}
+          className="w-full bg-[#059669] text-white font-bold text-[16px] py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {OUTLET_CLOSED.result}
-        </Button>
-        <Button variant="ghost" size="md" onClick={() => push("active-trip")}>
-          <AppIcon name="arrow-left" size={16} className="mr-2" /> Back to route
-        </Button>
+          REPORT
+        </button>
       </div>
     </div>
   );

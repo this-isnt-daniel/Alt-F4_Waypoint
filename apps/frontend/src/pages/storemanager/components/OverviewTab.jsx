@@ -28,33 +28,25 @@ export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, d
 
         {/* ── Order Arrived Alert Banner ── */}
         {deliveryArrived && (
-          <div className="bg-[#FFFFFF] border border-[#DCEEE1] rounded-2xl p-5 flex flex-col gap-4 animate-in fade-in slide-in-from-top-3 duration-300" style={{ fontFamily: 'Inter, sans-serif' }}>
-            <div className="flex items-start gap-3.5">
-              <div className="w-[38px] h-[38px] rounded-[9px] bg-[#2EA85C] text-white flex items-center justify-center shrink-0">
-                <Truck size={20} strokeWidth={2.5} />
+          <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md border border-slate-100 flex items-center justify-between p-4 relative overflow-hidden border-l-[4px] border-l-[#059669] transition-all duration-200 hover:-translate-y-1 cursor-pointer">
+            <div className="pl-1">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[15px] font-bold text-slate-900">Order ORD-10492</span>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#E8F7F0] text-[#059669]">Arrived</span>
+                <span className="text-[12px] font-medium text-slate-400 ml-1">· 2 min ago</span>
               </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E7F6EC] text-[#2EA85C] border border-[#BFE6CC]">
-                    Arrived
-                  </span>
-                  <span className="text-[14px] font-semibold text-[#152B1E]">
-                    Order ORD-10492
-                  </span>
-                </div>
-                <p className="text-[13px] font-medium text-[#5E7365] leading-relaxed">
-                  Vehicle VEH402 is at the loading dock. Provide the OTP to the driver to complete handover.
-                </p>
-              </div>
+              <p className="text-[13px] text-slate-500 font-medium">
+                VEH402 is at the loading dock — share this code with the driver
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={onOpenOtpModal}
-              className="w-full px-5 py-2.5 bg-white text-[#2EA85C] border border-[#2EA85C] hover:bg-[#E7F6EC] text-[13px] font-semibold rounded-full transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <KeyRound size={16} />
-              <span>Provide OTP</span>
-            </button>
+            
+            <div className="flex gap-2">
+              {['1', '6', '4', '4'].map((digit, i) => (
+                <div key={i} className="w-8 h-10 rounded-md bg-[#065F46] text-white flex items-center justify-center font-bold text-[16px]">
+                  {digit}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

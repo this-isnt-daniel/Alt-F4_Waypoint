@@ -16,6 +16,8 @@ import {
 import {
   ROUTE_UPDATED_SEQUENCE,
   TRIP_1_STOPS,
+  TRIP_2_STOPS,
+  type DriverStop,
 } from "@/driver/data/driverContent";
 
 export interface DriverStateContextValue {
@@ -24,14 +26,23 @@ export interface DriverStateContextValue {
   syncRecords: SyncRecord[];
   addSyncRecord: (record: Omit<SyncRecord, "id" | "createdAt">) => void;
   updateSyncRecord: (id: string, patch: Partial<SyncRecord>) => void;
+  activeTripId: 1 | 2;
+  setActiveTripId: (id: 1 | 2) => void;
   trip1Started: boolean;
+  trip1Completed: boolean;
   trip2Unlocked: boolean;
+  trip2Started: boolean;
+  trip2Completed: boolean;
   startTrip1: () => void;
   completeTrip1: () => void;
+  startTrip2: () => void;
+  completeTrip2: () => void;
   currentStopSeq: number;
   setCurrentStopSeq: (seq: number) => void;
   currentStopIndex: number;
+  currentTripStops: DriverStop[];
   trip1Sequence: string[];
+  currentTripSequence: string[];
   completedStopIds: string[];
   flaggedStopIds: string[];
   failedStopIds: string[];
@@ -41,6 +52,9 @@ export interface DriverStateContextValue {
   syncReviewForwarded: boolean;
   forwardSyncReview: () => void;
   applyScenario: (scenarioId: ScenarioId, params?: Record<string, string>) => void;
+  vehicleBreakdown: boolean;
+  setVehicleBreakdown: (val: boolean) => void;
+  reportBreakdown: (reason?: string) => void;
 }
 
 export const DriverStateContext = createContext<DriverStateContextValue | null>(
@@ -92,9 +106,16 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
     initial.connection,
   );
   const [syncRecords, setSyncRecords] = useState<SyncRecord[]>([]);
+  const [activeTripId, setActiveTripId] = useState<1 | 2>(initial.activeTripId ?? 1);
   const [trip1Started, setTrip1Started] = useState<boolean>(initial.tripStarted);
+  const [trip1Completed, setTrip1Completed] = useState<boolean>(initial.trip1Completed ?? false);
   const [trip2Unlocked, setTrip2Unlocked] = useState<boolean>(
     initial.trip2Unlocked ?? false,
+  );
+  const [trip2Started, setTrip2Started] = useState<boolean>(initial.trip2Started ?? false);
+  const [trip2Completed, setTrip2Completed] = useState<boolean>(false);
+  const [vehicleBreakdown, setVehicleBreakdown] = useState<boolean>(
+    initial.vehicleBreakdown ?? false,
   );
   const [trip1Sequence, setTrip1Sequence] = useState<string[]>(
     initial.routeSequence,
@@ -118,14 +139,22 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
     initial.syncReviewForwarded,
   );
 
+  const trip2Sequence = useMemo(() => TRIP_2_STOPS.map((s) => s.outletId), []);
+  const currentTripSequence = activeTripId === 2 ? trip2Sequence : trip1Sequence;
+  const currentTripStops = activeTripId === 2 ? TRIP_2_STOPS : TRIP_1_STOPS;
+
   const applyScenario = useCallback(
     (scenarioId: ScenarioId, params: Record<string, string> = {}) => {
       const state: ScenarioState =
         SCENARIO_INITIAL[scenarioId] ?? SCENARIO_INITIAL.happy;
 
       setConnectionState(state.connection);
+      setActiveTripId(state.activeTripId ?? 1);
       setTrip1Started(state.tripStarted);
+      setTrip1Completed(state.trip1Completed ?? false);
       setTrip2Unlocked(state.trip2Unlocked ?? false);
+      setTrip2Started(state.trip2Started ?? false);
+      setVehicleBreakdown(state.vehicleBreakdown ?? false);
       setTrip1Sequence([...state.routeSequence]);
       setCompletedStopIds([...state.completedStopIds]);
       setFlaggedStopIds([...state.flaggedStopIds]);
@@ -185,12 +214,46 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
   );
 
   const startTrip1 = useCallback(() => {
+    setActiveTripId(1);
     setTrip1Started(true);
   }, []);
 
   const completeTrip1 = useCallback(() => {
+    setTrip1Started(false);
+    setTrip1Completed(true);
     setTrip2Unlocked(true);
   }, []);
+
+  const startTrip2 = useCallback(() => {
+    setTrip1Started(false);
+    setTrip1Completed(true);
+    setTrip2Unlocked(true);
+    setTrip2Started(true);
+    setActiveTripId(2);
+    setCurrentStopIndex(0);
+    setCompletedStopIds([]);
+    setFlaggedStopIds([]);
+    setFailedStopIds([]);
+  }, []);
+
+  const completeTrip2 = useCallback(() => {
+    setTrip2Started(false);
+    setTrip2Completed(true);
+  }, []);
+
+  const reportBreakdown = useCallback(
+    (reason: string = "Vehicle breakdown / Roadside assistance requested") => {
+      setVehicleBreakdown(true);
+      addSyncRecord({
+        type: "issue",
+        outletId: currentTripSequence[currentStopIndex] ?? "EN_ROUTE",
+        state: connection === "online" ? "synced" : "pending",
+        hasPhoto: false,
+        pinVerified: false,
+      });
+    },
+    [currentTripSequence, currentStopIndex, connection, addSyncRecord],
+  );
 
   const acceptRouteUpdate = useCallback(() => {
     setRouteUpdateAccepted(true);
@@ -219,10 +282,10 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
 
       // Advance to next stop if available
       setCurrentStopIndex((prev) =>
-        prev < trip1Sequence.length - 1 ? prev + 1 : prev,
+        prev < currentTripSequence.length - 1 ? prev + 1 : prev,
       );
     },
-    [trip1Sequence],
+    [currentTripSequence],
   );
 
   const currentStopSeq = currentStopIndex + 1;
@@ -240,14 +303,23 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
       syncRecords,
       addSyncRecord,
       updateSyncRecord,
+      activeTripId,
+      setActiveTripId,
       trip1Started,
+      trip1Completed,
       trip2Unlocked,
+      trip2Started,
+      trip2Completed,
       startTrip1,
       completeTrip1,
+      startTrip2,
+      completeTrip2,
       currentStopSeq,
       setCurrentStopSeq,
       currentStopIndex,
+      currentTripStops,
       trip1Sequence,
+      currentTripSequence,
       completedStopIds,
       flaggedStopIds,
       failedStopIds,
@@ -257,6 +329,9 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
       syncReviewForwarded,
       forwardSyncReview,
       applyScenario,
+      vehicleBreakdown,
+      setVehicleBreakdown,
+      reportBreakdown,
     }),
     [
       connection,
@@ -264,14 +339,23 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
       syncRecords,
       addSyncRecord,
       updateSyncRecord,
+      activeTripId,
+      setActiveTripId,
       trip1Started,
+      trip1Completed,
       trip2Unlocked,
+      trip2Started,
+      trip2Completed,
       startTrip1,
       completeTrip1,
+      startTrip2,
+      completeTrip2,
       currentStopSeq,
       setCurrentStopSeq,
       currentStopIndex,
+      currentTripStops,
       trip1Sequence,
+      currentTripSequence,
       completedStopIds,
       flaggedStopIds,
       failedStopIds,
@@ -281,6 +365,9 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
       syncReviewForwarded,
       forwardSyncReview,
       applyScenario,
+      vehicleBreakdown,
+      setVehicleBreakdown,
+      reportBreakdown,
     ],
   );
 

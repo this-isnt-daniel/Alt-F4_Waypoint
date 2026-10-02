@@ -1,36 +1,41 @@
 import { useNavigator } from "@/router/navigator";
-import { Button } from "@/driver/components/Button";
-import { Card } from "@/driver/components/Card";
-import { AppIcon } from "@/driver/components/AppIcon";
+import { CloudOff } from "lucide-react";
 
 export function OfflineSavedScreen() {
   const { push } = useNavigator();
 
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto text-center">
-      <div className="pt-6">
-        <div className="w-16 h-16 rounded-full bg-slate-100 mx-auto flex items-center justify-center mb-3">
-          <AppIcon name="save" size={32} className="text-slate-600" />
+    <div className="flex flex-col flex-1 min-h-0 bg-white px-5 py-6">
+      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+        <div className="flex items-center gap-2 mb-3 text-amber-500">
+          <CloudOff size={28} />
         </div>
-        <h1 className="text-lg font-bold text-slate-900">Delivery saved</h1>
-        <p className="text-[13px] text-slate-500">OUT047 · 06:34</p>
+
+        <h1 className="text-[28px] font-bold text-slate-900 mb-1">
+          OFFLINE
+        </h1>
+        <p className="text-[16px] text-slate-500 mb-8">
+          Delivery saved
+        </p>
+
+        <p className="text-[16px] text-slate-900 font-medium mb-4">
+          Actions will be saved on this device and synced when connection returns.
+        </p>
       </div>
 
-      <p className="text-[13px] text-slate-500 font-medium">Saved safely on this phone</p>
-      
-      <Card variant="surface" className="text-left">
-        <p className="text-[13px] text-slate-500">
-          You can continue the route. The photo and PIN will sync automatically when connection returns. No work will be lost.
-        </p>
-      </Card>
-
-      <div className="space-y-2 pt-2">
-        <Button variant="primary" size="lg" onClick={() => push("active-trip")}>
-          Continue to next stop
-        </Button>
-        <Button variant="secondary" size="md" onClick={() => push("sync-centre")}>
-          Open Sync Centre
-        </Button>
+      <div className="mt-auto space-y-3 pb-safe">
+        <button 
+          onClick={() => push("active-trip")}
+          className="w-full bg-[#059669] text-white font-bold text-[16px] py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+        >
+          CONTINUE TO NEXT STOP
+        </button>
+        <button 
+          onClick={() => push("sync-centre")}
+          className="w-full py-4 rounded-lg bg-slate-100 text-[15px] font-bold text-slate-700 cursor-pointer"
+        >
+          OPEN SYNC CENTRE
+        </button>
       </div>
     </div>
   );

@@ -1,114 +1,131 @@
-import { formatUnits, formatVolume } from "@/lib/derive";
 import { useDriverState } from "@/driver/state/useDriverState";
 import { useNavigator } from "@/router/navigator";
-import { TRIP_1, TRIP_2, RUN_TARGETS } from "@/driver/data/driverContent";
-import { Button } from "@/driver/components/Button";
-import { Chip } from "@/driver/components/Chip";
-import { HeroBand } from "@/driver/components/HeroBand";
-import { Lock, Phone } from "lucide-react";
+import { TRIP_1, TRIP_2 } from "@/driver/data/driverContent";
+import { Lock, Check, Phone } from "lucide-react";
 
-function TripSpecRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-1.5">
-      <span className="text-sm text-ink-muted">{label}</span>
-      <span className="text-sm font-semibold text-ink">{value}</span>
-    </div>
-  );
-}
-
+// ── TODAY'S TRIPS SCREEN ─────────────────────────────────────────
+// Simple trip list. No analytics banner. No "13 stops · 2,100 cases" hero.
+// Driver needs: trip context → start action. That is all.
 export function TodayTripsScreen() {
-  const { trip2Unlocked } = useDriverState();
+  const {
+    trip1Started,
+    trip1Completed,
+    trip2Unlocked,
+    trip2Started,
+  } = useDriverState();
   const { push } = useNavigator();
 
+  const isTrip1Done = trip1Completed || trip2Started;
+
   return (
-    <div className="pb-6">
-      <HeroBand
-        label="TODAY'S RUN TARGETS"
-        title={`${RUN_TARGETS.stopCount} Stops · ${formatUnits(RUN_TARGETS.unitCount)}`}
-      />
+    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-white px-5 py-6">
+      {/* Page heading */}
+      <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1">Today</p>
+      <h1 className="text-[24px] font-bold text-slate-900 mb-6">Your trips</h1>
 
-      <div className="px-4">
-        <p className="mb-2 mt-4 text-2xs font-semibold uppercase tracking-wide text-ink-muted">
-          Trips
-        </p>
-
-        {/* Trip 1 — active */}
-        <section className="rounded-card border-[1.5px] border-green bg-surface p-4 shadow-[var(--shadow-1)]">
-          <header className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-bold text-ink">Fresh — Kandy</h2>
-            <Chip kind="capability" label="CHILLED REEFER" />
-          </header>
-          <div className="mt-2 divide-y divide-line">
-            <TripSpecRow label="Stops" value={`${TRIP_1.stopCount}`} />
-            <TripSpecRow label="Load" value={formatUnits(TRIP_1.manifestUnits)} />
-            <TripSpecRow
-              label="Weight / Volume"
-              value={`${TRIP_1.weightKg} kg · ${formatVolume(TRIP_1.volumeM3)}`}
-            />
-            <TripSpecRow
-              label="Depart / Return"
-              value={`${TRIP_1.depart} · ${TRIP_1.etaReturn}`}
-            />
+      {/* ── TRIP 1 ── */}
+      <section className={`mb-4 rounded-xl border ${isTrip1Done ? "border-slate-200 bg-slate-50 opacity-70" : "border-green/30 bg-white shadow-sm"}`}>
+        <div className="px-4 py-4">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <p className="text-[16px] font-bold text-slate-900">Trip 1 · Fresh</p>
+              <p className="text-[13px] text-slate-500 mt-0.5">{TRIP_1.stopCount} stops · Depart {TRIP_1.depart}</p>
+            </div>
+            {isTrip1Done && (
+              <span className="flex items-center gap-1 text-[12px] font-semibold text-emerald-600">
+                <Check size={14} /> Done
+              </span>
+            )}
           </div>
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            className="mt-3"
-            onClick={() => push("load-confirm")}
-          >
-            Start trip 1
-          </Button>
-        </section>
 
-        {/* Trip 2 — locked until trip1 + depot return */}
-        <section className="mt-3 rounded-card border border-line bg-surface p-4">
-          <header className="flex items-center justify-between gap-2">
-            <h2
-              className={
-                "text-lg font-bold " + (trip2Unlocked ? "text-ink" : "text-ink-muted")
-              }
-            >
-              Style — Kandy
-            </h2>
-            <Chip
-              kind="capability"
-              label={trip2Unlocked ? "AMBIENT" : "LOCKED"}
-            />
-          </header>
-          <div className="mt-2 divide-y divide-line">
-            <TripSpecRow label="Stops" value={`${TRIP_2.stopCount}`} />
-            <TripSpecRow label="Load" value={formatUnits(TRIP_2.manifestUnits)} />
-            <TripSpecRow
-              label="Weight / Volume"
-              value={`${TRIP_2.weightKg} kg · ${formatVolume(TRIP_2.volumeM3)}`}
-            />
+          {/* Compact info row */}
+          <div className="flex items-center gap-4 mt-3 mb-4 text-[13px] text-slate-500">
+            <span>Return {TRIP_1.etaReturn}</span>
+            <span>·</span>
+            <span>Chilled reefer</span>
           </div>
-          {trip2Unlocked ? (
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              className="mt-3"
-              onClick={() => push("load-confirm", { trip: "2" })}
+
+          {/* CTA */}
+          {isTrip1Done ? (
+            <div className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-100 text-[13px] font-semibold text-slate-400">
+              <Check size={15} className="text-emerald-500" /> Completed
+            </div>
+          ) : trip1Started ? (
+            <button
+              type="button"
+              onClick={() => push("active-trip")}
+              className="w-full bg-green text-white font-bold text-[15px] py-3.5 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+              style={{ backgroundColor: "var(--c-green)" }}
             >
-              Start trip 2
-            </Button>
+              Resume Trip 1
+            </button>
           ) : (
-            <div className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-btn bg-raised text-sm font-medium text-ink-muted">
-              <Lock size={16} aria-hidden="true" /> Locked until trip 1 done
+            <button
+              type="button"
+              onClick={() => push("trip-briefing", { trip: "1" })}
+              className="w-full bg-green text-white font-bold text-[15px] py-3.5 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+              style={{ backgroundColor: "var(--c-green)" }}
+            >
+              Start Trip 1
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* ── TRIP 2 ── */}
+      <section className={`mb-6 rounded-xl border ${trip2Unlocked || trip2Started ? "border-green/30 bg-white shadow-sm" : "border-slate-200 bg-slate-50 opacity-60"}`}>
+        <div className="px-4 py-4">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <p className={`text-[16px] font-bold ${trip2Unlocked || trip2Started ? "text-slate-900" : "text-slate-400"}`}>
+                Trip 2 · Style
+              </p>
+              <p className="text-[13px] text-slate-500 mt-0.5">{TRIP_2.stopCount} stops · Ambient</p>
+            </div>
+            {!trip2Unlocked && !trip2Started && (
+              <Lock size={16} className="text-slate-300 mt-0.5" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-4 mt-3 mb-4 text-[13px] text-slate-400">
+            <span>Available after Trip 1</span>
+          </div>
+
+          {trip2Started ? (
+            <button
+              type="button"
+              onClick={() => push("active-trip")}
+              className="w-full bg-green text-white font-bold text-[15px] py-3.5 rounded-lg cursor-pointer"
+              style={{ backgroundColor: "var(--c-green)" }}
+            >
+              Resume Trip 2
+            </button>
+          ) : trip2Unlocked ? (
+            <button
+              type="button"
+              onClick={() => push("trip-briefing", { trip: "2" })}
+              className="w-full bg-green text-white font-bold text-[15px] py-3.5 rounded-lg cursor-pointer"
+              style={{ backgroundColor: "var(--c-green)" }}
+            >
+              Start Trip 2
+            </button>
+          ) : (
+            <div className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-100 text-[13px] font-semibold text-slate-400">
+              <Lock size={14} /> Locked until Trip 1 done
             </div>
           )}
-        </section>
+        </div>
+      </section>
 
-        <button
-          type="button"
-          onClick={() => push("contact-dispatch")}
-          className="mx-auto mt-4 flex items-center gap-1.5 text-sm font-medium text-green hover:underline"
-        >
-          <Phone size={16} aria-hidden="true" /> Contact dispatch
-        </button>
-      </div>
+      {/* Dispatch link */}
+      <button
+        type="button"
+        onClick={() => push("contact-dispatch")}
+        className="flex items-center justify-center gap-1.5 text-[13px] font-medium text-slate-400 hover:text-slate-700 cursor-pointer py-1"
+      >
+        <Phone size={14} />
+        Contact dispatch
+      </button>
     </div>
   );
 }

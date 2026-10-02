@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, AlertTriangle, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Check, AlertTriangle, ChevronDown, ChevronUp, X, ArrowRight } from 'lucide-react';
 import { ORDER_HISTORY, DEFERRED_ORDERS } from '../data/orders';
 
 const OUTCOME_STYLE = {
@@ -16,7 +16,7 @@ const ISSUE_TYPES = [
   { id: 'other',   label: 'Other'          },
 ];
 
-export default function ReceiptsTab({ isConfirmed }) {
+export default function ReceiptsTab({ isConfirmed, onNavigate }) {
   const [expandedId, setExpandedId]       = useState(null);
   const [reportingId, setReportingId]     = useState(null);
 
@@ -25,164 +25,143 @@ export default function ReceiptsTab({ isConfirmed }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-screen-md mx-auto px-4 md:px-6 py-5 space-y-5 pb-10">
-        <h2 className="text-[19px] font-bold text-slate-900">Receipts &amp; Deferrals</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-[19px] font-bold text-slate-900">Receipts &amp; Deferrals</h2>
+          <button type="button" onClick={() => onNavigate && onNavigate('progress')} className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5 cursor-pointer">
+            2 orders in progress today <ArrowRight size={12} strokeWidth={2.5} />
+          </button>
+        </div>
 
-        {/* ── Today's Confirmed Receipt Banner ── */}
-        {isConfirmed && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <Check size={18} strokeWidth={2.5} />
-              </div>
+        <div className="pt-2 space-y-8">
+          {/* RECEIVED ORDERS */}
+          <section>
+            <button onClick={() => onNavigate && onNavigate('history-received')} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5 hover:text-emerald-700 transition-colors cursor-pointer group">
+              Received Orders <ArrowRight size={10} strokeWidth={3} className="opacity-0 group-hover:opacity-100 transition-opacity -ml-0.5" />
+            </button>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-50 overflow-hidden">
+              
+              {/* ORD-1029 */}
               <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-[14px] font-bold text-emerald-950">Today's Delivery Confirmed</p>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Handover Verified
-                  </span>
-                </div>
-                <p className="text-[12px] text-emerald-700 mt-0.5">
-                  Order #ORD-2026-0929 verified via Driver OTP. Goods received at loading dock.
-                </p>
-              </div>
-            </div>
-            <span className="text-[12px] font-semibold text-emerald-800 hidden sm:inline">
-              Today · Just now
-            </span>
-          </div>
-        )}
-
-        {/* ── Pending receipt confirmation ── */}
-        {ORDER_HISTORY.filter((o) => o.receipt === 'partial').length > 0 && (
-          <section>
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Open Issues</p>
-            {ORDER_HISTORY.filter((o) => o.receipt === 'partial').map((order) => (
-              <PendingIssueCard
-                key={order.id}
-                order={order}
-                onReport={() => setReportingId(order.id)}
-              />
-            ))}
-          </section>
-        )}
-
-        {/* ── Active deferrals ── */}
-        {DEFERRED_ORDERS.length > 0 && (
-          <section>
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Deferrals</p>
-            {DEFERRED_ORDERS.map((d) => (
-              <div key={d.id} className="bg-white border border-amber-200 rounded-xl overflow-hidden mb-2">
-                <div className="px-4 sm:px-5 py-4">
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[14px] font-bold text-slate-900 leading-none">{d.id}</span>
-                      <span className="text-[11px] text-slate-300 leading-none">·</span>
-                      <span className="text-[12px] text-slate-500 font-medium truncate leading-none">{d.type}</span>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0 leading-normal inline-flex items-center">
-                      Deferred
-                    </span>
+                <button type="button" onClick={() => toggle('ORD-1029')} className="w-full px-5 py-4 flex items-center justify-between text-[14px] hover:bg-slate-50/50 transition-colors text-left">
+                  <span className="text-slate-700">ORD-1029 · Thu, Oct 1</span>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <span className="font-semibold text-[#b45309]">Received with exceptions</span>
+                    <ChevronDown size={16} className={`text-slate-400 transition-transform ${expandedId === 'ORD-1029' ? 'rotate-180' : ''}`} />
                   </div>
-                  <p className="text-[12px] text-slate-500 space-y-0.5">
-                    <span className="block">Original: <span className="font-semibold text-slate-700">{d.originalDate}</span></span>
-                    <span className="block">New delivery: <span className="font-bold text-slate-900">{d.newDate}</span></span>
-                  </p>
-                  <p className="mt-2.5 text-[12px] text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 leading-relaxed">
-                    {d.reasonDetail}
-                  </p>
-                  {d.deferralCount > 1 && (
-                    <p className="mt-2 text-[12px] font-semibold text-amber-600">⚠ Deferral #{d.deferralCount} this month</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ── Order History ── */}
-        <section>
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Order History</p>
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            {ORDER_HISTORY.map((order, idx) => {
-              const isExpanded = expandedId === order.id;
-              const outcome = OUTCOME_STYLE[order.receipt] || OUTCOME_STYLE.confirmed;
-              const isLast = idx === ORDER_HISTORY.length - 1;
-
-              return (
-                <div key={order.id} className={isLast ? '' : 'border-b border-slate-100'}>
-                  {/* Row header */}
-                  <button
-                    type="button"
-                    onClick={() => toggle(order.id)}
-                    className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-[12px] text-slate-400 font-medium w-14 shrink-0">{order.date}</span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[14px] font-semibold text-slate-900">{order.id}</span>
-                          <span className="text-[11px] text-slate-400">{order.type}</span>
+                </button>
+                {expandedId === 'ORD-1029' && (
+                  <div className="px-5 pb-4 pt-2 bg-slate-50/30 border-t border-slate-50">
+                    <div className="space-y-3">
+                      <div className="bg-white border border-slate-200 rounded-lg px-3 py-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[13px] font-semibold text-slate-900">Butter 200g Salted</p>
+                          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            Short quantity
+                          </span>
                         </div>
-                        <p className="text-[12px] text-slate-500 mt-0.5">
-                          {order.totalReceived}/{order.totalOrdered} received
-                          {order.issues.length > 0 && (
-                            <span className="ml-1.5 text-amber-600 font-semibold">· {order.issues.length} issue{order.issues.length !== 1 ? 's' : ''}</span>
-                          )}
-                          {order.note && (
-                            <span className="ml-1.5 text-slate-400">· {order.note}</span>
-                          )}
+                        <div className="flex items-center gap-4 text-[12px] text-slate-500">
+                          <span>Ordered: <span className="font-semibold text-slate-800">12</span></span>
+                          <span>Received: <span className="font-semibold text-amber-700">10</span></span>
+                          <span className="font-semibold text-slate-600">Short by 2</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 pt-0.5">
+                          Loader note: Damaged during loading
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${outcome.bg} ${outcome.text} ${outcome.border}`}>
-                        {outcome.label}
-                      </span>
-                      {isExpanded ? <ChevronUp size={15} className="text-slate-400" /> : <ChevronDown size={15} className="text-slate-400" />}
-                    </div>
-                  </button>
+                  </div>
+                )}
+              </div>
 
-                  {/* Expanded detail */}
-                  {isExpanded && (
-                    <div className="px-4 sm:px-5 pb-4 pt-1 border-t border-slate-100 bg-slate-50/30">
-                      {order.issues.length === 0 ? (
-                        <div className="flex items-center gap-2 py-3 text-[13px] text-brand-700">
-                          <Check size={15} className="text-brand-600" />
-                          <span>All {order.totalOrdered} units received in good condition.</span>
+              {/* ORD-1011 */}
+              <div>
+                <button type="button" onClick={() => toggle('ORD-1011')} className="w-full px-5 py-4 flex items-center justify-between text-[14px] hover:bg-slate-50/50 transition-colors text-left">
+                  <span className="text-slate-700">ORD-1011 · Thu, Oct 1</span>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <span className="font-semibold text-[#b45309]">Received with exceptions</span>
+                    <ChevronDown size={16} className={`text-slate-400 transition-transform ${expandedId === 'ORD-1011' ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {expandedId === 'ORD-1011' && (
+                  <div className="px-5 pb-4 pt-2 bg-slate-50/30 border-t border-slate-50">
+                    <div className="space-y-3">
+                      <div className="bg-white border border-slate-200 rounded-lg px-3 py-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[13px] font-semibold text-slate-900">Cream Cracker 500g Munchee</p>
+                          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            Short quantity
+                          </span>
                         </div>
-                      ) : (
-                        <div className="py-3 space-y-3">
-                          {order.issues.map((issue, iIdx) => (
-                            <IssueDetail key={iIdx} issue={issue} />
-                          ))}
+                        <div className="flex items-center gap-4 text-[12px] text-slate-500">
+                          <span>Ordered: <span className="font-semibold text-slate-800">24</span></span>
+                          <span>Received: <span className="font-semibold text-amber-700">23</span></span>
+                          <span className="font-semibold text-slate-600">Short by 1</span>
                         </div>
-                      )}
-
-                      {/* Report issue button */}
-                      {order.receipt !== 'deferred' && (
-                        <button
-                          type="button"
-                          onClick={() => setReportingId(order.id)}
-                          className="mt-1 text-[12px] font-semibold text-brand-600 hover:underline"
-                        >
-                          + Report an issue with this delivery
-                        </button>
-                      )}
+                        <p className="text-[11px] text-slate-400 pt-0.5">
+                          Loader note: Damaged during loading
+                        </p>
+                      </div>
                     </div>
-                  )}
+                  </div>
+                )}
+              </div>
+
+              {/* ORD-1041 */}
+              <div>
+                <button type="button" onClick={() => toggle('ORD-1041')} className="w-full px-5 py-4 flex items-center justify-between text-[14px] hover:bg-slate-50/50 transition-colors text-left">
+                  <span className="text-slate-700">ORD-1041 · Thu, Oct 1</span>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <span className="font-semibold text-[#059669]">Received in full</span>
+                    <ChevronDown size={16} className={`text-slate-400 transition-transform ${expandedId === 'ORD-1041' ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {expandedId === 'ORD-1041' && (
+                  <div className="px-5 pb-4 pt-2 bg-slate-50/30 border-t border-slate-50">
+                    <div className="flex items-center gap-2 py-2 text-[13px] text-[#059669]">
+                      <Check size={16} strokeWidth={2.5} />
+                      <span>All units received in good condition.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </section>
+
+          {/* MISSING & DAMAGED GOODS */}
+          <section>
+            <button onClick={() => onNavigate && onNavigate('history-missing-damaged')} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5 hover:text-emerald-700 transition-colors cursor-pointer group">
+              Missing &amp; Damaged Goods <ArrowRight size={10} strokeWidth={3} className="opacity-0 group-hover:opacity-100 transition-opacity -ml-0.5" />
+            </button>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-50 overflow-hidden">
+              <div className="px-5 py-4 flex items-start justify-between">
+                <div>
+                  <p className="text-[14px] font-bold text-slate-900">Butter 200g Salted · 2 short</p>
+                  <p className="text-[12.5px] text-slate-400 mt-0.5">Damaged during loading — noted by loader</p>
                 </div>
-              );
-            })}
-          </div>
-        </section>
+                <span className="text-[12.5px] text-slate-400">ORD-1029</span>
+              </div>
+              <div className="px-5 py-4 flex items-start justify-between">
+                <div>
+                  <p className="text-[14px] font-bold text-slate-900">Cream Cracker 500g Munchee · 1 short</p>
+                  <p className="text-[12.5px] text-slate-400 mt-0.5">Damaged during loading — noted by loader</p>
+                </div>
+                <span className="text-[12.5px] text-slate-400">ORD-1011</span>
+              </div>
+            </div>
+          </section>
 
-        {/* Empty history */}
-        {ORDER_HISTORY.length === 0 && (
-          <div className="py-12 text-center text-slate-400">
-            <p className="text-[14px] font-medium">No delivery history yet.</p>
-            <p className="text-[13px] mt-1">Completed deliveries will appear here.</p>
-          </div>
-        )}
+          {/* DEFERRALS */}
+          <section>
+            <button onClick={() => onNavigate && onNavigate('history-deferrals')} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5 hover:text-emerald-700 transition-colors cursor-pointer group">
+              Deferrals <ArrowRight size={10} strokeWidth={3} className="opacity-0 group-hover:opacity-100 transition-opacity -ml-0.5" />
+            </button>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4">
+              <p className="text-[14px] font-bold text-slate-900">ORD-1038 · Chilled <span className="font-normal text-slate-800">— moved to</span> Fri, Oct 2</p>
+              <p className="text-[12.5px] text-slate-400 mt-0.5">Fleet capacity was short; Fresh outlets prioritized by order age.</p>
+            </div>
+          </section>
+        </div>
       </div>
 
       {/* ── Report Issue Modal ── */}

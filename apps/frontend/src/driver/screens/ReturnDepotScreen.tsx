@@ -1,36 +1,40 @@
 import { useNavigator } from "@/router/navigator";
-import { Button } from "@/driver/components/Button";
-import { Card } from "@/driver/components/Card";
-import { AppIcon } from "@/driver/components/AppIcon";
-import { RETURN_DEPOT } from "@/driver/data/driverContent";
+import { Building2 } from "lucide-react";
 
 export function ReturnDepotScreen() {
   const { push } = useNavigator();
+
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto">
-      <div>
-        <h1 className="text-lg font-bold text-slate-900">Return to depot</h1>
-        <p className="text-[13px] text-slate-500">{RETURN_DEPOT.items.reduce((s,i) => s + i.quantity, 0)} items · Kandy hub</p>
+    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-white px-5 py-6">
+      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+        <div className="flex items-center gap-2 mb-3 text-slate-400">
+          <Building2 size={24} strokeWidth={2} />
+        </div>
+
+        <h1 className="text-[28px] font-bold text-slate-900 mb-1">
+          RETURN TO DEPOT
+        </h1>
+        <p className="text-[16px] text-slate-500 mb-8">
+          Kandy Hub
+        </p>
+
+        <p className="text-[18px] font-bold text-slate-900">
+          Trip complete
+        </p>
+        <p className="text-[16px] text-slate-500">
+          All stops recorded
+        </p>
       </div>
-      <Card variant="surface" className="space-y-2">
-        <div className="text-[13px] font-medium text-slate-900">Return items are secured</div>
-        {RETURN_DEPOT.items.map((item, i) => (
-          <div key={i} className="py-2 border-t border-slate-100">
-            <div className="text-[13px] text-slate-900">{item.name} ×{item.quantity} — Return pending</div>
-            <div className="text-[12px] text-slate-500">Source {RETURN_DEPOT.sourceOutletId}</div>
-            <div className="text-[12px] text-slate-500">Reason {RETURN_DEPOT.reason}</div>
-            <div className="text-[12px] text-slate-500">Crate {RETURN_DEPOT.returnCrate}</div>
-          </div>
-        ))}
-      </Card>
-      <Card variant="raised" className="space-y-1">
-        <div className="text-[13px] text-slate-500">Destination: {RETURN_DEPOT.destination}</div>
-        <div className="text-[13px] text-slate-500">ETA: {RETURN_DEPOT.eta}</div>
-        <div className="text-[13px] text-slate-500">Handover: {RETURN_DEPOT.handover}</div>
-      </Card>
-      <Button variant="primary" size="lg" onClick={() => push("depot-return")}>
-        <AppIcon name="navigate" size={16} className="mr-2" /> Navigate to depot
-      </Button>
+
+      <div className="mt-auto pb-safe">
+        <button
+          type="button"
+          onClick={() => push("trip-complete")}
+          className="w-full bg-[#059669] text-white font-bold text-[16px] py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+        >
+          CONFIRM RETURN
+        </button>
+      </div>
     </div>
   );
 }
