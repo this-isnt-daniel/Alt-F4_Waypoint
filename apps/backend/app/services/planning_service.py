@@ -8,6 +8,7 @@ from app.models.order import Order
 from app.models.trip import Trip, TripStop
 from app.models.events import DeliveryEvent
 from app.models.deferral import Deferral
+from app.models.outlet import Outlet
 from app.schemas.dispatcher import ProposedPlanResponse, DeferOrderRequest
 
 # Fake in-memory storage for optimization runs
@@ -110,8 +111,16 @@ def defer_order(db: Session, request: DeferOrderRequest, dispatcher_depot: str, 
         
     if order.outlet_id != request.outlet_id:
         raise HTTPException(status_code=400, detail="Outlet mismatch")
-        
-    # Deferrals can happen from confirmed state usually, or if it failed loading
+
+    outlet = db.query(Outlet).filter(Outlet.outlet_id == order.outlet_id).first()
+    if outlet and outlet.depot_id and outlet.depot_id != dispatcher_depot:
+        raise HTTPException(status_code=403, detail="Cannot defer an order for a different depot")
+
+    if order.status in {"loaded", "out_for_delivery", "delivered", "cancelled"}:
+        raise HTTPException(status_code=400, detail=f"Order {order.order_id} cannot be deferred from {order.status}")
+
+    now = datetime.now(timezone.utc)
+    # Deferrals can happen from confirmed state usually, or from a loader failure path.
     order.defer_count += 1
     order.deferred_prev = True
     order.status = "deferred"
@@ -119,10 +128,13 @@ def defer_order(db: Session, request: DeferOrderRequest, dispatcher_depot: str, 
     deferral = Deferral(
         deferral_id=str(uuid.uuid4()),
         order_id=request.order_id,
+        outlet_id=request.outlet_id,
         original_date=request.original_date,
-        new_date=request.new_date,
-        reason_code=request.reason,
-        deferred_by=user_id,
+        new_date=request.new_date or request.original_date,
+        reason=request.reason,
+        created_at=now,
+        created_by=user_id,
+        trip_id=order.trip_id,
         client_op_id=request.client_op_id
     )
     db.add(deferral)
@@ -131,7 +143,7 @@ def defer_order(db: Session, request: DeferOrderRequest, dispatcher_depot: str, 
         event_id=str(uuid.uuid4()),
         order_id=request.order_id,
         event_type="order_deferred",
-        occurred_at=datetime.now(timezone.utc),
+        occurred_at=now,
         actor_role="dispatcher",
         actor_id=user_id
     ))
