@@ -12,3 +12,4 @@ from .deferral import Deferral
 from .events import DeliveryEvent, DriverEvent, Conflict
 from .route import RouteChange
 from .incident import VehicleIncident
+from .plan import DraftPlan
