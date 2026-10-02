@@ -35,3 +35,21 @@ class DeferOrderRequest(BaseModel):
     original_date: date
     new_date: Optional[date]
     reason: str
+
+class DraftPlanCreateRequest(BaseModel):
+    depot_id: Optional[str] = None
+    target_date: Optional[date] = None
+    brand: Optional[str] = None
+    enable_targeted_cpsat: bool = True
+
+class EditDraftPlanRequest(BaseModel):
+    actions: List[dict]
+
+class ApprovePlanRequest(BaseModel):
+    client_op_id: Optional[str] = None
+
+class BreakdownReallocateRequest(BaseModel):
+    plan_id: Optional[str] = None
+    undelivered_quantities: Optional[List[dict]] = None
+    current_time_iso: Optional[str] = None
+    pickup_location: Optional[str] = "DEPOT"

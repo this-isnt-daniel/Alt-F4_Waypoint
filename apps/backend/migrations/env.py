@@ -9,8 +9,15 @@ from alembic import context
 from dotenv import load_dotenv
 
 # Add the app directory to the sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-load_dotenv()
+BACKEND_DIR = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, BACKEND_DIR)
+
+# Load .env from backend directory or fallback to current directory
+dotenv_path = os.path.join(BACKEND_DIR, ".env")
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+else:
+    load_dotenv()
 
 # Import the SQLAlchemy Base and models
 from app.models import Base

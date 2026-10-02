@@ -68,7 +68,7 @@ def override_db():
             
     app.dependency_overrides[get_db] = _override_get_db
     yield db
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_db, None)
     Base.metadata.drop_all(bind=engine)
     db.close()
 
