@@ -2,12 +2,12 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# 1. Fetch credentials from environment variables securely
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./waypoint.db")
 
-# 2. The Engine is the core interface to the database. It handles the connection pool
-#    and translates SQLAlchemy commands into raw SQL for PostgreSQL.
-engine = create_engine(DATABASE_URL)
+# 2. The Engine is the core interface to the database.
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
+
 
 # 3. SessionLocal is a factory that generates new Session objects for each web request.
 #    A Session is a "workspace" for your objects before they are committed to the database.

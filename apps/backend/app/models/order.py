@@ -38,6 +38,11 @@ class Order(Base):
 
     lines = relationship("OrderLine", back_populates="order", cascade="all, delete-orphan")
 
+    @property
+    def items(self):
+        return self.lines
+
+
 
 class OrderLine(Base):
     __tablename__ = "order_line"
