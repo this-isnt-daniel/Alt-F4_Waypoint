@@ -1,59 +1,34 @@
+import { Button } from "@/driver/components/Button";
 import { useNavigator } from "@/router/navigator";
 
-// ── START DAY SCREEN ─────────────────────────────────────────────
-// Compact operational vehicle briefing. No decorative cards.
-// Typography + spacing create structure, not borders.
 export function StartDayScreen() {
   const { push } = useNavigator();
-
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-white px-5 py-6">
-      <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-        Monday · 29 September
-      </p>
-      <h1 className="text-[26px] font-bold text-slate-900 mb-6">Good morning, Daniru</h1>
+    <div className="px-4 pb-6 pt-2">
+      <p className="text-2xs font-semibold uppercase tracking-wide text-ink-muted">Saturday · 26 September</p>
+      <h1 className="mt-1 text-2xl font-bold text-ink">Good morning, Daniru</h1>
 
-      {/* Vehicle briefing – one clean section, no nested cards */}
-      <section className="mb-6">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-[18px] font-bold text-slate-900">VEH014</h2>
-          <span className="text-[13px] text-slate-400">Refrigerated van</span>
-        </div>
-
-        <div className="space-y-0">
-          <div className="flex items-center justify-between py-3 border-b border-slate-100">
-            <span className="text-[14px] text-slate-500">Home depot</span>
-            <span className="text-[14px] font-semibold text-slate-900">Kandy Hub</span>
-          </div>
-          <div className="flex items-center justify-between py-3 border-b border-slate-100">
-            <span className="text-[14px] text-slate-500">Temperature</span>
-            <span className="text-[14px] font-semibold text-emerald-600">3°C · In range</span>
-          </div>
-          <div className="flex items-center justify-between py-3">
-            <span className="text-[14px] text-slate-500">Fuel</span>
-            <span className="text-[14px] font-semibold text-slate-900">42 L remaining</span>
-          </div>
-        </div>
+      {/* Vehicle facts: read-only orientation, NOT a task */}
+      <section className="mt-4 rounded-card border border-line bg-surface p-4">
+        <header className="flex items-baseline justify-between">
+          <h2 className="font-bold text-ink">VEH014</h2>
+          <span className="text-sm text-ink-muted">Refrigerated van</span>
+        </header>
+        <dl className="mt-2 divide-y divide-line text-sm">
+          <div className="flex justify-between py-1.5"><dt className="text-ink-muted">Home depot</dt><dd className="font-medium text-ink">Kandy hub</dd></div>
+          <div className="flex justify-between py-1.5"><dt className="text-ink-muted">Temperature</dt><dd className="font-medium text-success">3°C · in range</dd></div>
+          <div className="flex justify-between py-1.5"><dt className="text-ink-muted">Fuel</dt><dd className="font-medium text-ink">42 L remaining</dd></div>
+        </dl>
       </section>
 
-      {/* Primary action */}
-      <button
-        type="button"
-        onClick={() => push("today-trips")}
-        className="w-full bg-green text-white font-bold text-[16px] py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer mb-3"
-        style={{ backgroundColor: "var(--c-green)" }}
-      >
-        Start Day
-      </button>
-
-      {/* Escape hatch */}
-      <button
-        type="button"
-        onClick={() => push("contact-dispatch")}
-        className="w-full py-2 text-[14px] font-medium text-slate-400 hover:text-rose-600 cursor-pointer"
-      >
+      {/* Primary: straight through. No gating. */}
+      <Button variant="primary" size="lg" fullWidth className="mt-4" onClick={() => push("today-trips")}>
+        Start day
+      </Button>
+      {/* Rare escape hatch, not a chore */}
+      <Button variant="ghost" fullWidth className="mt-2" onClick={() => push("contact-dispatch")}>
         Report a vehicle issue
-      </button>
+      </Button>
     </div>
   );
 }

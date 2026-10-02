@@ -6,6 +6,14 @@
   background: var(--c-canvas);
 }
 
+.driver-map--dark .leaflet-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(1.08) saturate(0.72);
+}
+
+.driver-map--dark .leaflet-container {
+  background: var(--c-canvas);
+}
+
 .driver-map .leaflet-control-attribution {
   background: color-mix(in srgb, var(--c-surface) 88%, transparent);
   color: var(--c-ink-muted);
@@ -14,4 +22,83 @@
 
 .driver-map .leaflet-control-attribution a {
   color: var(--c-green);
+}
+
+.driver-map-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.map-pin {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid var(--c-line);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font-weight: 700;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-1);
+}
+
+.map-pin--upcoming {
+  border-color: var(--c-line);
+}
+
+.map-pin--current {
+  border-color: var(--c-green);
+  background: var(--c-green-fill);
+  color: var(--c-green);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-green) 22%, transparent);
+}
+
+.map-pin--completed {
+  border-color: var(--c-success);
+  background: var(--c-success-fill);
+  color: var(--c-success);
+  opacity: 0.7;
+}
+
+.map-pin--flagged {
+  border-color: var(--c-warning);
+  background: var(--c-warning-fill);
+  color: var(--c-warning);
+}
+
+.map-pin--failed {
+  border-color: var(--c-danger);
+  background: var(--c-danger-fill);
+  color: var(--c-danger);
+}
+
+.map-depot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 2px solid var(--c-line);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-1);
+}
+
+.map-depot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--c-green);
+}
+
+.map-current {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--c-green);
+  border: 3px solid var(--c-surface);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-green) 24%, transparent);
 }

@@ -63,7 +63,7 @@ export function centroid(id: string): [number, number] {
     hash |= 0;
   }
   const absH = Math.abs(hash);
-  const radiusKm = 2.5 + ((num * 7 + (absH % 19)) % 16) * 1.25;
+  const radiusKm = 0.4 + ((num * 3 + (absH % 7)) % 10) * 0.15;
   const bearingDeg = (absH ^ (num * 37)) % 360;
   const bearingRad = (bearingDeg * Math.PI) / 180.0;
 

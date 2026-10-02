@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigator } from "@/router/navigator";
+import { Button } from "@/driver/components/Button";
+import { AppIcon } from "@/driver/components/AppIcon";
 import { VEHICLE, CONTACT_DISPATCH_PRESETS } from "@/driver/data/driverContent";
 import { useDriverState } from "@/driver/state/useDriverState";
-import { AlertTriangle, Phone, MessageSquare, ArrowLeft } from "lucide-react";
-import { ChoiceList } from "@/driver/components/ChoiceList";
+import { AlertTriangle, Wrench } from "lucide-react";
 
 export function ContactDispatchSheet() {
   const { route, push, back } = useNavigator();
@@ -16,7 +17,7 @@ export function ContactDispatchSheet() {
   } = useDriverState();
 
   const [selected, setSelected] = useState<string | null>(
-    route.params.topic ?? null,
+    route.params.topic ?? "Vehicle issue",
   );
 
   const currentOutletId =
@@ -34,103 +35,119 @@ export function ContactDispatchSheet() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-white px-5 py-6">
-      <div className="flex-1 flex flex-col max-w-sm mx-auto w-full">
-        <div className="flex items-center gap-3 mb-6">
-          <button type="button" onClick={back} className="p-1.5 -ml-1.5 rounded-full text-slate-500 hover:bg-slate-100 transition-colors">
-            <ArrowLeft size={22} />
-          </button>
-          <div>
-            <h1 className="text-[20px] font-bold text-slate-900 leading-tight">Contact Dispatch</h1>
-            <p className="text-[13px] text-slate-500">
-              {VEHICLE.id} · {VEHICLE.depot}
-            </p>
-          </div>
-        </div>
-
-        {vehicleBreakdown && (
-          <div className="flex items-start gap-2.5 mb-6 px-4 py-3 bg-rose-50 border border-rose-200 rounded-lg">
-            <AlertTriangle size={16} className="text-rose-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[13px] font-bold text-rose-800">Breakdown alert active</p>
-              <p className="text-[12px] text-rose-700 mt-0.5">
-                Dispatch has logged {VEHICLE.id}. Roadside assistance is coordinating.
-              </p>
-            </div>
-          </div>
-        )}
-
-        <h2 className="text-[14px] font-bold text-slate-900 mb-4">
-          What do you need?
-        </h2>
-
-        <div className="mb-6">
-          <ChoiceList
-            options={CONTACT_DISPATCH_PRESETS.map((preset) => ({
-              id: preset,
-              label: preset
-            }))}
-            selectedId={selected}
-            onSelect={(id) => setSelected(id)}
-            allowOtherNote={false}
-          />
-        </div>
-
-        {selected === "Outlet inaccessible" && currentStop && (
-          <div className="mb-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg">
-            <p className="text-[13px] text-slate-500 mb-2">
-              Current stop: <strong className="text-slate-800">{currentStop.outletId} · {currentStop.name}</strong>
-            </p>
-            <button
-              type="button"
-              onClick={() =>
-                push("failed-reason", {
-                  outletId: currentStop.outletId,
-                  seq: String(currentStop.seq),
-                })
-              }
-              className="text-[13px] font-bold text-[#059669] cursor-pointer"
-            >
-              Report stop failure →
-            </button>
-          </div>
-        )}
-
-        {selected === "Vehicle issue" && (
-          <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-[13px] text-amber-800 mb-3">
-              Report immediate breakdown — engine, reefer, or tyre. Dispatch and fleet maintenance will be notified.
-            </p>
-            <button
-              type="button"
-              onClick={handleTriggerBreakdown}
-              className="text-[13px] font-bold text-rose-600 cursor-pointer"
-            >
-              Trigger breakdown &amp; request assistance →
-            </button>
-          </div>
-        )}
+    <div className="p-4 space-y-4 max-w-[430px] mx-auto pb-6">
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">Contact Central Dispatch</h1>
+        <p className="text-[13px] text-slate-500">
+          Vehicle {VEHICLE.id} ({VEHICLE.type}) · {VEHICLE.depot}
+        </p>
       </div>
 
-      <div className="mt-auto space-y-3 pb-safe">
-        <button
-          type="button"
-          disabled={!selected}
-          onClick={() => push("chat", { recipient: "dispatch", topic: selected ?? "" })}
-          className="w-full bg-[#059669] text-white font-bold text-[16px] py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <MessageSquare size={18} />
-          MESSAGE DISPATCH
-        </button>
+      {vehicleBreakdown && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 flex items-start gap-2">
+          <AlertTriangle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold block">Vehicle Breakdown Alert Active</span>
+            <span>Dispatch has logged incident for {VEHICLE.id}. Roadside assistance is coordinating.</span>
+          </div>
+        </div>
+      )}
 
-        <button
-          type="button"
-          onClick={() => push("call-overlay", { recipient: "dispatch" })}
-          className="w-full py-4 rounded-lg bg-slate-100 text-[15px] font-bold text-slate-700 cursor-pointer flex items-center justify-center gap-2"
+      <div className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider">
+        Select reason / situation
+      </div>
+      <div className="space-y-2">
+        {CONTACT_DISPATCH_PRESETS.map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => setSelected(preset)}
+            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors cursor-pointer ${
+              selected === preset
+                ? "border-green/30 bg-green-fill ring-1 ring-green/20"
+                : "border-slate-200 bg-white hover:bg-slate-50"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {preset === "Vehicle issue" && (
+                <Wrench size={16} className="text-amber-600" />
+              )}
+              <span className="text-[13px] font-medium text-slate-900">{preset}</span>
+            </div>
+            {selected === preset && (
+              <AppIcon name="check" size={18} className="text-green" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Scenario / Emergency Failure Triggers */}
+      {selected === "Vehicle issue" && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+            <AlertTriangle size={15} className="text-amber-600" />
+            <span>Vehicle Breakdown / Failure Scenario</span>
+          </div>
+          <p className="text-xs text-amber-800 leading-relaxed">
+            Report an immediate vehicle breakdown (engine fault, reefer failure, tyre puncture). This notifies fleet maintenance and logs the event.
+          </p>
+          <Button
+            variant="secondary"
+            size="md"
+            className="w-full border-rose-300 text-rose-700 bg-white hover:bg-rose-50"
+            onClick={handleTriggerBreakdown}
+          >
+            <AlertTriangle size={14} className="mr-1.5 text-rose-600" />
+            Trigger Breakdown & Request Assistance
+          </Button>
+        </div>
+      )}
+
+      {selected === "Outlet inaccessible" && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3 space-y-2">
+          <div className="text-xs font-bold text-blue-900">
+            Current Stop: {currentStop?.outletId} ({currentStop?.name})
+          </div>
+          <p className="text-xs text-blue-800">
+            If the current outlet is closed or the loading bay is blocked, report the stop failure directly to advance to the next outlet.
+          </p>
+          <Button
+            variant="secondary"
+            size="md"
+            className="w-full border-blue-300 text-blue-700 bg-white hover:bg-blue-50"
+            onClick={() =>
+              push("failed-reason", {
+                outletId: currentStop?.outletId ?? currentOutletId ?? "OUT042",
+                seq: String(currentStop?.seq ?? 1),
+              })
+            }
+          >
+            Report Stop Unavailable & Next Outlet
+          </Button>
+        </div>
+      )}
+
+      <div className="space-y-2 pt-2">
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() =>
+            push("chat", { recipient: "dispatch", topic: selected ?? "" })
+          }
+          disabled={!selected}
         >
-          <Phone size={17} />
-          CALL DISPATCHER
-        </button>
+          <AppIcon name="send" size={16} className="mr-2" /> Message dispatch
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={() => push("call-overlay", { recipient: "dispatch" })}
+        >
+          <AppIcon name="phone" size={16} className="mr-2 text-green" /> Call dispatcher hotline
+        </Button>
+        <Button variant="ghost" size="md" onClick={back}>
+          <AppIcon name="arrow-left" size={16} className="mr-2" /> Back to route
+        </Button>
       </div>
     </div>
   );

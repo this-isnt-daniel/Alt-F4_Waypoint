@@ -4,10 +4,7 @@ import { DriverStateProvider } from "@/driver/state/DriverStateProvider";
 import { PreTripBar, ActiveTripBar } from "@/driver/components/TopBar";
 import { useDemoMode } from "@/driver/state/useDemoMode";
 import { ScenarioPanel } from "@/driver/components/ScenarioPanel";
-import { useDriverState } from "@/driver/state/useDriverState";
 import { ListChecks } from "lucide-react";
-import { VehicleSheet } from "@/driver/components/VehicleSheet";
-import { AccountSheet } from "@/driver/components/AccountSheet";
 
 // Import all screens
 import { SignInScreen } from "./screens/SignInScreen";
@@ -51,18 +48,15 @@ const SCREEN_MAP: Record<ScreenId, ComponentType> = {
   "trip-briefing": TripBriefingScreen,
   "load-confirm": LoadConfirmScreen,
   "active-trip": ActiveTripScreen,
-  
-  // Phase 2 Unified Stop Workspace
   "stop-detail": StopDetailScreen,
-  "mark-arrived": StopDetailScreen,
-  "checklist": StopDetailScreen,
-  "partial-summary": StopDetailScreen,
-  "failed-reason": StopDetailScreen,
-  "delivery-complete": StopDetailScreen,
-  
+  "mark-arrived": MarkArrivedScreen,
+  checklist: ChecklistScreen,
   "not-handed-over": NotHandedOverReasonScreen,
   "pod-photo": PodPhotoScreen,
   "pod-pin": PodPinScreen,
+  "delivery-complete": DeliveryCompleteScreen,
+  "partial-summary": PartialSummaryScreen,
+  "failed-reason": FailedReasonScreen,
   "return-depot": ReturnDepotScreen,
   "depot-return": DepotReturnScreen,
   "trip-complete": TripCompleteScreen,
@@ -83,22 +77,8 @@ const SCREEN_MAP: Record<ScreenId, ComponentType> = {
   "contact-dispatch": ContactDispatchSheet,
 };
 
-/** Screens where the header is hidden entirely */
-const HIDDEN_HEADER_SCREENS: ScreenId[] = [
-  "chat", 
-  "call-overlay",
-  "stop-detail",
-  "mark-arrived",
-  "checklist",
-  "partial-summary",
-  "failed-reason",
-  "delivery-complete",
-  "not-handed-over",
-  "pod-photo",
-  "pod-pin"
-];
+import { useDriverState } from "@/driver/state/useDriverState";
 
-/** Screens that use the pre-trip bar variant */
 const PRE_TRIP_SCREENS: ScreenId[] = [
   "signin",
   "start-day",
@@ -114,7 +94,6 @@ const PRE_TRIP_SCREENS: ScreenId[] = [
 
 function DriverContent() {
   const { route } = useNavigator();
-  const demo = useDemoMode();
   const {
     activeTripId,
     trip1Started,
@@ -124,11 +103,9 @@ function DriverContent() {
     vehicleBreakdown,
   } = useDriverState();
   const [scenOpen, setScenOpen] = useState(false);
-  const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
-  const [accountSheetOpen, setAccountSheetOpen] = useState(false);
 
   const Screen = SCREEN_MAP[route.id] ?? SignInScreen;
-  const hideTopBar = HIDDEN_HEADER_SCREENS.includes(route.id);
+  const hideTopBar = route.id === "chat" || route.id === "call-overlay";
   const isTripActive = trip1Started || trip2Started;
   const isPreTrip = !isTripActive || PRE_TRIP_SCREENS.includes(route.id);
   const currentStopNum = currentStopIndex + 1;
@@ -136,25 +113,22 @@ function DriverContent() {
   const tripLabel = activeTripId === 2 ? "Trip 2 · Style" : "Trip 1 · Fresh";
 
   return (
-    <div className="w-full h-dvh bg-white text-slate-900 overflow-hidden flex flex-col relative">
-      {/* Skip link for accessibility */}
+    <div className="min-h-screen bg-canvas text-ink selection:bg-green-fill selection:text-green-ink">
       <a
         href="#driver-main"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-white focus:text-green"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-surface focus:text-green"
       >
         Skip to main content
       </a>
 
-      {/* ── DEMO MODE BAR ──────────────────────────────────────────
-          Only rendered when ?demo=1 is in the URL.
-          A real driver session never sees this.
-      ───────────────────────────────────────────────────────────── */}
-      {demo && (
-        <div className="bg-slate-900 text-white px-4 py-1.5 flex items-center justify-between text-xs z-50 shrink-0">
+      {/* Container wrapper */}
+      <div className="max-w-[430px] mx-auto min-h-screen bg-canvas flex flex-col shadow-2 relative">
+        {/* Scenario Controls Bar - accessible so user can trigger failure scenarios */}
+        <div className="bg-slate-900 text-white px-4 py-1.5 flex items-center justify-between text-xs z-30 shrink-0">
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-emerald-400">Judge / Demo Mode</span>
+            <span className="font-semibold text-emerald-400">Scenarios & Controls</span>
             {vehicleBreakdown && (
-              <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold px-1.5 py-0.5 rounded">
+              <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold px-1.5 py-0.2 rounded">
                 Breakdown Active
               </span>
             )}
@@ -162,40 +136,31 @@ function DriverContent() {
           <button
             type="button"
             onClick={() => setScenOpen(true)}
-            className="flex items-center gap-1 bg-white/15 hover:bg-white/25 px-2 py-0.5 rounded text-white font-medium transition-colors cursor-pointer"
-            aria-label="Open Scenario Panel"
+            className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-medium transition-colors cursor-pointer"
+            aria-label="Open Scenario Explorer to trigger failure scenarios"
           >
             <ListChecks size={13} />
-            <span>Scenarios</span>
+            <span>Trigger Scenario</span>
           </button>
         </div>
-      )}
 
-      {/* ── COMPACT MOBILE HEADER ───────────────────────────────── */}
-      {!hideTopBar && (
-        isPreTrip ? <PreTripBar /> : (
-          <ActiveTripBar
-            tripLabel={tripLabel}
-            stopLabel={`Stop ${currentStopNum} of ${totalStops}`}
-            onOpenVehicle={() => setVehicleSheetOpen(true)}
-            onOpenAccount={() => setAccountSheetOpen(true)}
-          />
-        )
-      )}
+        {!hideTopBar && (
+          isPreTrip ? (
+            <PreTripBar />
+          ) : (
+            <ActiveTripBar
+              tripLabel={tripLabel}
+              stopLabel={`Stop ${currentStopNum} of ${totalStops}`}
+            />
+          )
+        )}
 
-      {/* ── SCREEN CONTENT ─────────────────────────────────────── */}
-      <main id="driver-main" className="flex-1 flex flex-col min-h-0 overflow-hidden relative z-0">
-        <Screen />
-      </main>
+        <main id="driver-main" className="flex-1 flex flex-col">
+          <Screen />
+        </main>
 
-      {/* Overlays */}
-      <VehicleSheet open={vehicleSheetOpen} onClose={() => setVehicleSheetOpen(false)} />
-      <AccountSheet open={accountSheetOpen} onClose={() => setAccountSheetOpen(false)} />
-
-      {/* Scenario Panel – demo only */}
-      {demo && (
         <ScenarioPanel open={scenOpen} onClose={() => setScenOpen(false)} />
-      )}
+      </div>
     </div>
   );
 }

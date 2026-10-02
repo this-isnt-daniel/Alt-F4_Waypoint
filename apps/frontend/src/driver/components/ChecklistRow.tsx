@@ -7,9 +7,9 @@ const VIEW: Record<
   CheckState,
   { icon: typeof Check; cls: string; label: string }
 > = {
-  pending: { icon: Circle, cls: "text-slate-400", label: "Awaiting check" },
-  delivered: { icon: Check, cls: "text-emerald-500", label: "Delivered" },
-  flagged: { icon: Flag, cls: "text-rose-500", label: "Not handed over" },
+  pending: { icon: Circle, cls: "text-ink-muted", label: "Awaiting check" },
+  delivered: { icon: Check, cls: "text-success", label: "Delivered" },
+  flagged: { icon: Flag, cls: "text-warning", label: "Not handed over" },
 };
 
 export function ChecklistRow({
@@ -30,14 +30,11 @@ export function ChecklistRow({
   const v = VIEW[state];
   const Icon = v.icon;
   return (
-    <div className={cn(
-      "flex items-center gap-3 rounded-lg border p-4 transition-colors",
-      state === "flagged" ? "border-rose-200 bg-rose-50" : "border-slate-200 bg-white"
-    )}>
+    <div className="flex items-center gap-3 rounded-card border border-line bg-surface p-4">
       <button
         type="button"
         onClick={onRowTap}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
       >
         <span
           aria-hidden="true"
@@ -46,13 +43,13 @@ export function ChecklistRow({
           <Icon size={22} strokeWidth={state === "pending" ? 1.5 : 2.5} />
         </span>
         <span className="min-w-0">
-          <span className="block truncate font-semibold text-slate-900 text-[15px]">
-            {name} <span className="text-slate-500">×{qty}</span>
+          <span className="block truncate font-semibold text-ink">
+            {name} ×{qty}
           </span>
-          <span className="block text-[13px] text-slate-500">{meta}</span>
+          <span className="block text-sm text-ink-muted">{meta}</span>
         </span>
       </button>
-      <span className={cn("hidden text-[13px] font-medium sm:inline", v.cls)}>
+      <span className={cn("hidden text-sm font-medium sm:inline", v.cls)}>
         {v.label}
       </span>
       {state !== "flagged" && (
@@ -60,7 +57,7 @@ export function ChecklistRow({
           type="button"
           onClick={onFlag}
           aria-label={`Flag ${name} as not handed over`}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-btn text-ink-muted hover:bg-raised hover:text-ink transition-colors"
         >
           <Flag size={18} />
         </button>

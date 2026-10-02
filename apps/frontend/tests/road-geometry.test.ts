@@ -12,8 +12,8 @@ describe("roadGeometry", () => {
     expect(depot[1]).toBeCloseTo(80.6337, 3);
 
     const out42 = centroid("OUT042");
-    expect(out42[0]).toBeCloseTo(7.1666, 3);
-    expect(out42[1]).toBeCloseTo(80.5666, 3);
+    expect(out42[0]).toBeCloseTo(7.2885, 3);
+    expect(out42[1]).toBeCloseTo(80.6322, 3);
 
     // Arbitrary outlet deterministic coordinates
     const arb1 = centroid("OUT999");

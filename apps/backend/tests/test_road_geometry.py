@@ -38,7 +38,7 @@ def test_outlet_coordinates_known():
     assert coords == (7.2906, 80.6337)
 
     out42 = get_outlet_coordinates("OUT042")
-    assert out42 == (7.1666, 80.5666)
+    assert out42 == (7.2885, 80.6322)
 
 
 def test_outlet_coordinates_deterministic_arbitrary():
