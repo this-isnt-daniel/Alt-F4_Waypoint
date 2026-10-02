@@ -44,50 +44,26 @@ app.add_middleware(
 )
 
 from app.api.v1.endpoints import platform_auth
+from app.api.v1.store_manager.router import router as sm_router
+from app.api.v1.dispatcher.router import router as disp_router
+from app.api.v1.loader.router import router as loader_router
+from app.api.v1.driver.router import router as pd_router
+from app.api.v1.orders.router import router as orders_router
 
 app.include_router(platform_auth.router, prefix="/api/v1/auth", tags=["Platform Auth"])
+app.include_router(sm_router, prefix="/api/v1/store-manager", tags=["Store Manager"])
+app.include_router(disp_router, prefix="/api/v1/dispatcher", tags=["Dispatcher"])
+app.include_router(loader_router, prefix="/api/v1/loader", tags=["Loader"])
+app.include_router(pd_router, prefix="/api/v1/driver-platform", tags=["Platform Driver"])
+app.include_router(orders_router, prefix="/api/v1/orders", tags=["Shared Orders"])
+
 app.include_router(api_router, prefix="/api")
 app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def root():
-    return {"message": "Waypoint Driver API is running"}
+    return {"message": "Waypoint Platform API is running"}
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-@app.post("/api/v1/demo/orders", response_model=OrderResponse)
-def demo_create_order(request: CreateOrderRequest, db: Session = Depends(get_db)):
-    # 1. Create the Order
-    new_order = Order(
-        order_id=f"ORD-{uuid.uuid4().hex[:8].upper()}",
-        outlet_id=request.outlet_id,
-        created_by="system", # Hardcoded for demo until Auth is integrated
-        brand=request.brand,
-        temp_req=request.temp_req,
-        order_date=request.order_date,
-        status="draft",
-        submitted_at=datetime.now(timezone.utc)
-    )
-    
-    db.add(new_order)
-    
-    # 2. Create the OrderLines
-    created_lines = []
-    for item in request.items:
-        line = OrderLine(
-            line_item_id=f"LI-{uuid.uuid4().hex[:8].upper()}",
-            order_id=new_order.order_id,
-            product_id=item.product_id,
-            quantity=item.quantity
-        )
-        db.add(line)
-        created_lines.append(line)
-        
-    # 3. Save to Database
-    db.commit()
-    db.refresh(new_order)
-        
-    new_order.items = created_lines
-    return new_order
