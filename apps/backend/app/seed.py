@@ -22,9 +22,42 @@ def _id() -> str:
     return str(uuid.uuid4())
 
 
+def seed_road_geometries(db):
+    try:
+        count = db.execute("SELECT COUNT(*) as c FROM road_geometry").fetchone()["c"]
+    except Exception:
+        count = 0
+    if count > 0:
+        return
+    import os
+    data_file = os.path.join(os.path.dirname(__file__), "data", "precomputed_road_geometries.json")
+    if os.path.exists(data_file):
+        with open(data_file, "r", encoding="utf-8") as f:
+            geometries = json.load(f)
+        for key, entry in geometries.items():
+            db.execute(
+                """INSERT OR REPLACE INTO road_geometry 
+                   (from_id, to_id, coords, coord_version, distance_meters, duration_seconds)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (
+                    entry["from_id"],
+                    entry["to_id"],
+                    json.dumps(entry["coords"]),
+                    entry.get("coord_version", 1),
+                    entry.get("distance_meters"),
+                    entry.get("duration_seconds"),
+                ),
+            )
+        db.commit()
+        print(f"  [OK] Seeded {len(geometries)} road geometries.")
+
+
 def seed():
     init_db()
     db = get_db_connection()
+
+    # Seed road geometry even if base tables already populated
+    seed_road_geometries(db)
 
     # Check if already seeded
     row = db.execute("SELECT COUNT(*) as c FROM drivers").fetchone()

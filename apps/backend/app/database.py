@@ -346,6 +346,24 @@ def init_db():
         created_at      TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    -- ═══════════════════════════════════════════════════════════════════
+    -- Road Geometry (OSRM cached edges for route polyline rendering)
+    -- ═══════════════════════════════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS road_geometry (
+        from_id         TEXT NOT NULL,
+        to_id           TEXT NOT NULL,
+        coords          TEXT NOT NULL,
+        coord_version   INTEGER NOT NULL DEFAULT 1,
+        distance_meters REAL,
+        duration_seconds REAL,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (from_id, to_id, coord_version)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_road_geometry_lookup
+        ON road_geometry(from_id, to_id, coord_version);
+
     """)
         conn.commit()
     finally:

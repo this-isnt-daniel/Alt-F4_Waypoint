@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 import sqlite3
 
-from app.api.v1.endpoints import auth, trips, departure, stops, returns, sync, changes, conflicts, chat
+from app.api.v1.endpoints import auth, trips, departure, stops, returns, sync, changes, conflicts, chat, road_geometry
 from app.models.schemas import DriverProfile
 from app.middleware.auth_middleware import get_current_driver
 from app.database import get_db
@@ -41,3 +41,7 @@ api_router.include_router(conflicts.router, prefix="/driver/conflicts", tags=["D
 
 # Module G: Chat & Call Intent (GET/POST /api/driver/stops/{id}/messages, POST /api/driver/stops/{id}/call-intent)
 api_router.include_router(chat.router, prefix="/driver", tags=["Driver Chat & Call"])
+
+# Road Geometry: Query and cache road polyline geometries
+api_router.include_router(road_geometry.router, prefix="/driver/road-geometry", tags=["Road Geometry"])
+

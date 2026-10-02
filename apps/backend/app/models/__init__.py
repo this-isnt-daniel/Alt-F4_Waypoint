@@ -13,3 +13,4 @@ from .events import DeliveryEvent, DriverEvent, Conflict
 from .route import RouteChange
 from .incident import VehicleIncident
 from .plan import DraftPlan
+from .road_geometry import RoadGeometry

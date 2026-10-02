@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import { KANDY_HUB_COORDS, STOP_COORDS, VEHICLE, type GeoPoint } from "@/driver/data/driverContent";
+import { buildRoadGeometry } from "@/driver/lib/roadGeometry";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from "@/theme/useTheme";
@@ -112,23 +113,27 @@ export function DriverMap({
   // Determine bounds
   const bounds = L.latLngBounds(routeLine ?? markerPositions);
 
-  // Fetch route line
+  // Build and stitch road geometry from DB / cache
   useEffect(() => {
-    const coordsString = markerPositions.map(c => `${c[1]},${c[0]}`).join(';');
-    fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.code === 'Ok' && data.routes && data.routes[0]) {
-          const latLngs = data.routes[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]] as [number, number]);
-          setRouteLine(latLngs);
-        } else {
-          setRouteLine(null);
+    let cancelled = false;
+    const sequence = ['DEPOT:KANDY_HUB', ...stopIds];
+    buildRoadGeometry(sequence)
+      .then(latLngs => {
+        if (!cancelled) {
+          if (latLngs && latLngs.length > 0) {
+            setRouteLine(latLngs);
+          } else {
+            setRouteLine(null);
+          }
         }
       })
       .catch(err => {
-        console.error('Failed to fetch route for driver map', err);
-        setRouteLine(null);
+        console.error('Failed to build road geometry for driver map', err);
+        if (!cancelled) setRouteLine(null);
       });
+    return () => {
+      cancelled = true;
+    };
   }, [stopIds]); // Re-fetch only if route stops change
 
   // Determine vehicle position

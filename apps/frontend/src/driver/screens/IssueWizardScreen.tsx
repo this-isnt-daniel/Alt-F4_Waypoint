@@ -10,7 +10,7 @@ export function IssueWizardScreen() {
 
   const handleContinue = () => {
     addSyncRecord({
-      type: "delay",
+      type: "issue",
       outletId: "VEHICLE",
       state: connection === "online" ? "synced" : "pending",
       hasPhoto: false,
