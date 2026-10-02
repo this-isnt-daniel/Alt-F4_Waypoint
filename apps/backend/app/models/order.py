@@ -22,10 +22,8 @@ class Order(Base):
     window_open = Column(String, nullable=True)
     window_close = Column(String, nullable=True)
     
-    # We intentionally leave this as a basic string for now so we don't force Trip
-    # architecture prematurely. The true foreign key constraint will be established 
-    # when the Trip model is added.
-    trip_id = Column(String, nullable=True)
+    # The foreign key boundary to the Trip model
+    trip_id = Column(String, ForeignKey("trip.trip_id", name="fk_order_trip_id"), nullable=True)
     
     stop_seq = Column(Integer, nullable=True)
     exp_arrival = Column(String, nullable=True)
