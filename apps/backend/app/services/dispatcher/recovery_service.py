@@ -252,10 +252,18 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
                 
             existing_stop = db.query(TripStop).filter(TripStop.order_id == order_ref).first()
             db_order = db.query(DbOrder).filter(DbOrder.order_id == order_ref).first()
+            
+            if db_order and db_order.status == "delivered":
+                continue
+                
             if existing_stop:
+                if existing_stop.status == "delivered" or (existing_stop.status == "skipped" and existing_stop.skip_reason != "breakdown"):
+                    continue
+                    
                 existing_stop.trip_id = v_trip.trip_id
                 existing_stop.stop_seq = seq
                 existing_stop.status = "upcoming"
+                existing_stop.skip_reason = None
                 # Invalidate offline driver edits made against the old assignment
                 existing_stop.row_version = (existing_stop.row_version or 1) + 1
                 new_stop_ids.append(existing_stop.stop_id)
@@ -282,7 +290,7 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
                 db_order.stop_seq = seq
             seq += 1
             
-        if needs_route_change:
+        if needs_route_change and new_stop_ids:
             # Issue RouteChange to the driver of v_trip
             rc_id = f"RC-{uuid.uuid4().hex[:8].upper()}"
             rc = RouteChange(
