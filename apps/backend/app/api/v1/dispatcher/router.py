@@ -84,7 +84,7 @@ def optimize_plan(request: OptimizeRequest, db: Session = Depends(get_db), curre
 
 @router.get("/planning/runs/{run_id}", response_model=ProposedPlanResponse, dependencies=[Depends(dispatcher_role)])
 def get_plan(run_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return planning_service.get_optimization_run(run_id)
+    return planning_service.get_optimization_run(db, run_id, current_user.depot_id)
 
 @router.post("/planning/runs/{run_id}/confirm", dependencies=[Depends(dispatcher_role)])
 def confirm_plan(run_id: str, request: ConfirmPlanRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -148,7 +148,7 @@ def get_plan_by_id(
     GET /dispatcher/plans/{plan_id}
     Retrieves the persisted draft plan.
     """
-    return get_plan_by_id_operation(db=db, plan_id=plan_id)
+    return get_plan_by_id_operation(db=db, plan_id=plan_id, depot_id=current_user.depot_id)
 
 
 @router.post("/plans/{plan_id}/edit", dependencies=[Depends(dispatcher_role)])
@@ -167,6 +167,7 @@ def edit_draft_plan(
         plan_id=plan_id,
         actions=request.actions,
         user_id=current_user.user_id,
+        depot_id=current_user.depot_id,
     )
 
 
@@ -188,6 +189,7 @@ def approve_plan(
         plan_id=plan_id,
         user_id=current_user.user_id,
         client_op_id=client_op_id,
+        depot_id=current_user.depot_id,
     )
 
 
@@ -215,4 +217,5 @@ def reallocate_broken_vehicle_route(
         current_time_iso=current_time_iso,
         pickup_location=pickup_loc,
         user_id=current_user.user_id,
+        depot_id=current_user.depot_id,
     )

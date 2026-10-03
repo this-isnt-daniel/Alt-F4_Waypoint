@@ -29,14 +29,16 @@ def create_optimization_run(db: Session, depot_id: str, target_date: str, brand:
     _mock_planning_runs[run_id] = plan
     return plan
 
-def get_optimization_run(run_id: str) -> ProposedPlanResponse:
+def get_optimization_run(db: Session, run_id: str, depot_id: str) -> ProposedPlanResponse:
     plan = _mock_planning_runs.get(run_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Planning run not found")
+    if plan.depot_id != depot_id:
+        raise HTTPException(status_code=403, detail="Cannot access plan for a different depot")
     return plan
 
 def confirm_plan(db: Session, run_id: str, client_op_id: str, dispatcher_depot: str, user_id: str):
-    plan = get_optimization_run(run_id)
+    plan = get_optimization_run(db, run_id, dispatcher_depot)
     if plan.depot_id != dispatcher_depot:
         raise HTTPException(status_code=403, detail="Cannot confirm plan for a different depot")
         

@@ -30,8 +30,8 @@ from app.schemas.loader import (
 )
 
 
-EDITABLE_TRIP_STATUSES = {"planned", "loading"}
-READ_ONLY_TRIP_STATUSES = {"loaded", "out_for_delivery", "cancelled", "vehicle_unavailable"}
+EDITABLE_TRIP_STATUSES = {"planned"}
+READ_ONLY_TRIP_STATUSES = {"loaded", "out_for_delivery", "completed"}
 COMPLETED_ITEM_STATUSES = {"verified", "short", "over", "damaged", "missing", "substituted"}
 
 
@@ -86,7 +86,7 @@ def _line_index_for_trip(db: Session, trip_id: str):
     return {line.line_item_id: (stop, line, product, outlet, stop_item) for stop, line, product, outlet, stop_item in _line_rows_for_trip(db, trip_id)}
 
 
-def _ensure_load_check(db: Session, trip: Trip, user_id: str, status: str = "in_progress") -> LoadCheck:
+def _ensure_load_check(db: Session, trip: Trip, user_id: str, status: str = "ok") -> LoadCheck:
     existing = db.query(LoadCheck).filter(LoadCheck.trip_id == trip.trip_id).first()
     if existing:
         return existing
@@ -320,7 +320,7 @@ def _build_workbench(db: Session, trip: Trip) -> LoaderWorkbench:
                 temp_req=stop.temp_req,
                 status=stop.status,
                 items=[],
-                complete=stop.status in {"loaded", "loading_complete"},
+                complete=stop.status in {"delivered", "skipped"},
             )
 
         saved = item_by_line.get(line.line_item_id)
@@ -379,7 +379,7 @@ def get_loader_queue(db: Session, loader_depot: str) -> list[LoaderQueueTrip]:
         db.query(Trip)
         .filter(
             Trip.depot_id == loader_depot,
-            Trip.status.in_(["planned", "loading", "loaded", "out_for_delivery", "vehicle_unavailable"]),
+            Trip.status.in_(["planned", "loaded", "out_for_delivery", "completed"]),
         )
         .order_by(Trip.trip_date, Trip.trip_no, Trip.vehicle_id)
         .all()
@@ -424,8 +424,6 @@ def start_loading(db: Session, trip_id: str, loader_depot: str, user_id: str):
     _ensure_vehicle_temperature_compatible(db, trip)
 
     check = _ensure_load_check(db, trip, user_id)
-    if trip.status == "planned":
-        trip.status = "loading"
         for stop in db.query(TripStop).filter(TripStop.trip_id == trip_id).all():
             _add_order_event(db, order_id=stop.order_id, event_type="loading_started", actor_id=user_id)
 
@@ -464,8 +462,6 @@ def save_load_item(
     _validate_item_state(line.quantity, request.loaded_qty, request.status, request.discrepancy_reason)
 
     check = _ensure_load_check(db, trip, user_id)
-    if trip.status == "planned":
-        trip.status = "loading"
 
     check_item = _upsert_load_item(db, check, line, request.loaded_qty, request.status, request.note)
     _sync_discrepancy(
@@ -514,7 +510,6 @@ def complete_stop(db: Session, trip_id: str, stop_id: str, loader_depot: str, us
         raise HTTPException(status_code=400, detail=f"Stop has unchecked items: {pending}")
 
     stop_model = db.query(TripStop).filter(TripStop.stop_id == stop_id, TripStop.trip_id == trip_id).first()
-    stop_model.status = "loading_complete"
     _add_order_event(db, order_id=stop_model.order_id, event_type="stop_loading_completed", actor_id=user_id)
     db.commit()
     return stop_model
@@ -554,7 +549,7 @@ def submit_load_check(
     check.client_op_id = request.client_op_id
     check.checked_by = user_id
     check.checked_at = _now()
-    check.status = "completed"
+    check.status = "shortfall" if any(item.status in DISCREPANCY_STATUSES for item in request.items) else "ok"
 
     for item in request.items:
         stop, line, _, _, _ = line_index[item.line_item_id]
@@ -608,18 +603,16 @@ def mark_vehicle_unavailable(
     trip = _get_trip_for_loader(db, trip_id, loader_depot)
     if trip.status in {"loaded", "out_for_delivery"}:
         raise HTTPException(status_code=400, detail=f"Cannot mark vehicle unavailable after trip is {trip.status}")
-    if trip.status in {"cancelled", "vehicle_unavailable"}:
+    if trip.status == "completed":
         raise HTTPException(status_code=400, detail=f"Trip is already {trip.status}")
 
     vehicle = _get_vehicle(db, trip.vehicle_id)
     if vehicle:
-        vehicle.status = "unavailable"
-
-    trip.status = "vehicle_unavailable"
+        vehicle.status = "in_workshop"
     stops = db.query(TripStop).filter(TripStop.trip_id == trip_id).all()
     for index, stop in enumerate(stops):
         order = db.query(Order).filter(Order.order_id == stop.order_id).first()
-        if order and order.status in {"planned", "loading"}:
+        if order and order.status == "planned":
             # Return the order to dispatcher-owned planning state without deleting
             # the historical TripStop, so the incident remains auditable.
             order.status = "confirmed"

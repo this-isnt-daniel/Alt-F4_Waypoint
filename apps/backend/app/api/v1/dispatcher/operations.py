@@ -88,7 +88,7 @@ def get_active_trips(
         query = query.filter(Trip.trip_date == date.today())
         
     # We want active or planned trips
-    query = query.filter(Trip.status.in_(["planned", "loaded", "out_for_delivery", "departed", "in_progress"]))
+    query = query.filter(Trip.status.in_(["planned", "loaded", "out_for_delivery"]))
     
     return query.all()
 
@@ -163,7 +163,7 @@ def assign_driver(
     trip = db.query(Trip).filter(Trip.trip_id == trip_id).with_for_update().first()
     if not trip or trip.depot_id != current_user.depot_id:
         raise HTTPException(status_code=404, detail="Trip not found in your depot")
-    if trip.status not in ("planned", "loading", "loaded"):
+    if trip.status not in ("planned", "loaded"):
         raise HTTPException(status_code=400, detail=f"Cannot reassign a trip that is '{trip.status}'")
 
     driver = db.query(User).filter(User.user_id == request.driver_id, User.role == "driver").first()

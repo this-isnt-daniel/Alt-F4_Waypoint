@@ -363,7 +363,7 @@ def generate_daily_draft_plan_operation(
     ref_data = get_reference_data()
 
     # Query confirmed orders
-    order_query = db.query(DbOrder).filter(DbOrder.status == "confirmed")
+    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(DbOrder.status == "confirmed", DbOutlet.depot_id == depot_id)
     if target_date:
         order_query = order_query.filter(DbOrder.order_date == target_date)
     if brand:
@@ -438,11 +438,13 @@ def generate_daily_draft_plan_operation(
     return plan_dict
 
 
-def get_plan_by_id_operation(db: Session, plan_id: str) -> Dict[str, Any]:
+def get_plan_by_id_operation(db: Session, plan_id: str, depot_id: str = None) -> Dict[str, Any]:
     """GET /dispatcher/plans/{plan_id} implementation."""
     draft_record = db.query(DraftPlan).filter(DraftPlan.plan_id == plan_id).first()
     if not draft_record:
         raise HTTPException(status_code=404, detail=f"Plan {plan_id} not found")
+    if depot_id and draft_record.depot_id != depot_id:
+        raise HTTPException(status_code=403, detail="Plan not in your depot scope")
     return draft_record.plan_data
 
 
@@ -451,6 +453,7 @@ def edit_draft_plan_operation(
     plan_id: str,
     actions: List[Dict[str, Any]],
     user_id: Optional[str] = None,
+    depot_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     POST /dispatcher/plans/{plan_id}/edit implementation.
@@ -459,12 +462,14 @@ def edit_draft_plan_operation(
     draft_record = db.query(DraftPlan).filter(DraftPlan.plan_id == plan_id).first()
     if not draft_record:
         raise HTTPException(status_code=404, detail=f"Plan {plan_id} not found")
+    if depot_id and draft_record.depot_id != depot_id:
+        raise HTTPException(status_code=403, detail="Plan not in your depot scope")
 
     base_plan = draft_record.plan_data
     ref_data = get_reference_data()
 
     # Load authoritative orders and fleet for the plan
-    order_query = db.query(DbOrder).filter(DbOrder.order_date == draft_record.target_date)
+    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(DbOrder.order_date == draft_record.target_date, DbOutlet.depot_id == draft_record.depot_id)
     db_orders = order_query.all()
     optimizer_orders = [convert_db_order_to_optimizer(o, ref_data, db) for o in db_orders]
 
@@ -557,6 +562,7 @@ def approve_draft_plan_operation(
     plan_id: str,
     user_id: str,
     client_op_id: Optional[str] = None,
+    depot_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     POST /dispatcher/plans/{plan_id}/approve implementation.
@@ -565,6 +571,8 @@ def approve_draft_plan_operation(
     draft_record = db.query(DraftPlan).filter(DraftPlan.plan_id == plan_id).first()
     if not draft_record:
         raise HTTPException(status_code=404, detail=f"Plan {plan_id} not found")
+    if depot_id and draft_record.depot_id != depot_id:
+        raise HTTPException(status_code=403, detail="Plan not in your depot scope")
 
     plan_data = draft_record.plan_data
     val = plan_data.get("validation", {})
@@ -723,6 +731,7 @@ def reallocate_broken_vehicle_operation(
     current_time_iso: Optional[str] = None,
     pickup_location: str = "DEPOT",
     user_id: Optional[str] = None,
+    depot_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     POST /dispatcher/breakdowns/{vehicle_id}/reallocate implementation.
@@ -743,6 +752,8 @@ def reallocate_broken_vehicle_operation(
 
     if not draft_record:
         raise HTTPException(status_code=404, detail="No active plan found for breakdown reallocation")
+    if depot_id and draft_record.depot_id != depot_id:
+        raise HTTPException(status_code=403, detail="Plan not in your depot scope")
 
     active_plan = draft_record.plan_data
     ref_data = get_reference_data()
@@ -781,7 +792,7 @@ def reallocate_broken_vehicle_operation(
     optimizer_fleet = [_ensure_live_fleet_state(v) for v in optimizer_fleet]
 
     # Authoritative orders
-    order_query = db.query(DbOrder).filter(DbOrder.order_date == draft_record.target_date)
+    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(DbOrder.order_date == draft_record.target_date, DbOutlet.depot_id == draft_record.depot_id)
     optimizer_orders = [convert_db_order_to_optimizer(o, ref_data, db) for o in order_query.all()]
 
     context = OperationalContext(
