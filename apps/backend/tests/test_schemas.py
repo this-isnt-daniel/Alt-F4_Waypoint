@@ -36,6 +36,19 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
+
+@pytest.fixture(autouse=True)
+def use_schema_test_db():
+    previous_get_db = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        yield
+    finally:
+        if previous_get_db is None:
+            app.dependency_overrides.pop(get_db, None)
+        else:
+            app.dependency_overrides[get_db] = previous_get_db
+
 def test_valid_create_order_request():
     req = CreateOrderRequest(
         outlet_id="OUT001",
