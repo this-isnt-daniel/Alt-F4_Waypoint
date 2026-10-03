@@ -5,8 +5,8 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
-# 1. Fetch credentials from environment variables securely
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint")
+# 1. Force SQLite for local dev environment
+DATABASE_URL = "sqlite:///waypoint.db"
 
 try:
     engine = create_engine(DATABASE_URL)

@@ -75,3 +75,36 @@ class TripResponse(BaseModel):
     temp_type: Optional[str] = None
     stops: List[TripStopResponse] = []
     model_config = ConfigDict(from_attributes=True)
+
+class VehicleResponse(BaseModel):
+    vehicle_id: str
+    depot_id: str
+    type: str
+    temp: str
+    weight_cap_kg: float
+    vol_cap_m3: float
+    fuel_type: Optional[str] = None
+    km_per_l: Optional[float] = None
+    fuel_quota_l: Optional[int] = None
+    plate: Optional[str] = None
+    status: str
+    last_lat: Optional[float] = None
+    last_lng: Optional[float] = None
+    last_seen_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class OutletResponse(BaseModel):
+    outlet_id: str
+    name: str
+    brand: str
+    district: Optional[str] = None
+    depot_id: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    window_open: Optional[str] = None
+    window_close: Optional[str] = None
+    mall_window: Optional[str] = None
+    dock_type: Optional[str] = None
+    park_constraint: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+

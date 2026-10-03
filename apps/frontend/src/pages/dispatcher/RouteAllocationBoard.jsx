@@ -99,7 +99,10 @@ const INITIAL_TRAY = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const rowWeightKg  = (row) => row.cards.reduce((s, c) => s + c.weightKg, 0);
 const rowWeightPct = (row) => Math.min((rowWeightKg(row) / row.capacityKg) * 100, 100);
-const canAccept    = (row, card) => row.refrigeration === card.refrigeration;
+const canAccept    = (row, card) => {
+  if (card.refrigeration === 'Reefer') return row.refrigeration === 'Reefer';
+  return true; // Ambient goods can go in either Ambient or Reefer vehicles
+};
 const barColour    = (pct) => pct < 75 ? C.primary : pct < 90 ? '#F59E0B' : '#EF4444';
 
 // ─── OrderTag ─────────────────────────────────────────────────────────────────

@@ -226,6 +226,23 @@ POST /call-intent     — Get masked dial number
 - Masked dial number has TTL (expires_at)
 - For hackathon, numbers are fake but API shape is production-ready
 
+### 4.8 Dispatcher Master Data & Operations (`/api/v1/dispatcher/*`)
+```
+GET  /api/v1/dispatcher/vehicles     — List all vehicles for the dispatcher's depot
+GET  /api/v1/dispatcher/outlets      — List all outlets for the dispatcher's depot (filterable by brand, district)
+GET  /api/v1/dispatcher/trips/active — Get today's active trips, stops, and line items (via operations API)
+GET  /api/v1/dispatcher/incidents    — List all vehicle breakdowns and damaged goods reports
+POST /api/v1/dispatcher/incidents    — Create a new incident
+POST /api/v1/dispatcher/recovery/incidents/{incident_id}/proposal — Generate a proposed recovery plan
+GET  /api/v1/dispatcher/recovery/proposals/{proposal_id}          — Fetch a proposed recovery plan
+POST /api/v1/dispatcher/recovery/proposals/{proposal_id}/approve  — Confirm a recovery plan, modifying live trips
+POST /api/v1/dispatcher/recovery/proposals/{proposal_id}/reject   — Discard a recovery plan
+```
+**Key decisions:**
+- Endpoints return the DB-seeded CSV data directly, ensuring the frontend uses dynamic master data instead of hardcoded arrays.
+- The Recovery workflow intentionally decouples plan generation (`/proposal`) from execution (`/approve`) to allow dispatchers to review draft plans before committing them to the active day schedule.
+- Filtered dynamically based on the requesting dispatcher's `depot_id`.
+
 ---
 
 ## 5. File Structure
@@ -277,6 +294,14 @@ apps/backend/
 ---
 
 ## 6. Seed Data (Canonical Day 5)
+
+There are four primary seed scripts available in the backend:
+1. **Driver Scenario Data:** `python -m app.seed` sets up the `waypoint_driver.db` with a Day 5 delivery scenario (using raw SQL).
+2. **Master Outlets Data:** `python seed_outlets.py` reads `data/outlets.csv` and populates the master `outlet` table in the backend database (`waypoint.db`).
+3. **Master Vehicles Data:** `python seed_vehicles.py` reads `data/vehicles.csv` and populates the master `vehicle` table in the backend database (`waypoint.db`).
+4. **Dispatcher Active State Data:** `python seed_trips.py` and `python seed_incidents.py` populate active trips and vehicle breakdowns respectively in `waypoint.db`, allowing the dispatcher UI to render dynamic data instead of hardcoded state.
+
+### 6.1 Driver Scenario (`app.seed`)
 
 The seed data matches the frontend's `driverContent.ts` exactly:
 
