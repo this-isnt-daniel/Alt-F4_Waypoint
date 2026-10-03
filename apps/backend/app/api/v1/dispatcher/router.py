@@ -14,6 +14,18 @@ from app.services import planning_service
 dispatcher_role = RoleChecker("dispatcher")
 router = APIRouter(dependencies=[Depends(dispatcher_role)])
 
+from app.api.v1.dispatcher.operations import router as operations_router
+router.include_router(operations_router)
+
+from app.api.v1.dispatcher.incidents.router import router as incidents_router
+router.include_router(incidents_router, prefix="/incidents")
+
+from app.api.v1.dispatcher.route_changes.router import router as route_changes_router
+router.include_router(route_changes_router)
+
+from app.api.v1.dispatcher.recovery.router import router as recovery_router
+router.include_router(recovery_router, prefix="/recovery")
+
 @router.get("/orders", response_model=List[OrderResponse], dependencies=[Depends(dispatcher_role)])
 def get_orders(
     date: Optional[date] = None,
