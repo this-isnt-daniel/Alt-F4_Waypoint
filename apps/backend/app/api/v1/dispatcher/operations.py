@@ -104,6 +104,8 @@ def get_trip_details(
     trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+    if trip.depot_id != current_user.depot_id:
+        raise HTTPException(status_code=403, detail="Trip not found in your depot")
         
     stops = db.query(TripStop).filter(TripStop.trip_id == trip_id).order_by(TripStop.stop_seq).all()
     
@@ -128,10 +130,12 @@ def get_shared_timeline(
     """
     query = db.query(DriverEvent)
     
+    query = query.join(Trip, DriverEvent.trip_id == Trip.trip_id).filter(Trip.depot_id == current_user.depot_id)
+    
     if trip_id:
         query = query.filter(DriverEvent.trip_id == trip_id)
     elif vehicle_id:
-        query = query.join(Trip, DriverEvent.trip_id == Trip.trip_id).filter(Trip.vehicle_id == vehicle_id)
+        query = query.filter(Trip.vehicle_id == vehicle_id)
         
     query = query.order_by(DriverEvent.received_at.desc()).limit(limit)
     return query.all()

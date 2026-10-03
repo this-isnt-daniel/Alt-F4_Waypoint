@@ -574,7 +574,6 @@ def submit_load_check(
     trip.status = "loaded"
     stops = db.query(TripStop).filter(TripStop.trip_id == trip_id).all()
     for stop in stops:
-        stop.status = "loaded"
         order = db.query(Order).filter(Order.order_id == stop.order_id).first()
         if order:
             order.status = "loaded"

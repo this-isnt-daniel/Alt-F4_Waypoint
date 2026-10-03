@@ -36,9 +36,7 @@ def get_orders(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # In a real app, we filter by orders relevant to current_user.depot_id.
-    # We might need to join with Outlet to check depot_id.
-    query = db.query(Order)
+    query = db.query(Order).join(Outlet, Order.outlet_id == Outlet.outlet_id).filter(Outlet.depot_id == current_user.depot_id)
     if date:
         query = query.filter(Order.order_date == date)
     if status:
@@ -55,7 +53,7 @@ def get_vehicles(
 ):
     query = db.query(Vehicle)
     # Filter by explicitly passed depot_id, or default to current user's depot
-    filter_depot = depot_id or current_user.depot_id
+    filter_depot = current_user.depot_id
     if filter_depot:
         query = query.filter(Vehicle.depot_id == filter_depot)
     return query.all()
@@ -69,7 +67,7 @@ def get_outlets(
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Outlet)
-    filter_depot = depot_id or current_user.depot_id
+    filter_depot = current_user.depot_id
     if filter_depot:
         query = query.filter(Outlet.depot_id == filter_depot)
     if brand:
@@ -127,7 +125,7 @@ def create_draft_plan(
     Runs hybrid multi-start greedy + targeted CP-SAT optimizer.
     Persists returned draft plan in database.
     """
-    depot_id = request.depot_id or current_user.depot_id
+    depot_id = current_user.depot_id
     return generate_daily_draft_plan_operation(
         db=db,
         depot_id=depot_id,
