@@ -1,24 +1,38 @@
 import uuid
-from datetime import datetime, timezone
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse
+
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from app.schemas.order import CreateOrderRequest, OrderResponse
-from app.db.session import get_db
-from app.models.order import Order, OrderLine
-
+from app.api.v1.dispatcher.router import router as disp_router
+from app.api.v1.driver.router import router as pd_router
+from app.api.v1.endpoints import platform_auth
+from app.api.v1.loader.router import router as loader_router
+from app.api.v1.orders.router import router as orders_router
+from app.api.v1.plans.router import router as plans_router
 from app.api.v1.router import api_router
+from app.api.v1.store_manager.router import router as sm_router
+from app.api.v1.vehicles.router import router as vehicles_router
 from app.config import CORS_ORIGINS
 from app.database import init_db
+from app.db.session import get_db
+from app.models.order import Order, OrderLine
+from app.schemas.order import CreateOrderRequest, OrderResponse
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    from app.db.base import Base
+    from app.db.session import engine
+    import app.models  # noqa: F401
+
+    Base.metadata.create_all(bind=engine)
     yield
+
 
 app = FastAPI(
     title="Waypoint Driver API",
@@ -27,13 +41,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 @app.exception_handler(IntegrityError)
 async def sqlalchemy_integrity_handler(request: Request, exc: IntegrityError):
-    # This translates DB unique/foreign-key violations to 409 Conflict
     return JSONResponse(
         status_code=409,
-        content={"detail": "Resource conflict or duplicate operation"}
+        content={"detail": "Resource conflict or duplicate operation", "error": str(exc.orig)},
     )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,16 +58,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.v1.endpoints import platform_auth
-from app.api.v1.store_manager.router import router as sm_router
-from app.api.v1.dispatcher.router import router as disp_router
-from app.api.v1.loader.router import router as loader_router
-from app.api.v1.driver.router import router as pd_router
-from app.api.v1.orders.router import router as orders_router
-
 app.include_router(platform_auth.router, prefix="/api/v1/auth", tags=["Platform Auth"])
 app.include_router(sm_router, prefix="/api/v1/store-manager", tags=["Store Manager"])
 app.include_router(disp_router, prefix="/api/v1/dispatcher", tags=["Dispatcher"])
+app.include_router(disp_router, prefix="/dispatcher", tags=["Dispatcher Direct"])
+app.include_router(plans_router, prefix="/api/v1/plans", tags=["Plans"])
+app.include_router(vehicles_router, prefix="/api/v1/vehicles", tags=["Vehicles"])
 app.include_router(loader_router, prefix="/api/v1/loader", tags=["Loader"])
 app.include_router(pd_router, prefix="/api/v1/driver-platform", tags=["Platform Driver"])
 app.include_router(orders_router, prefix="/api/v1/orders", tags=["Shared Orders"])
@@ -66,8 +77,8 @@ def create_demo_order(request: CreateOrderRequest, db: Session = Depends(get_db)
     """Small unauthenticated endpoint used by schema tests.
 
     The production store-manager route remains the real workflow endpoint. This
-    demo route exists only to exercise request validation and the global
-    IntegrityError-to-409 handler without requiring a login in schema tests.
+    demo route exercises request validation and the global IntegrityError-to-409
+    handler without requiring a login in schema tests.
     """
     order_id = f"DEMO-{uuid.uuid4().hex[:8].upper()}"
     order = Order(
@@ -122,6 +133,7 @@ def create_demo_order(request: CreateOrderRequest, db: Session = Depends(get_db)
 @app.get("/")
 def root():
     return {"message": "Waypoint Platform API is running"}
+
 
 @app.get("/health")
 def health():

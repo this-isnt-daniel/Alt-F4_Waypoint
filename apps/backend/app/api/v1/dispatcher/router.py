@@ -11,8 +11,8 @@ from app.schemas.shared import OrderResponse
 from app.schemas.dispatcher import OptimizeRequest, ProposedPlanResponse, ConfirmPlanRequest, DeferOrderRequest
 from app.services import planning_service
 
-router = APIRouter()
 dispatcher_role = RoleChecker("dispatcher")
+router = APIRouter(dependencies=[Depends(dispatcher_role)])
 
 @router.get("/orders", response_model=List[OrderResponse], dependencies=[Depends(dispatcher_role)])
 def get_orders(
@@ -51,3 +51,123 @@ def defer_order(order_id: str, request: DeferOrderRequest, db: Session = Depends
         raise HTTPException(status_code=400, detail="Path ID and body ID mismatch")
     deferral = planning_service.defer_order(db, request, current_user.depot_id, current_user.user_id)
     return {"status": "success", "deferral_id": deferral.deferral_id}
+
+
+# ── Waypoint Optimizer Endpoints (Step 5) ───────────────────────────────────
+
+from app.schemas.dispatcher import (
+    DraftPlanCreateRequest,
+    EditDraftPlanRequest,
+    ApprovePlanRequest,
+    BreakdownReallocateRequest,
+)
+from app.adapters.optimizer_adapter import (
+    generate_daily_draft_plan_operation,
+    get_plan_by_id_operation,
+    edit_draft_plan_operation,
+    approve_draft_plan_operation,
+    reallocate_broken_vehicle_operation,
+)
+
+
+@router.post("/plans/draft", dependencies=[Depends(dispatcher_role)])
+def create_draft_plan(
+    request: DraftPlanCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    POST /dispatcher/plans/draft
+    Reads confirmed orders, vehicle availability, and reference data.
+    Runs hybrid multi-start greedy + targeted CP-SAT optimizer.
+    Persists returned draft plan in database.
+    """
+    depot_id = request.depot_id or current_user.depot_id
+    return generate_daily_draft_plan_operation(
+        db=db,
+        depot_id=depot_id,
+        target_date=request.target_date,
+        brand=request.brand,
+        enable_targeted_cpsat=request.enable_targeted_cpsat,
+        user_id=current_user.user_id,
+    )
+
+
+@router.get("/plans/{plan_id}", dependencies=[Depends(dispatcher_role)])
+def get_plan_by_id(
+    plan_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    GET /dispatcher/plans/{plan_id}
+    Retrieves the persisted draft plan.
+    """
+    return get_plan_by_id_operation(db=db, plan_id=plan_id)
+
+
+@router.post("/plans/{plan_id}/edit", dependencies=[Depends(dispatcher_role)])
+def edit_draft_plan(
+    plan_id: str,
+    request: EditDraftPlanRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    POST /dispatcher/plans/{plan_id}/edit
+    Re-evaluates and validates dispatcher edits using evaluate_edited_draft.
+    """
+    return edit_draft_plan_operation(
+        db=db,
+        plan_id=plan_id,
+        actions=request.actions,
+        user_id=current_user.user_id,
+    )
+
+
+@router.post("/plans/{plan_id}/approve", dependencies=[Depends(dispatcher_role)])
+def approve_plan(
+    plan_id: str,
+    request: Optional[ApprovePlanRequest] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    POST /dispatcher/plans/{plan_id}/approve
+    Dispatcher reviews and confirms the draft.
+    Persists trips, stops, and updates order states to 'planned'.
+    """
+    client_op_id = request.client_op_id if request else None
+    return approve_draft_plan_operation(
+        db=db,
+        plan_id=plan_id,
+        user_id=current_user.user_id,
+        client_op_id=client_op_id,
+    )
+
+
+@router.post("/breakdowns/{vehicle_id}/reallocate", dependencies=[Depends(dispatcher_role)])
+def reallocate_broken_vehicle_route(
+    vehicle_id: str,
+    request: Optional[BreakdownReallocateRequest] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    POST /dispatcher/breakdowns/{vehicle_id}/reallocate
+    Uses reallocate_broken_vehicle to reallocate undelivered orders to surviving fleet.
+    """
+    plan_id = request.plan_id if request else None
+    undelivered = request.undelivered_quantities if request else None
+    current_time_iso = request.current_time_iso if request else None
+    pickup_loc = request.pickup_location if request and request.pickup_location else "DEPOT"
+
+    return reallocate_broken_vehicle_operation(
+        db=db,
+        vehicle_id=vehicle_id,
+        plan_id=plan_id,
+        undelivered_quantities=undelivered,
+        current_time_iso=current_time_iso,
+        pickup_location=pickup_loc,
+        user_id=current_user.user_id,
+    )
