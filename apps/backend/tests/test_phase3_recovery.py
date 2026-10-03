@@ -47,23 +47,23 @@ def override_db():
     users = [
         User(user_id="U2", name="Dispatcher One", username="disp1", hashed_pw=get_password_hash("pass"), role="dispatcher", depot_id="DEP1"),
         User(user_id="U3", name="Dispatcher Two", username="disp2", hashed_pw=get_password_hash("pass"), role="dispatcher", depot_id="DEP2"),
-        User(user_id="U4", name="Driver One", username="driver1", hashed_pw=get_password_hash("pass"), role="driver")
+        User(user_id="U4", name="Driver One", username="driver1", hashed_pw=get_password_hash("pass"), role="driver", depot_id="DEP1")
     ]
     db.add_all(users)
     
     from app.models.outlet import Outlet
     from app.models.product import Product
     outlets = [
-        Outlet(outlet_id="OUT1", name="Outlet 1", brand="test", lat=0.0, lng=0.0),
-        Outlet(outlet_id="OUT2", name="Outlet 2", brand="test", lat=0.0, lng=0.0)
+        Outlet(outlet_id="OUT1", name="Outlet 1", brand="fresh", lat=0.0, lng=0.0, dock_type="rear_dock", park_constraint="normal"),
+        Outlet(outlet_id="OUT2", name="Outlet 2", brand="fresh", lat=0.0, lng=0.0, dock_type="rear_dock", park_constraint="normal")
     ]
     db.add_all(outlets)
-    db.add(Product(product_id="P1", name="Prod 1", brand="test", temp_req="ambient", unit="EA", unit_wt_kg=1.0, unit_vol_m3=0.1))
+    db.add(Product(product_id="P1", name="Prod 1", brand="fresh", temp_req="ambient", unit="EA", unit_wt_kg=1.0, unit_vol_m3=0.1))
     
     # Orders
     orders = [
-        Order(order_id="ORD1", order_date=date.today(), status="planned", outlet_id="OUT1", created_by="U2", brand="test", temp_req="ambient"),
-        Order(order_id="ORD2", order_date=date.today(), status="planned", outlet_id="OUT2", created_by="U2", brand="test", temp_req="ambient")
+        Order(order_id="ORD1", order_date=date.today(), status="planned", outlet_id="OUT1", created_by="U2", brand="fresh", temp_req="ambient"),
+        Order(order_id="ORD2", order_date=date.today(), status="planned", outlet_id="OUT2", created_by="U2", brand="fresh", temp_req="ambient")
     ]
     db.add_all(orders)
     
@@ -71,7 +71,7 @@ def override_db():
     db.add(OrderLine(line_item_id="L2", order_id="ORD2", product_id="P1", quantity=10))
     
     # Active trip for V1
-    trip1 = Trip(trip_id="TRIP1", depot_id="DEP1", vehicle_id="V1", dispatcher_id="U2", trip_date=date.today(), trip_no=1, status="in_progress")
+    trip1 = Trip(trip_id="TRIP1", depot_id="DEP1", vehicle_id="V1", dispatcher_id="U2", trip_date=date.today(), trip_no=1, status="out_for_delivery")
     db.add(trip1)
     
     # Trip Stops for V1
@@ -197,7 +197,7 @@ def test_reject_recovery_proposal(client, disp_headers, mock_optimizer):
     assert res.json()["status"] == "rejected"
     assert res.json()["plan_data"]["_recovery_context"]["rejection_reason"] == "Cannot use this plan"
     
-    # Verify Trip is still in_progress
+    # Verify Trip is still out_for_delivery
     from app.models.trip import Trip
     # We must access DB to check
     # Instead, we just trust the API since rejecting doesn't mutate.
@@ -223,9 +223,9 @@ def test_approve_recovery_proposal(client, disp_headers, override_db, mock_optim
     from app.models.route import RouteChange
     from app.models.vehicle import Vehicle
     
-    # Broken trip should be failed
+    # Broken trip should be completed
     broken_trip = db.query(Trip).filter(Trip.trip_id == "TRIP1").first()
-    assert broken_trip.status == "failed"
+    assert broken_trip.status == "completed"
     
     # Stop 2 (uncompleted) should be moved to the new trip and be upcoming
     s2 = db.query(TripStop).filter(TripStop.stop_id == "S2").first()

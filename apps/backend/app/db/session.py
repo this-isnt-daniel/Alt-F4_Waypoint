@@ -1,22 +1,22 @@
 import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.config import DATABASE_URL
 
-load_dotenv()
-
-# 1. Force SQLite for local dev environment
-DATABASE_URL = "sqlite:///waypoint.db"
+if not DATABASE_URL or DATABASE_URL.startswith("sqlite"):
+    raise RuntimeError(f"Invalid DATABASE_URL configuration. PostgreSQL must be used. Got: {DATABASE_URL}")
 
 try:
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20
+    )
     # Test connection dialect loading
     _ = engine.dialect
-except Exception:
-    # Fallback to local SQLite if postgresql/psycopg2 is not available
-    DATABASE_URL = "sqlite:///waypoint_fallback.db"
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-
+except Exception as e:
+    raise RuntimeError(f"Failed to initialize PostgreSQL engine with DATABASE_URL={DATABASE_URL}") from e
 
 # 3. SessionLocal is a factory that generates new Session objects for each web request.
 #    A Session is a "workspace" for your objects before they are committed to the database.

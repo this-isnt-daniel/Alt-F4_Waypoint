@@ -178,3 +178,6 @@ def resolve_conflict(
 ):
     """Dispatcher resolves a driver sync conflict for a trip in their depot."""
     return driver_service.resolve_conflict(db, dispatcher, conflict_id, request)
+
+from app.api.v1.driver.road_geometry import router as rg_router
+router.include_router(rg_router, prefix="/road-geometry", tags=["Road Geometry"])

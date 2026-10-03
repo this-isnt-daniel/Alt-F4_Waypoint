@@ -4,11 +4,11 @@ Road Geometry API endpoints: Query and fetch road polyline geometry for routes.
 
 from __future__ import annotations
 
-import sqlite3
+from sqlalchemy.orm import Session
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.database import get_db
+from app.db.session import get_db
 from app.models.schemas import (
     RoadGeometryRow,
     RoadGeometryQueryRequest,
@@ -28,7 +28,7 @@ router = APIRouter()
 @router.post("/query", response_model=RoadGeometryQueryResponse)
 def query_road_geometry(
     req: RoadGeometryQueryRequest,
-    db: sqlite3.Connection = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     """
     Query road geometries for an edge sequence.
@@ -57,7 +57,7 @@ def query_road_geometry(
 @router.post("/sequence", response_model=RoadSequenceResponse)
 def resolve_sequence(
     req: RoadSequenceRequest,
-    db: sqlite3.Connection = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     """
     Given an ordered sequence of outlet numbers/depot from dispatcher:
@@ -115,7 +115,7 @@ def get_edge_geometry(
     from_id: str = Query(..., description="Starting outlet/depot ID"),
     to_id: str = Query(..., description="Destination outlet/depot ID"),
     coord_version: int = Query(1, description="Coordinate version"),
-    db: sqlite3.Connection = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     """Get road geometry for a single edge."""
     edge_data = lookup_or_fetch_edge(from_id, to_id, db, coord_version=coord_version)

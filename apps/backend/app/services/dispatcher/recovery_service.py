@@ -13,8 +13,8 @@ from app.models.route import RouteChange
 from app.services.manifest_service import add_stop_items
 
 # Canonical trip statuses (docs/schema_design.md) plus legacy driver-back names.
-ACTIVE_TRIP_STATUSES = ["planned", "loaded", "out_for_delivery", "in_progress", "departed"]
-FINISHED_STOP_STATUSES = ["delivered", "skipped", "failed", "returned", "completed"]
+ACTIVE_TRIP_STATUSES = ["planned", "loaded", "out_for_delivery"]
+FINISHED_STOP_STATUSES = ["delivered", "skipped"]
 
 from app.adapters.optimizer_adapter import (
     get_reference_data,
@@ -45,7 +45,7 @@ def build_recovery_proposal(db: Session, depot_id: str, user_id: str, incident_i
     # Find active trip for this vehicle
     trip = db.query(Trip).filter(
         Trip.vehicle_id == incident.vehicle_id,
-        Trip.status.in_(["planned", "departed", "in_progress"])
+        Trip.status.in_(ACTIVE_TRIP_STATUSES)
     ).first()
     
     if not trip:
@@ -192,17 +192,16 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
     # Transactional Application
     now = datetime.now(timezone.utc)
     
-    # 1. Update old trip (mark as failed or completed depending on if it had any delivered)
-    # Actually, we shouldn't change the trip status blindly, but typically a broken vehicle's trip ends.
-    # Let's cancel the remaining stops on the broken trip
+    # 1. Update old trip (mark as completed, as it is aborted)
     broken_stops = db.query(TripStop).filter(TripStop.trip_id == broken_trip_id).all()
     remaining_orders = []
     for s in broken_stops:
         if s.status not in FINISHED_STOP_STATUSES:
-            s.status = "failed" # Mark original stop as failed due to breakdown
+            s.status = "skipped" # Mark original stop as skipped due to breakdown
+            s.skip_reason = "breakdown"
             remaining_orders.append(s.order_id)
             
-    broken_trip.status = "failed"
+    broken_trip.status = "completed"
     
     # 2. Extract reassigned trips from the optimizer result and create them/update them
     plan_trips = proposal.plan_data.get("trips", [])

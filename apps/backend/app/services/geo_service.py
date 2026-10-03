@@ -9,7 +9,10 @@ import hashlib
 import json
 import math
 import re
-import sqlite3
+from sqlalchemy.orm import Session
+from app.models.road_geometry import RoadGeometry
+from app.models.trip import TripStop
+from app.models.outlet import Outlet
 import urllib.request
 from typing import Any, Optional
 
@@ -38,7 +41,7 @@ def get_outlet_coordinates(
     identifier: str,
     depot_id: str = "DEPOT:KANDY_HUB",
     distance_km: Optional[float] = None,
-    db: Optional[sqlite3.Connection] = None,
+    db: Optional[Session] = None,
 ) -> tuple[float, float]:
     """
     Get or synthesize geographic coordinates (lat, lng) for ANY outlet or depot.
@@ -55,12 +58,9 @@ def get_outlet_coordinates(
     # Check database if available
     if db is not None:
         try:
-            row = db.execute(
-                "SELECT lat, lng FROM stops WHERE outlet_id = ? AND lat IS NOT NULL LIMIT 1",
-                (clean_id,),
-            ).fetchone()
-            if row and row["lat"] is not None and row["lng"] is not None:
-                return float(row["lat"]), float(row["lng"])
+            outlet = db.query(Outlet.lat, Outlet.lng).filter(Outlet.outlet_id == clean_id, Outlet.lat.isnot(None)).first()
+            if outlet and outlet.lat is not None and outlet.lng is not None:
+                return float(outlet.lat), float(outlet.lng)
         except Exception:
             pass
 
@@ -216,7 +216,7 @@ def fetch_osrm_multi_waypoint(
 def lookup_or_fetch_edge(
     from_id: str,
     to_id: str,
-    db: sqlite3.Connection,
+    db: Session,
     coord_version: int = 1,
 ) -> dict[str, Any]:
     """
@@ -224,51 +224,40 @@ def lookup_or_fetch_edge(
     Checks directed -> reverse -> live fetch with persistence.
     """
     # 1. Exact directed hit
-    row = db.execute(
-        "SELECT from_id, to_id, coords, coord_version, distance_meters, duration_seconds "
-        "FROM road_geometry WHERE from_id = ? AND to_id = ? AND coord_version = ?",
-        (from_id, to_id, coord_version),
-    ).fetchone()
+    row = db.query(RoadGeometry).filter_by(from_id=from_id, to_id=to_id, coord_version=coord_version).first()
     if row:
-        coords = json.loads(row["coords"]) if isinstance(row["coords"], str) else row["coords"]
+        coords = json.loads(row.coords) if isinstance(row.coords, str) else row.coords
         return {
-            "from_id": row["from_id"],
-            "to_id": row["to_id"],
+            "from_id": row.from_id,
+            "to_id": row.to_id,
             "coords": coords,
-            "coord_version": row["coord_version"],
-            "distance_meters": row["distance_meters"],
-            "duration_seconds": row["duration_seconds"],
+            "coord_version": row.coord_version,
+            "distance_meters": row.distance_meters,
+            "duration_seconds": row.duration_seconds,
         }
 
     # 2. Reverse cached hit
-    rev_row = db.execute(
-        "SELECT from_id, to_id, coords, coord_version, distance_meters, duration_seconds "
-        "FROM road_geometry WHERE from_id = ? AND to_id = ? AND coord_version = ?",
-        (to_id, from_id, coord_version),
-    ).fetchone()
+    rev_row = db.query(RoadGeometry).filter_by(from_id=to_id, to_id=from_id, coord_version=coord_version).first()
     if rev_row:
-        rev_coords = json.loads(rev_row["coords"]) if isinstance(rev_row["coords"], str) else rev_row["coords"]
+        rev_coords = json.loads(rev_row.coords) if isinstance(rev_row.coords, str) else rev_row.coords
         reversed_coords = list(reversed(rev_coords))
-        db.execute(
-            "INSERT OR REPLACE INTO road_geometry (from_id, to_id, coords, coord_version, distance_meters, duration_seconds) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (
-                from_id,
-                to_id,
-                json.dumps(reversed_coords),
-                coord_version,
-                rev_row["distance_meters"],
-                rev_row["duration_seconds"],
-            ),
+        new_geom = RoadGeometry(
+            from_id=from_id,
+            to_id=to_id,
+            coords=json.dumps(reversed_coords),
+            coord_version=coord_version,
+            distance_meters=rev_row.distance_meters,
+            duration_seconds=rev_row.duration_seconds
         )
+        db.merge(new_geom)
         db.commit()
         return {
             "from_id": from_id,
             "to_id": to_id,
             "coords": reversed_coords,
             "coord_version": coord_version,
-            "distance_meters": rev_row["distance_meters"],
-            "duration_seconds": rev_row["duration_seconds"],
+            "distance_meters": rev_row.distance_meters,
+            "duration_seconds": rev_row.duration_seconds,
         }
 
     # 3. Compute coordinates and fetch
@@ -276,31 +265,22 @@ def lookup_or_fetch_edge(
     c2 = get_outlet_coordinates(to_id, db=db)
     route_data = fetch_osrm_route(c1, c2)
 
-    db.execute(
-        "INSERT OR REPLACE INTO road_geometry (from_id, to_id, coords, coord_version, distance_meters, duration_seconds) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (
-            from_id,
-            to_id,
-            json.dumps(route_data["coords"]),
-            coord_version,
-            route_data.get("distance_meters"),
-            route_data.get("duration_seconds"),
-        ),
-    )
-    # Also save reverse
-    db.execute(
-        "INSERT OR REPLACE INTO road_geometry (from_id, to_id, coords, coord_version, distance_meters, duration_seconds) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (
-            to_id,
-            from_id,
-            json.dumps(list(reversed(route_data["coords"]))),
-            coord_version,
-            route_data.get("distance_meters"),
-            route_data.get("duration_seconds"),
-        ),
-    )
+    db.merge(RoadGeometry(
+        from_id=from_id,
+        to_id=to_id,
+        coords=json.dumps(route_data["coords"]),
+        coord_version=coord_version,
+        distance_meters=route_data.get("distance_meters"),
+        duration_seconds=route_data.get("duration_seconds")
+    ))
+    db.merge(RoadGeometry(
+        from_id=to_id,
+        to_id=from_id,
+        coords=json.dumps(list(reversed(route_data["coords"]))),
+        coord_version=coord_version,
+        distance_meters=route_data.get("distance_meters"),
+        duration_seconds=route_data.get("duration_seconds")
+    ))
     db.commit()
 
     return {
@@ -315,7 +295,7 @@ def lookup_or_fetch_edge(
 
 def resolve_sequence_road_geometries(
     sequence: list[str],
-    db: sqlite3.Connection,
+    db: Session,
     coord_version: int = 1,
 ) -> list[dict[str, Any]]:
     """
@@ -335,42 +315,33 @@ def resolve_sequence_road_geometries(
     resolved: dict[str, dict[str, Any]] = {}
 
     for i, (f, t) in enumerate(edges):
-        row = db.execute(
-            "SELECT from_id, to_id, coords, coord_version, distance_meters, duration_seconds "
-            "FROM road_geometry WHERE from_id = ? AND to_id = ? AND coord_version = ?",
-            (f, t, coord_version),
-        ).fetchone()
+        row = db.query(RoadGeometry).filter_by(from_id=f, to_id=t, coord_version=coord_version).first()
         if row:
             resolved[f"{f}|{t}"] = {
                 "from_id": f,
                 "to_id": t,
-                "coords": json.loads(row["coords"]) if isinstance(row["coords"], str) else row["coords"],
-                "coord_version": row["coord_version"],
-                "distance_meters": row["distance_meters"],
-                "duration_seconds": row["duration_seconds"],
+                "coords": json.loads(row.coords) if isinstance(row.coords, str) else row.coords,
+                "coord_version": row.coord_version,
+                "distance_meters": row.distance_meters,
+                "duration_seconds": row.duration_seconds,
             }
         else:
-            # Check reverse
-            rev_row = db.execute(
-                "SELECT from_id, to_id, coords, coord_version, distance_meters, duration_seconds "
-                "FROM road_geometry WHERE from_id = ? AND to_id = ? AND coord_version = ?",
-                (t, f, coord_version),
-            ).fetchone()
+            rev_row = db.query(RoadGeometry).filter_by(from_id=t, to_id=f, coord_version=coord_version).first()
             if rev_row:
-                rev_coords = json.loads(rev_row["coords"]) if isinstance(rev_row["coords"], str) else rev_row["coords"]
+                rev_coords = json.loads(rev_row.coords) if isinstance(rev_row.coords, str) else rev_row.coords
                 rev_list = list(reversed(rev_coords))
-                db.execute(
-                    "INSERT OR REPLACE INTO road_geometry (from_id, to_id, coords, coord_version, distance_meters, duration_seconds) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    (f, t, json.dumps(rev_list), coord_version, rev_row["distance_meters"], rev_row["duration_seconds"]),
-                )
+                db.merge(RoadGeometry(
+                    from_id=f, to_id=t, coords=json.dumps(rev_list),
+                    coord_version=coord_version, distance_meters=rev_row.distance_meters,
+                    duration_seconds=rev_row.duration_seconds
+                ))
                 resolved[f"{f}|{t}"] = {
                     "from_id": f,
                     "to_id": t,
                     "coords": rev_list,
                     "coord_version": coord_version,
-                    "distance_meters": rev_row["distance_meters"],
-                    "duration_seconds": rev_row["duration_seconds"],
+                    "distance_meters": rev_row.distance_meters,
+                    "duration_seconds": rev_row.duration_seconds,
                 }
             else:
                 missing_indices.append(i)
@@ -381,18 +352,16 @@ def resolve_sequence_road_geometries(
         batch_legs = fetch_osrm_multi_waypoint(coords_list)
         for i, leg_data in enumerate(batch_legs):
             f, t = edges[i]
-            # Save directed
-            db.execute(
-                "INSERT OR REPLACE INTO road_geometry (from_id, to_id, coords, coord_version, distance_meters, duration_seconds) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (f, t, json.dumps(leg_data["coords"]), coord_version, leg_data["distance_meters"], leg_data["duration_seconds"]),
-            )
-            # Save reverse
-            db.execute(
-                "INSERT OR REPLACE INTO road_geometry (from_id, to_id, coords, coord_version, distance_meters, duration_seconds) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (t, f, json.dumps(list(reversed(leg_data["coords"]))), coord_version, leg_data["distance_meters"], leg_data["duration_seconds"]),
-            )
+            db.merge(RoadGeometry(
+                from_id=f, to_id=t, coords=json.dumps(leg_data["coords"]),
+                coord_version=coord_version, distance_meters=leg_data["distance_meters"],
+                duration_seconds=leg_data["duration_seconds"]
+            ))
+            db.merge(RoadGeometry(
+                from_id=t, to_id=f, coords=json.dumps(list(reversed(leg_data["coords"]))),
+                coord_version=coord_version, distance_meters=leg_data["distance_meters"],
+                duration_seconds=leg_data["duration_seconds"]
+            ))
             resolved[f"{f}|{t}"] = {
                 "from_id": f,
                 "to_id": t,
@@ -408,7 +377,7 @@ def resolve_sequence_road_geometries(
 
 def query_edges_batch(
     edges: list[list[str]],
-    db: sqlite3.Connection,
+    db: Session,
     coord_version: int = 1,
 ) -> list[dict[str, Any]]:
     """

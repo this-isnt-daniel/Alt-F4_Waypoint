@@ -112,7 +112,7 @@ export const db: DatabaseClient = {
     // Try fetching from backend API if running in browser
     if (typeof window !== "undefined" && typeof fetch === "function") {
       try {
-        const response = await fetch("/api/v1/driver/road-geometry/query", {
+        const response = await fetch("/api/v1/driver-platform/road-geometry/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ edges, coord_version: 1 }),

@@ -18,11 +18,11 @@ def get_current_user(
     Extracts the user ID and fetches the User from the PostgreSQL database.
     """
     if not credentials:
-        # Mock auth for demo/frontend integration without login
-        mock_user = db.query(User).filter(User.role == "dispatcher").first()
-        if not mock_user:
-            return User(user_id="USR-MOCK", role="dispatcher", depot_id="peliyagoda", username="mock_user")
-        return mock_user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     token = credentials.credentials
     try:
