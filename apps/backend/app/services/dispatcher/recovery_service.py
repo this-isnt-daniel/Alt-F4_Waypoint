@@ -247,6 +247,7 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
                 continue
                 
             existing_stop = db.query(TripStop).filter(TripStop.order_id == order_ref).first()
+            db_order = db.query(DbOrder).filter(DbOrder.order_id == order_ref).first()
             if existing_stop:
                 existing_stop.trip_id = v_trip.trip_id
                 existing_stop.stop_seq = seq
@@ -255,7 +256,6 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
             else:
                 # Should not happen typically if we are recovering, but handle just in case
                 stop_id = f"TS-{uuid.uuid4().hex[:6].upper()}"
-                db_order = db.query(DbOrder).filter(DbOrder.order_id == order_ref).first()
                 if db_order:
                     new_ts = TripStop(
                         stop_id=stop_id,
@@ -268,6 +268,11 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
                     )
                     db.add(new_ts)
                     new_stop_ids.append(stop_id)
+            
+            # Update denormalized fields on Order
+            if db_order:
+                db_order.trip_id = v_trip.trip_id
+                db_order.stop_seq = seq
             seq += 1
             
         if needs_route_change:

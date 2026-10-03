@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Numeric, ForeignKey
+from sqlalchemy import Column, String, Numeric, ForeignKey, CheckConstraint
 from app.db.base import Base
 
 class Outlet(Base):
@@ -16,3 +16,9 @@ class Outlet(Base):
     mall_window = Column(String, nullable=True)
     dock_type = Column(String, nullable=True)
     park_constraint = Column(String, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("brand IN ('fresh', 'style', 'tech')", name="check_outlet_brand"),
+        CheckConstraint("dock_type IN ('rear_dock', 'street', 'mall_bay')", name="check_outlet_dock_type"),
+        CheckConstraint("park_constraint IN ('normal', 'van_only', 'mall_dock')", name="check_outlet_park_constraint"),
+    )

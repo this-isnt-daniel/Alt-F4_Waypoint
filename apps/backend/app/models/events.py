@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, CheckConstraint
 from app.db.base import Base
 
 class DeliveryEvent(Base):
@@ -15,6 +15,10 @@ class DeliveryEvent(Base):
     synced_at = Column(DateTime(timezone=True), nullable=True)
     client_op_id = Column(String, nullable=True, unique=True)
 
+    __table_args__ = (
+        CheckConstraint("event_type IN ('order_confirmed', 'order_planned', 'order_loaded', 'order_out_for_delivery', 'order_delivered', 'order_deferred')", name="check_delivery_event_type"),
+    )
+
 class DriverEvent(Base):
     __tablename__ = "driver_event"
     
@@ -28,6 +32,10 @@ class DriverEvent(Base):
     payload = Column(String, nullable=False) # Simplified payload string
     sync_status = Column(String, nullable=False, default="pending")
     sync_error = Column(String, nullable=True)
+    
+    __table_args__ = (
+        CheckConstraint("sync_status IN ('pending', 'applied', 'conflict', 'failed', 'already_applied')", name="check_driver_event_sync_status"),
+    )
 
 class Conflict(Base):
     __tablename__ = "conflict"
@@ -42,3 +50,7 @@ class Conflict(Base):
     status = Column(String, nullable=False, default="open")
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     resolved_by = Column(String, ForeignKey("user.user_id"), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('open', 'resolved')", name="check_conflict_status"),
+    )

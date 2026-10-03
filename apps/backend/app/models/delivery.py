@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, CheckConstraint
 from app.db.base import Base
 
 class ProofOfDelivery(Base):
@@ -45,3 +45,9 @@ class Discrepancy(Base):
     reported_qty = Column(Integer, nullable=False)
     status = Column(String, nullable=False, default="open")
     note = Column(String, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("source_stage IN ('loading', 'receipt')", name="check_discrepancy_source_stage"),
+        CheckConstraint("type IN ('missing', 'damaged', 'wrong_item', 'short_qty', 'other')", name="check_discrepancy_type"),
+        CheckConstraint("status IN ('open', 'resolved')", name="check_discrepancy_status"),
+    )

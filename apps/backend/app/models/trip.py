@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Date, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Date, ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
@@ -15,6 +15,8 @@ class Trip(Base):
 
     __table_args__ = (
         UniqueConstraint('vehicle_id', 'trip_date', 'trip_no', name='uix_trip_vehicle_date_no'),
+        CheckConstraint("trip_no IN (1, 2)", name="check_trip_no"),
+        CheckConstraint("status IN ('planned', 'loaded', 'out_for_delivery', 'completed')", name="check_trip_status"),
     )
 
 class TripStop(Base):
@@ -33,6 +35,11 @@ class TripStop(Base):
     forced_reefer = Column(String, nullable=True)
     status = Column(String, nullable=False, default="upcoming")
     row_version = Column(Integer, nullable=False, default=1)
+    
+    __table_args__ = (
+        CheckConstraint("temp_req IN ('ambient', 'chilled')", name="check_trip_stop_temp_req"),
+        CheckConstraint("status IN ('upcoming', 'arrived', 'delivered', 'skipped')", name="check_trip_stop_status"),
+    )
 
 class TripStopItem(Base):
     __tablename__ = "trip_stop_item"

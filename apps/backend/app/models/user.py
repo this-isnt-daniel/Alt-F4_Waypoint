@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, CheckConstraint
+# pyrefly: ignore [missing-import]
 from app.db.base import Base
 
 class User(Base):
@@ -11,3 +12,15 @@ class User(Base):
     depot_id = Column(String, ForeignKey("depot.depot_id"), nullable=True)
     name = Column(String, nullable=False)
     hashed_pw = Column(String, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('store_manager', 'dispatcher', 'loader', 'driver')",
+            name="check_valid_role"
+        ),
+        CheckConstraint(
+            "(role = 'store_manager' AND outlet_id IS NOT NULL AND depot_id IS NULL) OR "
+            "(role IN ('dispatcher', 'loader', 'driver') AND depot_id IS NOT NULL AND outlet_id IS NULL)",
+            name="check_role_associations"
+        ),
+    )
