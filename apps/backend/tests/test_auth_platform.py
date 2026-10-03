@@ -61,6 +61,19 @@ def sm_only():
 app.include_router(test_router)
 client = TestClient(app)
 
+
+@pytest.fixture(autouse=True)
+def use_auth_test_db():
+    previous_get_db = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        yield
+    finally:
+        if previous_get_db is None:
+            app.dependency_overrides.pop(get_db, None)
+        else:
+            app.dependency_overrides[get_db] = previous_get_db
+
 def test_login_success():
     res = client.post("/api/v1/auth/login", json={"username": "manager1", "password": "password123"})
     assert res.status_code == 200

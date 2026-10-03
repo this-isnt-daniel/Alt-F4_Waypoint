@@ -87,6 +87,8 @@ class LoaderWorkbench(BaseModel):
 
 
 class SaveLoadItemRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     client_op_id: Optional[str] = None
     loaded_qty: int = Field(..., ge=0)
     status: str
@@ -102,6 +104,8 @@ class SaveLoadItemRequest(BaseModel):
 
 
 class LoadCheckItemInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     # line_item_id is the canonical identity. product_id alone is unsafe because
     # the same product can appear in multiple orders on the same trip.
     line_item_id: str
@@ -119,11 +123,15 @@ class LoadCheckItemInput(BaseModel):
 
 
 class SubmitLoadCheckRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     client_op_id: str
     items: List[LoadCheckItemInput]
 
 
 class VehicleUnavailableRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     client_op_id: str
     reason: str = Field(..., min_length=3)
     note: Optional[str] = None

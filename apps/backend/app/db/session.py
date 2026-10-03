@@ -17,6 +17,7 @@ except Exception:
     DATABASE_URL = "sqlite:///waypoint_fallback.db"
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
+
 # 3. SessionLocal is a factory that generates new Session objects for each web request.
 #    A Session is a "workspace" for your objects before they are committed to the database.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
