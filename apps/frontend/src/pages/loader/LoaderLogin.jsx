@@ -10,12 +10,34 @@ export default function LoaderLogin({ onLogin }) {
   const [username, setUsername] = useState(USERS.peliyagoda.username);
   const [password, setPassword] = useState(USERS.peliyagoda.password);
 
-  const handleLogin = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (username === USERS.kandy.username) {
-      onLogin(USERS.kandy);
-    } else {
-      onLogin(USERS.peliyagoda);
+    setLoading(true);
+    setError(null);
+    try {
+      const { apiFetch } = await import('../../lib/api');
+      const { safeStorage } = await import('../../lib/security');
+      const response = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
+      safeStorage.set('token', response.access_token);
+      
+      const me = await apiFetch('/auth/me');
+      onLogin({
+        id: me.user_id,
+        name: me.name || username,
+        depot: me.depot_id,
+        username: me.username,
+        role: me.role
+      });
+    } catch (err) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,6 +92,7 @@ export default function LoaderLogin({ onLogin }) {
           </div>
         </div>
 
+        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded">{error}</div>}
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

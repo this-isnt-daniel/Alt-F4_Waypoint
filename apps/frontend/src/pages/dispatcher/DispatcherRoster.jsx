@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { apiFetch } from '../../lib/api';
 
 // Fix for default Leaflet icon paths in Vite/Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -159,8 +160,7 @@ export default function DispatcherRoster({ onLogout }) {
   const [contingencyDisruptedOrders, setContingencyDisruptedOrders] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/dispatcher/incidents')
-      .then(res => res.json())
+    apiFetch('/dispatcher/incidents')
       .then(data => {
         const formatted = data.map((inc, i) => ({
           id: inc.incident_id,
@@ -242,8 +242,7 @@ export default function DispatcherRoster({ onLogout }) {
   const [fleetList, setFleetList] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/dispatcher/vehicles')
-      .then(res => res.json())
+    apiFetch('/dispatcher/vehicles')
       .then(data => {
         const formatted = data.map(v => ({
           id: v.vehicle_id,
@@ -265,8 +264,7 @@ export default function DispatcherRoster({ onLogout }) {
   const [vehicleAssignments, setVehicleAssignments] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/dispatcher/trips/active')
-      .then(res => res.json())
+    apiFetch('/dispatcher/trips/active')
       .then(data => {
         // Group trips by vehicle (or just list them as assignments)
         const mapped = data.map(trip => {

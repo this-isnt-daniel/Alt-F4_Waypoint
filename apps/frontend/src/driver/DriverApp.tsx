@@ -193,9 +193,7 @@ function DriverContent() {
       <AccountSheet open={accountSheetOpen} onClose={() => setAccountSheetOpen(false)} />
 
       {/* Scenario Panel – demo only */}
-      {demo && (
-        <ScenarioPanel open={scenOpen} onClose={() => setScenOpen(false)} />
-      )}
+
     </div>
   );
 }
