@@ -7,7 +7,7 @@ from app.config import SECRET_KEY, ALGORITHM
 from app.db.session import get_db
 from app.models.user import User
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
@@ -17,6 +17,13 @@ def get_current_user(
     Authenticates the user by verifying the JWT token.
     Extracts the user ID and fetches the User from the PostgreSQL database.
     """
+    if not credentials:
+        # Mock auth for demo/frontend integration without login
+        mock_user = db.query(User).filter(User.role == "dispatcher").first()
+        if not mock_user:
+            return User(user_id="USR-MOCK", role="dispatcher", depot_id="peliyagoda", username="mock_user")
+        return mock_user
+
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])

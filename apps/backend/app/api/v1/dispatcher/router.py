@@ -7,7 +7,9 @@ from app.db.session import get_db
 from app.api.deps import get_current_user, RoleChecker
 from app.models.user import User
 from app.models.order import Order
-from app.schemas.shared import OrderResponse
+from app.schemas.shared import OrderResponse, VehicleResponse, OutletResponse
+from app.models.vehicle import Vehicle
+from app.models.outlet import Outlet
 from app.schemas.dispatcher import OptimizeRequest, ProposedPlanResponse, ConfirmPlanRequest, DeferOrderRequest
 from app.services import planning_service
 
@@ -43,6 +45,37 @@ def get_orders(
         query = query.filter(Order.status == status)
     if brand:
         query = query.filter(Order.brand == brand)
+    return query.all()
+
+@router.get("/vehicles", response_model=List[VehicleResponse], dependencies=[Depends(dispatcher_role)])
+def get_vehicles(
+    depot_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = db.query(Vehicle)
+    # Filter by explicitly passed depot_id, or default to current user's depot
+    filter_depot = depot_id or current_user.depot_id
+    if filter_depot:
+        query = query.filter(Vehicle.depot_id == filter_depot)
+    return query.all()
+
+@router.get("/outlets", response_model=List[OutletResponse], dependencies=[Depends(dispatcher_role)])
+def get_outlets(
+    depot_id: Optional[str] = None,
+    brand: Optional[str] = None,
+    district: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = db.query(Outlet)
+    filter_depot = depot_id or current_user.depot_id
+    if filter_depot:
+        query = query.filter(Outlet.depot_id == filter_depot)
+    if brand:
+        query = query.filter(Outlet.brand == brand.lower())
+    if district:
+        query = query.filter(Outlet.district == district)
     return query.all()
 
 @router.post("/planning/optimize", response_model=ProposedPlanResponse, dependencies=[Depends(dispatcher_role)])
