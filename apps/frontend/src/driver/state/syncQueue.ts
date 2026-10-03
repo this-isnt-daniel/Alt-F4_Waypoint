@@ -5,6 +5,7 @@ export type SyncRecordType =
   | "partial"
   | "failed"
   | "issue"
+  | "delay"
   | "return"
   | "chat-message";
 

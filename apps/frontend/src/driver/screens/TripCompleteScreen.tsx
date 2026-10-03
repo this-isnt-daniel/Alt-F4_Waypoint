@@ -1,43 +1,61 @@
 import { useNavigator } from "@/router/navigator";
-import { Button } from "@/driver/components/Button";
-import { Card } from "@/driver/components/Card";
-import { Chip } from "@/driver/components/Chip";
-import { AppIcon } from "@/driver/components/AppIcon";
-import { TRIP_COMPLETE } from "@/driver/data/driverContent";
 import { useDriverState } from "@/driver/state/useDriverState";
 
 export function TripCompleteScreen() {
   const { push } = useNavigator();
-  const { completeTrip1 } = useDriverState();
+  const { completeTrip1, completeTrip2, completedStopIds, flaggedStopIds, failedStopIds, activeTripId, currentTripSequence } = useDriverState();
+
+  const handleContinue = () => {
+    if (activeTripId === 1) {
+      completeTrip1();
+      push("today-trips");
+    } else {
+      completeTrip2();
+      push("day-summary");
+    }
+  };
+
   return (
-    <div className="p-4 space-y-4 max-w-[430px] mx-auto">
-      <div>
-        <h1 className="text-lg font-bold text-slate-900">{TRIP_COMPLETE.title}</h1>
-      </div>
-      <div className="flex gap-2">
-        <Chip kind="outcome" tone="delivered" label={`${TRIP_COMPLETE.delivered} delivered`} />
-        <Chip kind="outcome" tone="partial" label={`${TRIP_COMPLETE.partial} partial`} count={TRIP_COMPLETE.partial} />
-        <Chip kind="outcome" tone="failed" label={`${TRIP_COMPLETE.failed} failed`} count={TRIP_COMPLETE.failed} />
-      </div>
-      <Card variant="surface" className="space-y-2">
-        <div className="flex justify-between text-[13px]"><span className="text-slate-500">Total trip time</span><span className="font-medium text-slate-900">{TRIP_COMPLETE.totalTripTime} — under budget</span></div>
-        <div className="flex justify-between text-[13px]"><span className="text-slate-500">Distance</span><span className="font-medium text-slate-900">{TRIP_COMPLETE.distance}</span></div>
-        <div className="flex justify-between text-[13px]"><span className="text-slate-500">Fuel</span><span className="font-medium text-slate-900">{TRIP_COMPLETE.fuelEconomy} · {TRIP_COMPLETE.fuelUsed} used</span></div>
-      </Card>
-      <Card variant="raised" className="space-y-1">
-        <div className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider">Route recap</div>
-        {TRIP_COMPLETE.routeRecap.map((r) => (
-          <div key={r.outletId} className="flex justify-between text-[13px] py-1">
-            <span className="text-slate-900">{r.outletId} <span className={r.outcome === 'Partial' ? 'text-amber-600' : 'text-green'}>{r.outcome}</span></span>
-            <span className="text-slate-500">{r.time}{r.suffix ? ` · ${r.suffix}` : ''}</span>
+    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-white px-5 py-6">
+      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+        <h1 className="text-[28px] font-bold text-slate-900 mb-1">
+          TRIP COMPLETE
+        </h1>
+        <p className="text-[16px] text-slate-500 mb-8">
+          Trip {activeTripId} · {activeTripId === 1 ? "Fresh" : "Style"}
+        </p>
+        
+        <p className="text-[18px] font-bold text-slate-900 mb-6">
+          {currentTripSequence.length} of {currentTripSequence.length} stops completed
+        </p>
+
+        <div className="space-y-4 mb-8">
+          <div className="flex justify-between items-baseline border-b border-slate-100 pb-3">
+            <span className="text-[15px] font-medium text-slate-600">Delivered</span>
+            <span className="text-[18px] font-bold text-slate-900">{completedStopIds.length}</span>
           </div>
-        ))}
-        <div className="text-[12px] text-slate-400">+{TRIP_COMPLETE.remainingRecapCount} stops delivered</div>
-      </Card>
-      <p className="text-[13px] text-slate-500">{TRIP_COMPLETE.returnGuidance}</p>
-      <Button variant="primary" size="lg" onClick={() => { completeTrip1(); push("today-trips"); }}>
-        {TRIP_COMPLETE.forwardCta}
-      </Button>
+          
+          <div className="flex justify-between items-baseline border-b border-slate-100 pb-3">
+            <span className="text-[15px] font-medium text-slate-600">Partial</span>
+            <span className="text-[18px] font-bold text-slate-900">{flaggedStopIds.length}</span>
+          </div>
+          
+          <div className="flex justify-between items-baseline border-b border-slate-100 pb-3">
+            <span className="text-[15px] font-medium text-slate-600">Not completed</span>
+            <span className="text-[18px] font-bold text-slate-900">{failedStopIds.length}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-auto pb-safe">
+        <button
+          type="button"
+          onClick={handleContinue}
+          className="w-full bg-[#059669] text-white font-bold text-[16px] py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer"
+        >
+          CONTINUE
+        </button>
+      </div>
     </div>
   );
 }

@@ -29,6 +29,7 @@ wheels/
 .ven/
 venv/
 ENV/
+*.txt
 
 # Node / Frontend
 node_modules/

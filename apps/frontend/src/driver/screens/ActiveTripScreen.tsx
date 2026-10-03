@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { Lock } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigator } from "@/router/navigator";
 import { DriverMap } from "@/driver/components/DriverMap";
-import { BottomSheet } from "@/driver/components/BottomSheet";
-import { AppIcon } from "@/driver/components/AppIcon";
 import { useDriverState } from "@/driver/state/useDriverState";
+import { Check, X, LocateFixed } from "lucide-react";
 
 export function ActiveTripScreen() {
   const { push } = useNavigator();
@@ -17,234 +15,198 @@ export function ActiveTripScreen() {
     failedStopIds,
   } = useDriverState();
 
-  const [viewMode, setViewMode] = useState<"map" | "list">("map");
-
   const currentOutletId =
     currentTripSequence[currentStopIndex] ?? currentTripSequence[0] ?? "OUT042";
-  const stop =
-    currentTripStops.find((s) => s.outletId === currentOutletId) ??
-    currentTripStops[0];
+
+  const [selectedOutletId, setSelectedOutletId] = useState<string | null>(currentOutletId);
+  const [recenterTrigger, setRecenterTrigger] = useState(0);
+
+  const displayOutletId = selectedOutletId;
+  const stop = displayOutletId
+    ? currentTripStops.find((s) => s.outletId === displayOutletId)
+    : null;
+
+  const isNextStop = displayOutletId === currentOutletId;
+  const isTripComplete = currentStopIndex >= currentTripSequence.length;
+
+  const windowCloses = stop?.window?.split("–")[1]?.trim() ?? "06:30";
+
+  // For horizontal scroll auto-scroll to selected item (simplified approach)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative flex flex-col flex-1 h-[calc(100vh-84px)] max-w-[430px] mx-auto overflow-hidden bg-slate-50">
-      {/* Surface: Map or Accessible Stop List */}
-      {viewMode === "map" ? (
-        <div className="relative flex-1 min-h-0">
-          {/* Quick Floating Controls positioned strictly inside map canvas */}
-          <div className="absolute top-3 left-3 z-[1000]">
+    <div className="flex flex-col flex-1 min-h-0 bg-slate-100 relative">
+      {/* ── MAP ── */}
+      <div className="flex-1 min-h-0 relative">
+        <DriverMap
+          stopIds={currentTripSequence}
+          currentStopId={currentOutletId}
+          selectedStopId={selectedOutletId || undefined}
+          recenterTrigger={recenterTrigger}
+          completedStopIds={completedStopIds}
+          flaggedStopIds={flaggedStopIds}
+          failedStopIds={failedStopIds}
+          onStopClick={(outletId) => setSelectedOutletId(outletId)}
+          className="absolute inset-0"
+        />
+      </div>
+
+      {isTripComplete ? (
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] z-[1000] pb-[env(safe-area-inset-bottom)]">
+          {/* ── TRIP COMPLETE SHEET ── */}
+          <div className="px-5 pb-8 pt-6">
+            <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              TRIP COMPLETE
+            </p>
+            <p className="text-[22px] font-bold text-slate-900 leading-tight mb-4">
+              {currentTripSequence.length} / {currentTripSequence.length} stops
+            </p>
+            
+            <div className="flex gap-4 mb-6">
+              <div>
+                <span className="block text-[18px] font-bold text-slate-900">{completedStopIds.length}</span>
+                <span className="text-[13px] font-medium text-slate-500">delivered</span>
+              </div>
+              <div>
+                <span className="block text-[18px] font-bold text-slate-900">{flaggedStopIds.length}</span>
+                <span className="text-[13px] font-medium text-slate-500">partial</span>
+              </div>
+              <div>
+                <span className="block text-[18px] font-bold text-slate-900">{failedStopIds.length}</span>
+                <span className="text-[13px] font-medium text-slate-500">not completed</span>
+              </div>
+            </div>
+
             <button
               type="button"
-              onClick={() => push("contact-dispatch")}
-              className="bg-white/95 backdrop-blur-sm shadow-md border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 transition-colors cursor-pointer"
-              aria-label="Contact Dispatch"
+              onClick={() => push("return-depot")}
+              className="w-full bg-[#059669] text-white font-bold text-[15px] py-3.5 rounded-lg transition-colors active:scale-[0.98] cursor-pointer hover:bg-emerald-700"
             >
-              <AppIcon name="phone" size={13} className="text-green" />
-              <span>Contact Dispatch</span>
+              RETURN TO DEPOT
             </button>
           </div>
-
-          <div className="absolute top-3 right-3 z-[1000]">
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className="bg-white/95 backdrop-blur-sm shadow-md border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 transition-colors cursor-pointer"
-              aria-label="Switch to list view"
-            >
-              <AppIcon name="list" size={14} />
-              <span>List view</span>
-            </button>
-          </div>
-
-          <DriverMap
-            stopIds={currentTripSequence}
-            currentStopId={currentOutletId}
-            completedStopIds={completedStopIds}
-            flaggedStopIds={flaggedStopIds}
-            failedStopIds={failedStopIds}
-            onStopClick={(outletId) => {
-              const stopIdx = currentTripSequence.indexOf(outletId);
-              // Sequential rule: can only view current or review past stops
-              if (stopIdx <= currentStopIndex) {
-                const s = currentTripStops.find((x) => x.outletId === outletId);
-                if (s) push("stop-detail", { seq: String(s.seq) });
-              }
-            }}
-            className="absolute inset-0"
-          />
         </div>
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col bg-slate-50">
-          {/* List Subheader - positioned below TopBar and never covering it */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-200 shrink-0 shadow-xs">
-            <div>
-              <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Route Stops ({currentTripSequence.length})
-              </h2>
-              <span className="text-[11px] text-slate-500">
-                Stop {currentStopIndex + 1} is active · Sequential access
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => push("contact-dispatch")}
-                className="bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
-                aria-label="Contact dispatch"
-              >
-                <AppIcon name="phone" size={13} className="text-green" />
-                <span>Dispatch</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("map")}
-                className="bg-white border border-slate-200 shadow-sm px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1.5 hover:bg-slate-50 transition-colors cursor-pointer"
-                aria-label="Switch to map view"
-              >
-                <AppIcon name="map" size={14} />
-                <span>Map view</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Sequential Stops Scrollable Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
-            {currentTripSequence.map((outletId, index) => {
-              const stopItem = currentTripStops.find((s) => s.outletId === outletId);
-              const isCurrent = index === currentStopIndex;
-              const isPast = index < currentStopIndex;
-              const isUpcoming = index > currentStopIndex;
-
-              // Strict temporal logic: upcoming stops CANNOT be marked failed or delivered!
-              const isCompleted = isPast && completedStopIds.includes(outletId);
-              const isFlagged = isPast && flaggedStopIds.includes(outletId);
-              const isFailed = isPast && failedStopIds.includes(outletId);
-
-              return (
-                <div
-                  key={outletId}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-colors ${
-                    isCurrent
-                      ? "bg-white border-green shadow-sm ring-1 ring-green/30"
-                      : isPast
-                        ? "bg-white/80 border-slate-200"
-                        : "bg-slate-100/70 border-slate-200/80 opacity-75"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span
-                      className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
-                        isCurrent
-                          ? "bg-green text-white ring-2 ring-green/30"
-                          : isPast
-                            ? isFailed
-                              ? "bg-rose-100 text-rose-700"
-                              : isFlagged
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-emerald-100 text-emerald-800"
-                            : "bg-slate-200 text-slate-500"
-                      }`}
-                    >
-                      {isCompleted ? "✓" : isFailed ? "✕" : index + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-slate-900 text-sm">
-                          {outletId}
-                        </span>
-                        {isUpcoming && (
-                          <span className="text-[10px] text-slate-400 font-medium bg-slate-200/60 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <Lock size={9} /> Locked
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-slate-500 block truncate max-w-[170px]">
-                        {stopItem?.name ?? outletId}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-right text-xs shrink-0">
-                    {isCurrent && (
-                      <span className="text-green font-bold bg-green-fill px-2 py-0.5 rounded-full border border-green/20">
-                        Current
-                      </span>
-                    )}
-                    {isCompleted && (
-                      <span className="text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Delivered
-                      </span>
-                    )}
-                    {isFlagged && (
-                      <span className="text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                        Partial
-                      </span>
-                    )}
-                    {isFailed && (
-                      <span className="text-rose-700 font-medium bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                        Failed
-                      </span>
-                    )}
-                    {isUpcoming && (
-                      <span className="text-slate-400 text-[11px] font-medium">
-                        Upcoming
-                      </span>
-                    )}
-
-                    {/* Action buttons - strictly sequential! */}
-                    {isCurrent ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (stopItem) push("stop-detail", { seq: String(stopItem.seq) });
-                        }}
-                        className="ml-1 text-xs font-semibold text-green bg-green-fill hover:bg-green/20 px-2.5 py-1 rounded-md border border-green/30 cursor-pointer"
-                      >
-                        Action
-                      </button>
-                    ) : isPast ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (stopItem) push("stop-detail", { seq: String(stopItem.seq) });
-                        }}
-                        className="ml-1 text-xs font-medium text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md cursor-pointer"
-                      >
-                        Review
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        title="Complete preceding stops first. Route is sequential."
-                        className="ml-1 text-xs font-medium text-slate-400 bg-slate-100/50 px-2 py-1 rounded-md cursor-not-allowed"
-                      >
-                        Locked
-                      </button>
-                    )}
-                  </div>
+        <div className="absolute bottom-0 left-0 right-0 flex flex-col z-[1000] pointer-events-none">
+          {/* ── EXPANDED PREVIEW (Slides up above strip) ── */}
+          {stop && (
+            <div className="bg-white px-5 pt-5 pb-5 rounded-t-xl shadow-[0_-8px_24px_rgba(0,0,0,0.08)] border-t border-slate-200 animate-in slide-in-from-bottom-4 duration-200 pointer-events-auto">
+              <div className="flex justify-between items-start mb-1">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    {isNextStop ? "Next Stop" : `Stop ${stop.seq}`}
+                  </p>
+                  <h2 className="text-[20px] font-bold text-slate-900 leading-tight">
+                    {stop.outletId}
+                  </h2>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                <button 
+                  onClick={() => setSelectedOutletId(null)}
+                  className="p-1.5 -mr-2 -mt-1 text-slate-400 hover:text-slate-600 bg-slate-50 rounded-full"
+                >
+                  <X size={20} strokeWidth={2.5} />
+                </button>
+              </div>
+              
+              <p className="text-[15px] font-semibold text-slate-600 mb-3">{stop.name}</p>
 
-      {/* Persistent Bottom Sheet docked at bottom for the current stop */}
-      {stop && (
-        <div className="shrink-0 z-30 w-full">
-          <BottomSheet
-            stop={stop}
-            etaMin={12}
-            windowClosingMin={43}
-            onMarkArrived={() => push("mark-arrived", { seq: String(stop.seq) })}
-            onChat={() => push("chat", { outletId: stop.outletId })}
-            onCall={() => push("call-overlay", { outletId: stop.outletId })}
-            onDetails={() => push("stop-detail", { seq: String(stop.seq) })}
-            onFailed={() =>
-              push("failed-reason", { outletId: stop.outletId, seq: String(stop.seq) })
-            }
-            onContactDispatch={() => push("contact-dispatch")}
-          />
+              <div className="flex flex-col gap-1 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-bold text-slate-900">12 min</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-[15px] font-semibold text-slate-600">5.4 km</span>
+                </div>
+                <p className="text-[13px] font-medium text-slate-500">
+                  Window {stop.window}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mb-5">
+                {stop.temp && <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">{stop.temp}</span>}
+                {stop.dock && <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">{stop.dock}</span>}
+                {stop.parking !== "Normal" && <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">{stop.parking}</span>}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => push("stop-detail", { seq: String(stop.seq) })}
+                className="w-full bg-white border-2 border-slate-200 text-slate-900 font-bold text-[14px] py-3.5 rounded-lg transition-colors active:scale-[0.98] cursor-pointer hover:bg-slate-50 hover:border-slate-300"
+              >
+                VIEW MORE DETAILS
+              </button>
+            </div>
+          )}
+
+          {/* ── MAP CONTROLS ── */}
+          <div className="absolute right-4 bottom-[84px] pointer-events-auto flex flex-col gap-2 transition-transform">
+            <button
+              onClick={() => {
+                setSelectedOutletId(null);
+                setRecenterTrigger(c => c + 1);
+              }}
+              className="w-10 h-10 rounded-full bg-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] border border-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+            >
+              <LocateFixed size={20} strokeWidth={2.5} className="text-[#059669]" />
+            </button>
+          </div>
+
+          {/* ── HORIZONTAL STRIP ── */}
+          <div className="pb-[env(safe-area-inset-bottom)] pointer-events-none">
+            <div 
+              ref={scrollContainerRef}
+              className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-2.5 px-4 py-3.5 items-center pointer-events-auto"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {currentTripSequence.map((outletId, idx) => {
+                const isCompleted = completedStopIds.includes(outletId);
+                const isCurrentOrNext = outletId === currentOutletId;
+                const isSelected = outletId === selectedOutletId;
+                const stopData = currentTripStops.find((s) => s.outletId === outletId);
+                
+                let cardClasses = "flex items-center gap-2 px-3.5 py-2.5 rounded-xl border-2 transition-all whitespace-nowrap snap-center shrink-0 cursor-pointer ";
+                
+                if (isCompleted) {
+                  cardClasses += "bg-slate-50 border-slate-200 text-slate-500 opacity-60";
+                } else if (isCurrentOrNext) {
+                  cardClasses += "bg-emerald-50 border-[#059669] text-[#059669]";
+                } else {
+                  cardClasses += "bg-white border-slate-200 text-slate-700 shadow-[0_2px_8px_rgba(0,0,0,0.08)]";
+                }
+                
+                if (isSelected && !isCompleted && !isCurrentOrNext) {
+                   // Add a subtle highlight if selected and not already accented
+                   cardClasses += " ring-2 ring-slate-400 ring-offset-1";
+                }
+
+                return (
+                  <button
+                    key={outletId}
+                    onClick={() => {
+                      setSelectedOutletId(outletId);
+                      // Center the card in the scroll view
+                      const btn = document.getElementById(`strip-card-${outletId}`);
+                      if (btn && scrollContainerRef.current) {
+                        const container = scrollContainerRef.current;
+                        const scrollLeft = btn.offsetLeft - container.offsetWidth / 2 + btn.offsetWidth / 2;
+                        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+                      }
+                    }}
+                    id={`strip-card-${outletId}`}
+                    className={cardClasses}
+                  >
+                    {isCompleted ? (
+                      <Check size={16} strokeWidth={3} className="text-slate-400" />
+                    ) : (
+                      <span className="font-bold text-[14px]">{idx + 1}</span>
+                    )}
+                    <span className="font-semibold text-[14px] tracking-tight truncate max-w-[180px]">
+                      {stopData ? `${stopData.outletId} · ${stopData.name}` : outletId}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -16,6 +16,8 @@ export interface DriverMapProps {
   flaggedStopIds?: string[];
   failedStopIds?: string[];
   onStopClick?: (outletId: string) => void;
+  selectedStopId?: string;
+  recenterTrigger?: number;
   className?: string;
 }
 
@@ -34,6 +36,8 @@ export function DriverMap({
   flaggedStopIds = [],
   failedStopIds = [],
   onStopClick,
+  selectedStopId,
+  recenterTrigger,
   className
 }: DriverMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -182,6 +186,33 @@ export function DriverMap({
       isCancelled = true;
     };
   }, [stopIds, currentStopId, completedStopIds, flaggedStopIds, failedStopIds, onStopClick]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (selectedStopId) {
+      try {
+        const coords = getStopCoords(selectedStopId);
+        mapRef.current.setView([coords.lat, coords.lng], 16, { animate: true });
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [selectedStopId]);
+
+  useEffect(() => {
+    if (!mapRef.current || !recenterTrigger) return;
+    let vehicleCoords: [number, number] = [KANDY_HUB_COORDS.lat, KANDY_HUB_COORDS.lng];
+    if (completedStopIds.length > 0) {
+      const lastCompletedId = completedStopIds[completedStopIds.length - 1];
+      if (lastCompletedId) {
+        try {
+          const coords = getStopCoords(lastCompletedId);
+          vehicleCoords = [coords.lat, coords.lng];
+        } catch (e) {}
+      }
+    }
+    mapRef.current.setView(vehicleCoords, 16, { animate: true });
+  }, [recenterTrigger, completedStopIds]);
 
   return (
     <div
