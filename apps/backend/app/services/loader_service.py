@@ -125,8 +125,59 @@ def _validate_item_state(expected_qty: int, loaded_qty: int, status: str, reason
         raise HTTPException(status_code=400, detail="Over items must have loaded quantity above assigned quantity")
     if status in DISCREPANCY_STATUSES and not reason:
         raise HTTPException(status_code=400, detail="Discrepancy reason is required for mismatch items")
+    if status not in DISCREPANCY_STATUSES and reason:
+        raise HTTPException(status_code=400, detail="Discrepancy reason is only allowed for mismatch items")
     if status == "pending" and loaded_qty != expected_qty:
         raise HTTPException(status_code=400, detail="Quantity mismatch must be reported as a discrepancy")
+
+
+def _ensure_trip_manifest_current(db: Session, trip_id: str):
+    """Detect dispatcher changes made after the loader opened a stale screen."""
+    rows = (
+        db.query(TripStop, Order)
+        .join(Order, Order.order_id == TripStop.order_id)
+        .filter(TripStop.trip_id == trip_id)
+        .all()
+    )
+    for stop, order in rows:
+        if order.status in {"deferred", "cancelled"}:
+            raise HTTPException(status_code=409, detail=f"Order {order.order_id} is {order.status}")
+        if order.trip_id != trip_id:
+            raise HTTPException(status_code=409, detail=f"Order {order.order_id} is no longer assigned to this trip")
+
+
+def _ensure_trip_has_loadable_manifest(db: Session, trip_id: str):
+    stops = db.query(TripStop).filter(TripStop.trip_id == trip_id).all()
+    if not stops:
+        raise HTTPException(status_code=400, detail="Trip has no stops to load")
+
+    empty_stops = []
+    for stop in stops:
+        item_count = (
+            db.query(OrderLine)
+            .filter(OrderLine.order_id == stop.order_id)
+            .count()
+        )
+        if item_count == 0:
+            empty_stops.append(stop.stop_id)
+    if empty_stops:
+        raise HTTPException(status_code=400, detail=f"Stops have no load items: {empty_stops}")
+
+
+def _ensure_vehicle_temperature_compatible(db: Session, trip: Trip):
+    vehicle = _get_vehicle(db, trip.vehicle_id)
+    if not vehicle:
+        raise HTTPException(status_code=400, detail="Trip vehicle is missing")
+    if vehicle.temp == "reefer":
+        return
+
+    rows = _line_rows_for_trip(db, trip.trip_id)
+    cold_items = sorted({line.product_id for _, line, product, _, _ in rows if product and product.temp_req == "reefer"})
+    if cold_items:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Vehicle {vehicle.vehicle_id} is not temperature-compatible with items: {cold_items}",
+        )
 
 
 def _upsert_load_item(
@@ -368,6 +419,9 @@ def start_loading(db: Session, trip_id: str, loader_depot: str, user_id: str):
         raise HTTPException(status_code=400, detail=f"Trip is {trip.status} and cannot be edited")
     if trip.status not in EDITABLE_TRIP_STATUSES:
         raise HTTPException(status_code=400, detail=f"Trip cannot be loaded from status {trip.status}")
+    _ensure_trip_has_loadable_manifest(db, trip_id)
+    _ensure_trip_manifest_current(db, trip_id)
+    _ensure_vehicle_temperature_compatible(db, trip)
 
     check = _ensure_load_check(db, trip, user_id)
     if trip.status == "planned":
@@ -398,6 +452,9 @@ def save_load_item(
         raise HTTPException(status_code=400, detail=f"Trip is {trip.status} and cannot be edited")
     if trip.status not in EDITABLE_TRIP_STATUSES:
         raise HTTPException(status_code=400, detail=f"Trip cannot be loaded from status {trip.status}")
+    _ensure_trip_has_loadable_manifest(db, trip_id)
+    _ensure_trip_manifest_current(db, trip_id)
+    _ensure_vehicle_temperature_compatible(db, trip)
 
     line_index = _line_index_for_trip(db, trip_id)
     row = line_index.get(line_item_id)
@@ -445,6 +502,7 @@ def complete_stop(db: Session, trip_id: str, stop_id: str, loader_depot: str, us
     trip = _get_trip_for_loader(db, trip_id, loader_depot)
     if trip.status in READ_ONLY_TRIP_STATUSES:
         raise HTTPException(status_code=400, detail=f"Trip is {trip.status} and cannot be edited")
+    _ensure_trip_manifest_current(db, trip_id)
 
     wb = _build_workbench(db, trip)
     target = next((stop for stop in wb.stops if stop.stop_id == stop_id), None)
@@ -478,6 +536,9 @@ def submit_load_check(
         raise HTTPException(status_code=400, detail=f"Trip is {trip.status} and cannot be edited")
     if trip.status not in EDITABLE_TRIP_STATUSES:
         raise HTTPException(status_code=400, detail=f"Trip cannot be loaded from status {trip.status}")
+    _ensure_trip_has_loadable_manifest(db, trip_id)
+    _ensure_trip_manifest_current(db, trip_id)
+    _ensure_vehicle_temperature_compatible(db, trip)
 
     line_index = _line_index_for_trip(db, trip_id)
     expected_line_ids = set(line_index.keys())
