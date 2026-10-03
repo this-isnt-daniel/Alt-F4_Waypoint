@@ -78,7 +78,9 @@ def get_outlets(
 
 @router.post("/planning/optimize", response_model=ProposedPlanResponse, dependencies=[Depends(dispatcher_role)])
 def optimize_plan(request: OptimizeRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return planning_service.create_optimization_run(db, request.depot_id, request.target_date, request.brand)
+    if request.depot_id and request.depot_id != current_user.depot_id:
+        raise HTTPException(status_code=403, detail="Cannot optimize plan for another depot")
+    return planning_service.create_optimization_run(db, current_user.depot_id, request.target_date, request.brand)
 
 @router.get("/planning/runs/{run_id}", response_model=ProposedPlanResponse, dependencies=[Depends(dispatcher_role)])
 def get_plan(run_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

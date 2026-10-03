@@ -126,7 +126,7 @@ def make_trip(db, *, driver_id="U_DRV1", trip_no=1, vehicle_id="V1", status="loa
         db.add(order)
         db.flush()
         stop = TripStop(stop_id=f"S{n}-{seq}", trip_id=trip.trip_id, outlet_id=outlet_id, order_id=order.order_id,
-                        stop_seq=seq, temp_req="ambient", status="loaded")
+                        stop_seq=seq, temp_req="ambient", status="upcoming")
         db.add(stop)
         db.flush()
         for product_id, qty in lines.items():
@@ -249,7 +249,7 @@ def test_driver_cannot_touch_another_drivers_trip_or_stop(client, db):
 
     # Nothing changed, and every attempt is in the ledger as failed without a trip/stop link.
     db.expire_all()
-    assert db.query(TripStop).filter(TripStop.stop_id == stop_id).one().status == "loaded"
+    assert db.query(TripStop).filter(TripStop.stop_id == stop_id).one().status == "upcoming"
     failed = db.query(DriverEvent).filter(DriverEvent.driver_id == "U_DRV1").all()
     assert failed and all(e.status == "failed" and e.trip_id is None and e.stop_id is None for e in failed)
 

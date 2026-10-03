@@ -18,6 +18,11 @@ from app.models.plan import DraftPlan
 from app.models.trip import Trip, TripStop
 from app.adapters.optimizer_adapter import get_reference_data
 
+try:
+    get_reference_data()
+except FileNotFoundError:
+    pytest.skip("Reference data missing, skipping module", allow_module_level=True)
+
 
 @pytest.fixture
 def test_db():

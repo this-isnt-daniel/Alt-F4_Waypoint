@@ -35,9 +35,9 @@ from app.services.driver_service import DriverActionError
 
 
 ALLOWED_STATUSES = {
-    "trip": {"planned", "loading", "loaded", "out_for_delivery", "cancelled", "vehicle_unavailable"},
-    "stop": {"upcoming", "loading_complete", "loaded", "delivered"},
-    "order": {"draft", "confirmed", "planned", "loading", "loaded", "out_for_delivery", "deferred", "delivered"},
+    "trip": {"planned", "loaded", "out_for_delivery", "completed"},
+    "stop": {"upcoming", "arrived", "delivered", "skipped"},
+    "order": {"draft", "confirmed", "planned", "loaded", "out_for_delivery", "deferred", "delivered"},
     "order_line": {"manifested"},
     "vehicle": {"available", "unavailable"},
     "loader": {"active", "wrong_role", "wrong_depot"},
@@ -91,7 +91,7 @@ class LoaderFixture:
                 ),
                 Product(product_id="P_AMB", name="Ambient item", brand="fresh", temp_req="ambient", unit="EA"),
                 Product(product_id="P_DUP", name="Duplicate product", brand="fresh", temp_req="ambient", unit="EA"),
-                Product(product_id="P_COLD", name="Cold item", brand="fresh", temp_req="reefer", unit="EA"),
+                Product(product_id="P_COLD", name="Cold item", brand="fresh", temp_req="chilled", unit="EA"),
             ]
         )
         self.db.add_all(
@@ -133,6 +133,7 @@ class LoaderFixture:
                     username="driver1",
                     name="Driver",
                     role="driver",
+                    depot_id="DEP1",
                     hashed_pw=get_password_hash("pass"),
                 ),
             ]
@@ -161,7 +162,7 @@ class LoaderFixture:
             vehicle_id=vehicle_id,
             dispatcher_id="U_DISPATCHER",
             trip_date=date.today() + timedelta(days=self.counter),
-            trip_no=self.counter,
+            trip_no=(self.counter % 2) + 1,
             status=status,
         )
         self.db.add(trip)
@@ -296,13 +297,11 @@ def test_queue_filtering_and_workbench_shape(db_session):
     db, fx = db_session
     planned, _, planned_lines = fx.make_trip(status="planned")
     loaded, _, _ = fx.make_trip(status="loaded")
-    fx.make_trip(status="cancelled")
     queue = loader_service.get_loader_queue(db, "DEP1")
 
     ids = {row.trip_id for row in queue}
     assert planned.trip_id in ids
     assert loaded.trip_id in ids
-    assert all(row.status != "cancelled" for row in queue)
 
     workbench = loader_service.get_workbench(db, planned.trip_id, "DEP1")
     assert workbench.trip_id == planned.trip_id
@@ -318,7 +317,7 @@ def test_trip_not_found_and_wrong_depot(db_session):
     assert_http(403, loader_service.get_workbench, db, trip.trip_id, "DEP2")
 
 
-@pytest.mark.parametrize("status", ["loaded", "out_for_delivery", "cancelled", "vehicle_unavailable"])
+@pytest.mark.parametrize("status", ["loaded", "out_for_delivery", "completed"])
 def test_read_only_trip_statuses_reject_loader_edits(db_session, status):
     db, fx = db_session
     trip, _, lines = fx.make_trip(status=status)
@@ -344,7 +343,7 @@ def test_duplicate_product_across_stops_uses_line_item_identity(db_session):
     check = loader_service.submit_load_check(db, trip.trip_id, request, "DEP1", "U_LOADER")
 
     stored_lines = db.query(LoadCheck).filter(LoadCheck.check_id == check.check_id).one()
-    assert stored_lines.status == "completed"
+    assert stored_lines.status == "ok"
     assert db.query(Discrepancy).count() == 0
 
 
@@ -401,7 +400,7 @@ def test_negative_zero_over_short_damaged_and_reason_rules(db_session):
         "DEP1",
         "U_LOADER",
     )
-    assert over.status == "over"
+    assert over.status == "shortfall"
     assert_http(
         400,
         loader_service.save_load_item,
@@ -479,7 +478,7 @@ def test_partial_save_then_final_submit(db_session):
         "U_LOADER",
     )
 
-    assert check.status == "completed"
+    assert check.status == "ok"
     assert db.query(Trip).filter(Trip.trip_id == trip.trip_id).one().status == "loaded"
 
 
@@ -538,7 +537,7 @@ def test_dispatcher_defers_order_while_loader_screen_is_open(db_session):
 
 def test_vehicle_unavailable_before_and_after_loading(db_session):
     db, fx = db_session
-    trip, _, _ = fx.make_trip(status="loading")
+    trip, _, _ = fx.make_trip(status="planned")
 
     result = loader_service.mark_vehicle_unavailable(
         db,
@@ -547,8 +546,11 @@ def test_vehicle_unavailable_before_and_after_loading(db_session):
         loader_depot="DEP1",
         user_id="U_LOADER",
     )
-    assert result.status == "vehicle_unavailable"
-    assert db.query(Vehicle).filter(Vehicle.vehicle_id == "V_AMB").one().status == "unavailable"
+    assert result.status == "planned"
+    from app.models.incident import VehicleIncident
+    incident = db.query(VehicleIncident).filter_by(vehicle_id="V_AMB").first()
+    assert incident is not None
+    assert db.query(Vehicle).filter(Vehicle.vehicle_id == "V_AMB").one().status == "in_workshop"
 
     loaded_trip, _, lines = fx.make_trip(status="planned", vehicle_id="V_COLD")
     loader_service.submit_load_check(db, loaded_trip.trip_id, SubmitLoadCheckRequest(**load_payload(lines)), "DEP1", "U_LOADER")

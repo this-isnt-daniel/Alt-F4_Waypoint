@@ -219,6 +219,23 @@ def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, 
             
             calc_reported = rep_q if rep_q is not None else ((exp_q - act_q) if exp_q is not None and act_q is not None else 0)
             
+            # Map legacy/UI reason codes to canonical Discrepancy.type
+            canonical_type = "other"
+            if r_code in ("short", "short_quantity", "short_qty"):
+                canonical_type = "short_qty"
+            elif r_code in ("missing",):
+                canonical_type = "missing"
+            elif r_code in ("damaged",):
+                canonical_type = "damaged"
+            elif r_code in ("substituted", "wrong_item"):
+                canonical_type = "wrong_item"
+            
+            # Preserve original reason in note if it's being mapped to 'other' or modified
+            final_note = n_val or ""
+            if r_code and r_code not in ("short_qty", "missing", "damaged", "wrong_item", "other"):
+                prefix = f"Original receipt reason: {r_code}"
+                final_note = f"{prefix}; {final_note}" if final_note else prefix
+
             d = Discrepancy(
                 discrepancy_id=str(uuid.uuid4()),
                 order_id=order_id,
@@ -226,10 +243,10 @@ def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, 
                 source_stage="receipt",
                 confirm_id=receipt.confirm_id,
                 product_id=p_id or "UNKNOWN",
-                type=r_code or "receipt_discrepancy",
+                type=canonical_type,
                 reported_qty=calc_reported,
                 status="open",
-                note=n_val
+                note=final_note if final_note else None
             )
             db.add(d)
             
@@ -325,8 +342,8 @@ def get_order_eta(db: Session, order_id: str, outlet_id: str) -> dict:
         stop = db.query(TripStop).filter(TripStop.order_id == order_id).first()
         if stop:
             stop_status = stop.status
-            if not order.exp_arrival and stop.expected_arrival:
-                order.exp_arrival = stop.expected_arrival
+            if not order.exp_arrival and stop.eta:
+                order.exp_arrival = stop.eta
 
     return {
         "order_id": order.order_id,

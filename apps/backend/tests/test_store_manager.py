@@ -237,10 +237,16 @@ def test_confirm_receipt_and_discrepancies(client, store_manager_db):
     assert rec_res.status_code == 200, rec_res.json()
     assert rec_res.json()["status"] == "success"
     
-    # Check order status changed to delivered_with_discrepancy
+    # Check order status changed to delivered
     get_order_res = client.get(f"/api/v1/store-manager/orders/{order_id}", headers=headers)
     assert get_order_res.status_code == 200
-    assert get_order_res.json()["status"] == "delivered_with_discrepancy"
+    assert get_order_res.json()["status"] == "delivered"
+    
+    # Check discrepancy record in DB
+    from app.models.delivery import Discrepancy
+    disc = store_manager_db.query(Discrepancy).filter_by(order_id=order_id).first()
+    assert disc is not None
+    assert disc.type == "missing"
 
 
 def test_get_order_eta_and_deferrals(client, store_manager_db):

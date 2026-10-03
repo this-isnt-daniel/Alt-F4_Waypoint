@@ -23,7 +23,7 @@ def seed_trips():
                 dispatcher_id="USR-999",
                 trip_date=today,
                 trip_no=trip_no,
-                status="in_progress"
+                status="out_for_delivery"
             )
             db.add(trip)
             db.commit()
@@ -84,7 +84,7 @@ def seed_trips():
                 seq += 1
 
         # TRIP 1: VEH014
-        create_trip("TRP-VEH014-1", "VEH014", "reefer", 1, [
+        create_trip("TRP-VEH014-1", "VEH014", "chilled", 1, [
             {
                 "outlet_id": "OUT-011", "eta": "07:30 AM", "status": "Completed",
                 "lines": [{"sku": "DAI-102", "qty": 40}, {"sku": "VEG-05", "qty": 20}]
@@ -108,7 +108,7 @@ def seed_trips():
         ])
 
         # TRIP 2: VEH009
-        create_trip("TRP-VEH009-1", "VEH009", "reefer", 1, [
+        create_trip("TRP-VEH009-1", "VEH009", "chilled", 1, [
             {
                 "outlet_id": "OUT-2041", "eta": "07:15 AM", "status": "Completed",
                 "lines": [{"sku": "VEG-22", "qty": 10}]

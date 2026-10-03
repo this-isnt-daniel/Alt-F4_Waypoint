@@ -42,7 +42,7 @@ def override_db():
     
     users = [
         User(user_id="U2", name="Dispatcher One", username="disp1", hashed_pw=get_password_hash("pass"), role="dispatcher", depot_id="DEP1"),
-        User(user_id="U4", name="Driver One", username="driver1", hashed_pw=get_password_hash("pass"), role="driver")
+        User(user_id="U4", name="Driver One", username="driver1", hashed_pw=get_password_hash("pass"), role="driver", depot_id="DEP1")
     ]
     db.add_all(users)
     

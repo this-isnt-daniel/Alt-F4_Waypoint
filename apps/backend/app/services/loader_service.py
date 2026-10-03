@@ -172,7 +172,7 @@ def _ensure_vehicle_temperature_compatible(db: Session, trip: Trip):
         return
 
     rows = _line_rows_for_trip(db, trip.trip_id)
-    cold_items = sorted({line.product_id for _, line, product, _, _ in rows if product and product.temp_req == "reefer"})
+    cold_items = sorted({line.product_id for _, line, product, _, _ in rows if product and product.temp_req == "chilled"})
     if cold_items:
         raise HTTPException(
             status_code=400,

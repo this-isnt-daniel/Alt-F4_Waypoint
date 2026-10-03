@@ -7,6 +7,7 @@ import json
 from app.models.incident import VehicleIncident
 from app.models.trip import Trip, TripStop, TripStopItem
 from app.models.order import Order as DbOrder, OrderLine as DbOrderLine
+from app.models.outlet import Outlet as DbOutlet
 from app.models.vehicle import Vehicle as DbVehicle
 from app.models.plan import DraftPlan
 from app.models.route import RouteChange
@@ -86,13 +87,15 @@ def build_recovery_proposal(db: Session, depot_id: str, user_id: str, incident_i
     # 4. Get active plan
     draft_record = db.query(DraftPlan).filter(
         DraftPlan.target_date == trip.trip_date,
-        DraftPlan.status == "approved"
+        DraftPlan.status == "approved",
+        DraftPlan.depot_id == depot_id
     ).order_by(DraftPlan.updated_at.desc()).first()
     
     if not draft_record:
         # Fallback to the latest draft if no approved plan
         draft_record = db.query(DraftPlan).filter(
-            DraftPlan.target_date == trip.trip_date
+            DraftPlan.target_date == trip.trip_date,
+            DraftPlan.depot_id == depot_id
         ).order_by(DraftPlan.updated_at.desc()).first()
         
     if not draft_record:
@@ -112,8 +115,11 @@ def build_recovery_proposal(db: Session, depot_id: str, user_id: str, incident_i
         
     optimizer_fleet = [_ensure_live_fleet_state(v) for v in optimizer_fleet]
 
-    # Authoritative orders for the date
-    order_query = db.query(DbOrder).filter(DbOrder.order_date == trip.trip_date)
+    # Authoritative orders for the date (scoped to depot)
+    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(
+        DbOrder.order_date == trip.trip_date,
+        DbOutlet.depot_id == depot_id
+    )
     optimizer_orders = [convert_db_order_to_optimizer(o, ref_data, db) for o in order_query.all()]
 
     context = OperationalContext(
@@ -197,8 +203,9 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
     remaining_orders = []
     for s in broken_stops:
         if s.status not in FINISHED_STOP_STATUSES:
-            s.status = "skipped" # Mark original stop as skipped due to breakdown
-            s.skip_reason = "breakdown"
+            if s.status != "arrived":
+                s.status = "skipped" # Mark original stop as skipped due to breakdown
+                s.skip_reason = "breakdown"
             remaining_orders.append(s.order_id)
             
     broken_trip.status = "completed"
@@ -262,7 +269,8 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
                     
                 existing_stop.trip_id = v_trip.trip_id
                 existing_stop.stop_seq = seq
-                existing_stop.status = "upcoming"
+                if existing_stop.status != "arrived":
+                    existing_stop.status = "upcoming"
                 existing_stop.skip_reason = None
                 # Invalidate offline driver edits made against the old assignment
                 existing_stop.row_version = (existing_stop.row_version or 1) + 1
