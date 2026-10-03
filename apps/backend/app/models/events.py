@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, CheckConstraint
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, CheckConstraint
 from app.db.base import Base
 
 class DeliveryEvent(Base):
@@ -20,37 +20,45 @@ class DeliveryEvent(Base):
     )
 
 class DriverEvent(Base):
-    __tablename__ = "driver_event"
-    
+    __tablename__ = "driver_events"
+
     event_id = Column(String, primary_key=True)
+    driver_id = Column(String, ForeignKey("user.user_id"), nullable=False, index=True)
+    device_id = Column(String, nullable=True)
     client_event_id = Column(String, nullable=False, unique=True)
-    trip_id = Column(String, ForeignKey("trip.trip_id"), nullable=False)
+    kind = Column(String, nullable=False)
     stop_id = Column(String, ForeignKey("trip_stop.stop_id"), nullable=True)
-    type = Column(String, nullable=False)
-    occurred_at = Column(DateTime(timezone=True), nullable=False)
+    trip_id = Column(String, ForeignKey("trip.trip_id"), nullable=True, index=True)
+    payload = Column(String, nullable=True) # JSON blob
+    occurred_at = Column(DateTime(timezone=True), nullable=True)
     received_at = Column(DateTime(timezone=True), nullable=False)
-    payload = Column(String, nullable=False) # Simplified payload string
-    sync_status = Column(String, nullable=False, default="pending")
-    sync_error = Column(String, nullable=True)
+    applied_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String, nullable=False, default="pending")
+    row_version_before = Column(Integer, nullable=True)
+    row_version_after = Column(Integer, nullable=True)
+    error = Column(String, nullable=True)
     
     __table_args__ = (
-        CheckConstraint("sync_status IN ('pending', 'applied', 'conflict', 'failed', 'already_applied')", name="check_driver_event_sync_status"),
+        CheckConstraint("status IN ('pending', 'applied', 'conflict', 'failed', 'already_applied')", name="check_driver_event_status"),
     )
 
 class Conflict(Base):
     __tablename__ = "conflict"
-    
+
     conflict_id = Column(String, primary_key=True)
-    driver_event_id = Column(String, ForeignKey("driver_event.event_id"), nullable=False)
-    entity_type = Column(String, nullable=False)
-    entity_id = Column(String, nullable=False)
-    conflict_type = Column(String, nullable=False)
-    server_state = Column(String, nullable=False)
-    client_state = Column(String, nullable=False)
-    status = Column(String, nullable=False, default="open")
+    stop_id = Column(String, ForeignKey("trip_stop.stop_id"), nullable=True)
+    driver_event_id = Column(String, ForeignKey("driver_events.event_id"), nullable=True)
+    driver_json = Column(String, nullable=True)
+    system_json = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="in_review")
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    forwarded_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     resolved_by = Column(String, ForeignKey("user.user_id"), nullable=True)
+    resolved_by_role = Column(String, nullable=True)
+    resolution = Column(String, nullable=True)
+    resolution_note = Column(String, nullable=True)
 
     __table_args__ = (
-        CheckConstraint("status IN ('open', 'resolved')", name="check_conflict_status"),
+        CheckConstraint("status IN ('in_review', 'forwarded', 'resolved', 'dismissed')", name="check_conflict_status"),
     )

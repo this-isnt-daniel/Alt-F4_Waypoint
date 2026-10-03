@@ -23,7 +23,7 @@ def create_route_change(
         raise HTTPException(status_code=403, detail="Trip not in your depot scope")
 
     # 2. Check if trip is in a state where route change makes sense
-    if trip.status not in ["planned", "departed", "in_progress"]:
+    if trip.status not in ["planned", "loaded", "out_for_delivery", "departed", "in_progress"]:
         raise HTTPException(status_code=422, detail=f"Cannot change route for trip in status {trip.status}")
 
     # 3. Handle idempotency

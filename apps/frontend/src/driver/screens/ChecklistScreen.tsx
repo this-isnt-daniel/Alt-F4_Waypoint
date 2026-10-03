@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Button } from "@/driver/components/Button";
 import { ChoiceList } from "@/driver/components/ChoiceList";
 import { BottomSheet } from "@/driver/components/BottomSheet";
 import { ChecklistRow, type CheckState } from "@/driver/components/ChecklistRow";
@@ -97,17 +98,17 @@ export function ChecklistScreen() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-white px-5 pb-6 pt-5">
-      <p className="text-[12px] font-bold uppercase tracking-wider text-green mb-1">
+    <div className="flex min-h-full flex-col px-4 pb-6 pt-2 max-w-[430px] mx-auto">
+      <p className="text-2xs font-semibold uppercase tracking-wide text-green">
         Unloading checklist
       </p>
-      <h1 className="text-[22px] font-bold text-slate-900">
+      <h1 className="mt-1 text-2xl font-bold text-ink">
         {currentStop.name}
       </h1>
-      <p className="mt-1 text-[13px] text-slate-500 mb-4">
+      <p className="mt-1 text-sm text-ink-muted">
         {currentOutletId} · arrived 06:18
       </p>
-      <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-[13px] text-slate-700">
+      <p className="mt-3 rounded-card border border-line bg-surface p-3 text-sm text-ink">
         Check each item, or flag what was not handed over.
       </p>
 
@@ -130,15 +131,18 @@ export function ChecklistScreen() {
         <button
           type="button"
           onClick={() => setBulkOpen(true)}
-          className="mt-3 self-start text-[14px] font-medium text-green hover:underline cursor-pointer"
+          className="mt-3 self-start text-sm font-medium text-green hover:underline"
         >
           Mark all items delivered
         </button>
       )}
 
       <div className="mt-auto pt-4 space-y-2">
-        <button
-          type="button"
+        {/* Photo ONLY when items flagged / damaged; otherwise directly PIN */}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
           disabled={!allResolved}
           onClick={() => {
             if (hasFlagged) {
@@ -147,30 +151,38 @@ export function ChecklistScreen() {
               push("pod-pin", { outletId: currentOutletId, cleanHandover: "true" });
             }
           }}
-          className="w-full bg-green text-white font-bold text-[16px] py-4 rounded-lg transition-colors active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ backgroundColor: "var(--c-green)" }}
         >
-          {hasFlagged ? "Continue — items flagged" : "Continue to POD"}
-        </button>
+          {hasFlagged ? "Continue to photo (items flagged)" : "Continue to PIN"}
+        </Button>
         {!allResolved && (
-          <p className="text-center text-[12px] text-slate-400">
+          <p className="text-center text-xs text-ink-muted">
             Resolve all {pending} item(s) to continue.
+          </p>
+        )}
+        {allResolved && !hasFlagged && (
+          <p className="text-center text-xs text-ink-muted">
+            Clean handover · No photograph required.
+          </p>
+        )}
+        {allResolved && hasFlagged && (
+          <p className="text-center text-xs text-amber-600 font-medium">
+            Photograph required: 1+ item damaged / returned.
           </p>
         )}
         <div className="flex items-center justify-between pt-2">
           <button
             type="button"
             onClick={() => push("active-trip")}
-            className="text-[13px] font-medium text-slate-400 hover:text-slate-700 cursor-pointer"
+            className="text-sm font-medium text-green hover:underline"
           >
             ← Back to map
           </button>
           <button
             type="button"
             onClick={() => push("failed-reason", { outletId: currentOutletId })}
-            className="text-[13px] font-semibold text-slate-400 hover:text-rose-600 cursor-pointer"
+            className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline"
           >
-            Report failure
+            Report stop failure
           </button>
         </div>
       </div>
@@ -197,25 +209,20 @@ export function ChecklistScreen() {
         onClose={() => setBulkOpen(false)}
         title="Mark all delivered?"
       >
-        <p className="px-5 text-[14px] text-slate-700">
+        <p className="px-4 text-sm text-ink">
           This marks all {pending} remaining item(s) as handed over. You can still flag an item afterwards.
         </p>
-        <div className="flex gap-3 p-5">
-          <button
-            type="button"
-            className="flex-1 py-3.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[15px] cursor-pointer"
+        <div className="flex gap-2 p-4">
+          <Button
+            variant="secondary"
+            fullWidth
             onClick={() => setBulkOpen(false)}
           >
             Cancel
-          </button>
-          <button 
-            type="button"
-            className="flex-1 py-3.5 rounded-lg bg-green text-white font-semibold text-[15px] cursor-pointer"
-            style={{ backgroundColor: "var(--c-green)" }}
-            onClick={markAllDelivered}
-          >
+          </Button>
+          <Button variant="primary" fullWidth onClick={markAllDelivered}>
             Confirm all
-          </button>
+          </Button>
         </div>
       </BottomSheet>
     </div>
@@ -237,7 +244,7 @@ function FlagReasonForm({
   const [note, setNote] = useState(initialNote);
 
   return (
-    <div className="space-y-4 px-5 pb-5">
+    <div className="space-y-4 p-4">
       <ChoiceList
         options={HANDOVER_REASONS.map((r) => ({ id: r, label: r }))}
         selectedId={reason}
@@ -250,25 +257,20 @@ function FlagReasonForm({
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           placeholder="Add a short detail…"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] text-slate-900 outline-none focus:border-green"
+          className="w-full rounded-btn border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-green"
         />
       )}
-      <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          className="flex-1 py-3.5 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[15px] cursor-pointer"
-          onClick={onCancel}
-        >
+      <div className="flex gap-2 pt-1">
+        <Button variant="secondary" fullWidth onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="button"
-          className="flex-1 py-3.5 rounded-lg bg-green text-white font-semibold text-[15px] cursor-pointer"
-          style={{ backgroundColor: "var(--c-green)" }}
+        </Button>
+        <Button
+          variant="primary"
+          fullWidth
           onClick={() => onSubmit(reason, note)}
         >
-          Save flag
-        </button>
+          Save & back to list
+        </Button>
       </div>
     </div>
   );

@@ -22,9 +22,42 @@ def _id() -> str:
     return str(uuid.uuid4())
 
 
+def seed_road_geometries(db):
+    try:
+        count = db.execute("SELECT COUNT(*) as c FROM road_geometry").fetchone()["c"]
+    except Exception:
+        count = 0
+    if count > 0:
+        return
+    import os
+    data_file = os.path.join(os.path.dirname(__file__), "data", "precomputed_road_geometries.json")
+    if os.path.exists(data_file):
+        with open(data_file, "r", encoding="utf-8") as f:
+            geometries = json.load(f)
+        for key, entry in geometries.items():
+            db.execute(
+                """INSERT OR REPLACE INTO road_geometry 
+                   (from_id, to_id, coords, coord_version, distance_meters, duration_seconds)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (
+                    entry["from_id"],
+                    entry["to_id"],
+                    json.dumps(entry["coords"]),
+                    entry.get("coord_version", 1),
+                    entry.get("distance_meters"),
+                    entry.get("duration_seconds"),
+                ),
+            )
+        db.commit()
+        print(f"  [OK] Seeded {len(geometries)} road geometries.")
+
+
 def seed():
     init_db()
     db = get_db_connection()
+
+    # Seed road geometry even if base tables already populated
+    seed_road_geometries(db)
 
     # Check if already seeded
     row = db.execute("SELECT COUNT(*) as c FROM drivers").fetchone()
@@ -61,30 +94,30 @@ def seed():
     # Trip 1 stops
     trip1_stops = [
         ("STOP-001", 1, "OUT042", "Waypoint Fresh Gampola", "Main Street, Gampola",
-         7.1666, 80.5666, "05:30", "06:30", None, "street", "van_only", "chilled_ambient",
+         7.2885, 80.6322, "05:30", "06:30", None, "street", "van_only", "chilled_ambient",
          120, 120, 0, None, "K. Bandara", "+94 7• ••• ••18", 16, None),
         ("STOP-002", 2, "OUT047", "Waypoint Fresh Kandy Town", "Dalada Veediya · beside Clock Tower, Kandy",
-         7.2931, 80.6350, "05:45", "07:01", None, "rear_dock", "van_only", "chilled",
+         7.2925, 80.6345, "05:45", "07:01", None, "rear_dock", "van_only", "chilled",
          25, 25, 0, None, "Joseph Vijay", "+94 7• ••• ••42", 15,
          "Use service lane. Ask for manager Joseph Vijay. Keep chilled crates sealed until handover."),
         ("STOP-003", 3, "OUT049", "Waypoint Fresh Kandy Fort", "Fort Road, Kandy",
-         7.2936, 80.6360, "06:00", "07:30", None, "street", "normal", "ambient",
+         7.2948, 80.6365, "06:00", "07:30", None, "street", "normal", "ambient",
          18, 18, 0, None, "P. Jayasuriya", "+94 7• ••• ••21", 14, None),
         ("STOP-004", 4, "OUT052", "Waypoint Fresh Kandy City Centre", "Kandy City Centre, loading bay level",
-         7.2941, 80.6380, "05:45", "07:30", "05:30-07:00", "mall_bay", "mall_dock", "chilled_ambient",
+         7.2965, 80.6390, "05:45", "07:30", "05:30-07:00", "mall_bay", "mall_dock", "chilled_ambient",
          160, 160, 0, None, "M. Fernando", "+94 7• ••• ••63", 18, None),
         ("STOP-005", 5, "OUT055", "Waypoint Fresh Kandy East", "Kandy East, Peradeniya Road",
-         7.2880, 80.6200, "06:15", "07:45", None, "rear_dock", "normal", "ambient",
+         7.2938, 80.6425, "06:15", "07:45", None, "rear_dock", "normal", "ambient",
          8, 8, 0, None, "R. Gunawardena", "+94 7• ••• ••09", 12, None),
         ("STOP-006", 6, "OUT058", "Waypoint Fresh Kandy Hills", "Kandy Hills, Baddegama Road",
-         7.2850, 80.6250, "06:45", "08:00", None, "rear_dock", "normal", "chilled",
+         7.2890, 80.6400, "06:45", "08:00", None, "rear_dock", "normal", "chilled",
          12, 10, 2, "R-04", "S. Silva", "+94 7• ••• ••77", 15,
          "Two frozen items are sealed in return crate R-04. Do not hand them over."),
         ("STOP-007", 7, "OUT061", "Waypoint Fresh Peradeniya", "Peradeniya, Kandy",
-         7.2667, 80.6000, "06:45", "08:00", None, "rear_dock", "normal", "chilled_ambient",
+         7.2860, 80.6355, "06:45", "08:00", None, "rear_dock", "normal", "chilled_ambient",
          210, 210, 0, None, "D. Perera", "+94 7• ••• ••34", 17, None),
         ("STOP-008", 8, "OUT064", "Waypoint Fresh Nawalapitiya", "Nawalapitiya, Kandy district",
-         7.0500, 80.5333, "07:00", "08:00", None, "street", "normal", "ambient",
+         7.2880, 80.6318, "07:00", "08:00", None, "street", "normal", "ambient",
          687, 687, 0, None, "T. Rosa", "+94 7• ••• ••55", 20, None),
     ]
 
@@ -150,19 +183,19 @@ def seed():
 
     trip2_stops = [
         ("STOP-T2-001", 1, "OUT070", "Waypoint Style Kandy City", "Kandy City Centre, Style unit",
-         7.2941, 80.6380, "10:00", "12:00", "10:00-12:00", "mall_bay", "mall_dock", "ambient",
+         7.2940, 80.6370, "10:00", "12:00", "10:00-12:00", "mall_bay", "mall_dock", "ambient",
          220, 220, 0, None, "A. Silva", "+94 7• ••• ••80", 18, None),
         ("STOP-T2-002", 2, "OUT071", "Waypoint Style Gampola", "Main Street, Gampola",
-         7.1666, 80.5666, "10:30", "12:30", None, "street", "normal", "ambient",
+         7.2962, 80.6350, "10:30", "12:30", None, "street", "normal", "ambient",
          160, 160, 0, None, "J. Fernando", "+94 7• ••• ••81", 15, None),
         ("STOP-T2-003", 3, "OUT072", "Waypoint Style Kandy Fort", "Fort Road, Kandy",
-         7.2936, 80.6360, "11:00", "13:00", None, "rear_dock", "normal", "ambient",
+         7.2985, 80.6325, "11:00", "13:00", None, "rear_dock", "normal", "ambient",
          180, 180, 0, None, "K. Silva", "+94 7• ••• ••82", 16, None),
         ("STOP-T2-004", 4, "OUT073", "Waypoint Style Peradeniya", "Peradeniya, Kandy",
-         7.2667, 80.6000, "11:30", "13:30", None, "street", "normal", "ambient",
+         7.2950, 80.6285, "11:30", "13:30", None, "street", "normal", "ambient",
          150, 150, 0, None, "L. Perera", "+94 7• ••• ••83", 14, None),
         ("STOP-T2-005", 5, "OUT074", "Waypoint Style Nawalapitiya", "Nawalapitiya, Kandy district",
-         7.0500, 80.5333, "12:00", "14:00", None, "rear_dock", "normal", "ambient",
+         7.2915, 80.6305, "12:00", "14:00", None, "rear_dock", "normal", "ambient",
          150, 150, 0, None, "M. Rosa", "+94 7• ••• ••84", 14, None),
     ]
 

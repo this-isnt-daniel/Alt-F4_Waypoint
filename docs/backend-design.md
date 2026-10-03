@@ -692,3 +692,90 @@ The service uses standard SQL compatible with both SQLite and PostgreSQL. To swi
 3. Change `PRAGMA foreign_keys = ON` and `PRAGMA journal_mode = WAL` to standard Postgres transaction isolation.
 
 
+---
+
+## 16. Road Geometry & Route Geographic Positioning (OSRM, Schema & Client API)
+
+### 16.1 The Geographic Positioning Challenge
+While depots and canonical scenario outlets in Kandy have known GPS coordinates, upstream datathon datasets and optimization engine references may only specify an outlet's distance from depot ($D$ in km) rather than precise geographic lat/lon.
+
+To enable rich road polyline rendering on Leaflet maps without divergence between the optimizer and driver UI:
+1. **Canonical Locations**:
+   - `DEPOT:KANDY_HUB`: `(7.2906, 80.6337)`
+   - Known Kandy outlets (`OUT042`, `OUT047`, `OUT049`, `OUT052`, `OUT055`, `OUT058`, `OUT061`, `OUT064`, `OUT070`-`OUT074`).
+2. **Deterministic Bearing Offset**:
+   For arbitrary or synthetic outlets where only depot distance $D$ is specified:
+   $$\theta = \left(\text{int}(\text{SHA256}(\text{outlet\_id})[:8], 16) \pmod{360}\right) \times \frac{\pi}{180}$$
+   $$\Delta \text{lat} = \frac{D \cos \theta}{111.0}, \quad \Delta \text{lng} = \frac{D \sin \theta}{111.0 \cos(\text{lat}_{\text{depot}})}$$
+   $$\text{lat} = \text{lat}_{\text{depot}} + \Delta \text{lat}, \quad \text{lng} = \text{lng}_{\text{depot}} + \Delta \text{lng}$$
+   This guarantees reproducible, consistent coordinates across the allocation engine, backend API, and frontend.
+
+### 16.2 Database Schema (`road_geometry`)
+```sql
+CREATE TABLE IF NOT EXISTS road_geometry (
+    from_id         TEXT NOT NULL,
+    to_id           TEXT NOT NULL,
+    coords          TEXT NOT NULL,        -- JSON array of [lat, lng] pairs
+    coord_version   INTEGER NOT NULL DEFAULT 1,
+    distance_meters REAL,
+    duration_seconds REAL,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (from_id, to_id, coord_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_road_geometry_lookup
+    ON road_geometry(from_id, to_id, coord_version);
+```
+
+### 16.3 Multi-Tier Retrieval Hierarchy
+When stitching road geometry for a delivery sequence:
+1. **Directed Hit**: Exact lookup `road_geometry WHERE from_id = f AND to_id = t`.
+2. **Reverse Hit**: If directed hit is absent, reverse lookup `WHERE from_id = t AND to_id = f` is used, reversing the coordinate array and caching the directed result.
+3. **OSRM Live Fetch**: For uncached edges, live driving geometry is fetched from OSRM (`http://router.project-osrm.org/route/v1/driving/...`), converted from GeoJSON `[lng, lat]` to Leaflet `[lat, lng]`, and saved to `road_geometry`.
+4. **Spline Safety Net**: If OSRM is unreachable or network is offline, a smooth curved spline is generated between the centroids.
+5. **Junction Deduplication**: When chaining edges: `i === 0 ? c : c.slice(1)` removes duplicate junction points.
+
+### 16.4 Frontend `buildRoadGeometry` Implementation
+Located at `apps/frontend/src/driver/lib/roadGeometry.ts`:
+```typescript
+export async function buildRoadGeometry(sequence: string[]): Promise<[number,number][]> {
+  if (sequence.length <= 1) {
+    return sequence.length === 1 ? [centroid(sequence[0]!)] : [];
+  }
+  const edges = sequence.slice(0,-1).map((f,i) => [f, sequence[i+1]!] as const);
+  const { rows } = await db.query(
+    `SELECT from_id, to_id, coords FROM road_geometry
+     WHERE coord_version = 1 AND (from_id, to_id) IN (${edges.map((_,i)=>`(\$${1+i*2},\$${2+i*2})`).join(",")})`,
+    edges.flat()
+  );
+  const byPair = new Map(rows.map((r:any)=>[`${r.from_id}|${r.to_id}`, r.coords as [number,number][]]));
+  return edges.flatMap(([f,t], i) => {
+    const c = byPair.get(`${f}|${t}`)
+      ?? byPair.get(`${t}|${f}`)?.slice().reverse()
+      ?? spline([centroid(f), centroid(t)]);
+    return i === 0 ? c : c.slice(1);
+  });
+}
+```
+This replaces the old per-leg fetch in `DriverMap.tsx` and eliminates network latency on every re-render.
+
+### 16.5 Sequential Route Closeness & Visual Topology
+To provide an optimal mobile driver experience where the entire delivery sequence is immediately discernible without extreme zoom-outs across provincial mountain ranges:
+1. **Topological Sequence Over Raw Distance**: Stop geographic coordinates are clustered tightly within Kandy central municipality ($\approx 250\,\text{m} - 1.5\,\text{km}$ radius from Kandy Hub Depot at `[7.2906, 80.6337]`), arranged sequentially along real connected municipal thoroughfares (William Gopallawa Mawatha, Clock Tower, Dalada Veediya, Kandy City Centre, Lake Victoria Drive, Sangharaja Mawatha, Peradeniya Road).
+2. **Compact Synthetic Coordinates**: For arbitrary outlet sequences, synthetic coordinates are generated within a tight $0.4\,\text{km} - 1.9\,\text{km}$ radius:
+   $$\text{radius\_km} = 0.4 + \left((\text{num} \times 3 + (h \pmod 7)) \pmod{10}\right) \times 0.15$$
+3. **OSRM Batch Street Routing**: High-fidelity driving geometries are retrieved in single batch calls via `/api/v1/driver/road-geometry/sequence`, ensuring all stops in the active trip sequence form an unbroken, interconnected road route with no redundant dead-ends.
+
+### 16.6 Route Rendering: Solid Green Line
+In `apps/frontend/src/driver/components/DriverMap.tsx`:
+- Replaced previous dashed slate polyline (`dashArray: '6, 6'`, `#64748b`) with a **solid emerald green polyline** (`color: '#059669'`, `weight: 5`, `opacity: 0.9`).
+- While road geometry is asynchronously fetched from database cache or API, immediate sequential waypoints are rendered, seamlessly upgrading to exact road polylines upon resolution.
+- Dynamic bounds fitting (`map.fitBounds(latLngs, { padding: [36, 36], maxZoom: 16 })`) ensures the route fills the mobile viewport with clear stop visibility.
+
+### 16.7 Mobile Layout & Dimensions Integrity
+- **Mobile Container Shell**: Strict mobile viewport confinement (`max-w-[430px] mx-auto min-h-screen bg-canvas shadow-2 relative`) prevents UI stretching on tablet or desktop screens.
+- **Dedicated Driver Screens**: Preserves clean individual mobile screens for departure verification, stop arrival, checklist, proof-of-delivery (PIN/photo), and depot return reconciliation.
+- **Docked Active Trip Navigation**: Persistent bottom sheet provides single-tap access to call/chat with store managers, sequential stop progression, and turn-by-turn context.
+
+
+

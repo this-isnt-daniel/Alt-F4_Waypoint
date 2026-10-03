@@ -426,3 +426,40 @@ class ForwardConflictResponse(BaseModel):
     status: str
     conflict_id: str
     forwarded_at: str
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Road Geometry
+# ═══════════════════════════════════════════════════════════════════════════
+
+class RoadGeometryRow(BaseModel):
+    from_id: str
+    to_id: str
+    coords: list[list[float]]  # [[lat, lng], ...]
+    coord_version: int = 1
+    distance_meters: Optional[float] = None
+    duration_seconds: Optional[float] = None
+
+
+class RoadGeometryQueryRequest(BaseModel):
+    edges: list[list[str]]  # e.g. [["DEPOT:KANDY_HUB", "OUT042"], ...]
+    coord_version: int = 1
+
+
+class RoadGeometryQueryResponse(BaseModel):
+    rows: list[RoadGeometryRow]
+
+
+class RoadSequenceRequest(BaseModel):
+    sequence: list[str]  # e.g. ["DEPOT", "OUT001", "OUT002", ...]
+    coord_version: int = 1
+
+
+class RoadSequenceResponse(BaseModel):
+    sequence: list[str]
+    polyline: list[list[float]]  # stitched [lat, lng]
+    edges: list[RoadGeometryRow]
+    total_distance_meters: float
+    total_duration_seconds: float
+
+

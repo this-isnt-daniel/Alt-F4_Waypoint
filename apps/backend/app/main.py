@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# Guarantee optimization_engine src is discoverable
+_opt_src = str(Path(__file__).resolve().parent.parent / "optimization_engine" / "src")
+if _opt_src not in sys.path:
+    sys.path.insert(0, _opt_src)
+
 import uuid
 from contextlib import asynccontextmanager
 

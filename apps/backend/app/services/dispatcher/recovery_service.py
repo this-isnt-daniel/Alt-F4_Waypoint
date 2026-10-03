@@ -10,6 +10,11 @@ from app.models.order import Order as DbOrder, OrderLine as DbOrderLine
 from app.models.vehicle import Vehicle as DbVehicle
 from app.models.plan import DraftPlan
 from app.models.route import RouteChange
+from app.services.manifest_service import add_stop_items
+
+# Canonical trip statuses (docs/schema_design.md) plus legacy driver-back names.
+ACTIVE_TRIP_STATUSES = ["planned", "loaded", "out_for_delivery", "in_progress", "departed"]
+FINISHED_STOP_STATUSES = ["delivered", "skipped", "failed", "returned", "completed"]
 
 from app.adapters.optimizer_adapter import (
     get_reference_data,
@@ -53,7 +58,7 @@ def build_recovery_proposal(db: Session, depot_id: str, user_id: str, incident_i
     has_remaining = False
     
     for stop in stops:
-        if stop.status in ["delivered", "failed", "returned", "completed"]:
+        if stop.status in FINISHED_STOP_STATUSES:
             continue # Already done
         
         has_remaining = True
@@ -180,7 +185,7 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
     
     # Validation: Ensure the vehicle is still assigned to the broken trip
     broken_trip = db.query(Trip).filter(Trip.trip_id == broken_trip_id).first()
-    if not broken_trip or broken_trip.status not in ["planned", "in_progress", "departed"]:
+    if not broken_trip or broken_trip.status not in ACTIVE_TRIP_STATUSES:
         print(f"DEBUG: broken_trip={broken_trip}, status={broken_trip.status if broken_trip else 'None'}")
         raise HTTPException(status_code=409, detail=f"Broken trip is no longer active (stale proposal): status={broken_trip.status if broken_trip else 'None'}")
         
@@ -193,7 +198,7 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
     broken_stops = db.query(TripStop).filter(TripStop.trip_id == broken_trip_id).all()
     remaining_orders = []
     for s in broken_stops:
-        if s.status not in ["delivered", "failed", "returned", "completed"]:
+        if s.status not in FINISHED_STOP_STATUSES:
             s.status = "failed" # Mark original stop as failed due to breakdown
             remaining_orders.append(s.order_id)
             
@@ -215,7 +220,7 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
         v_trip = db.query(Trip).filter(
             Trip.vehicle_id == vid,
             Trip.trip_date == proposal.target_date,
-            Trip.status.in_(["planned", "in_progress", "departed"])
+            Trip.status.in_(ACTIVE_TRIP_STATUSES)
         ).first()
         
         if not v_trip:
@@ -237,7 +242,7 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
         new_stops_data = ptrip.get("driver_itinerary") or ptrip.get("stops", [])
         
         # Determine if we need to issue a RouteChange (if the trip was already in progress/departed)
-        needs_route_change = v_trip.status in ["departed", "in_progress", "planned"]
+        needs_route_change = v_trip.status in ACTIVE_TRIP_STATUSES
         
         seq = 1
         new_stop_ids = []
@@ -252,6 +257,8 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
                 existing_stop.trip_id = v_trip.trip_id
                 existing_stop.stop_seq = seq
                 existing_stop.status = "upcoming"
+                # Invalidate offline driver edits made against the old assignment
+                existing_stop.row_version = (existing_stop.row_version or 1) + 1
                 new_stop_ids.append(existing_stop.stop_id)
             else:
                 # Should not happen typically if we are recovering, but handle just in case
@@ -263,10 +270,11 @@ def approve_recovery_proposal(db: Session, depot_id: str, user_id: str, proposal
                         outlet_id=db_order.outlet_id,
                         order_id=order_ref,
                         stop_seq=seq,
-                        temp_req="ambient",
+                        temp_req=db_order.temp_req,
                         status="upcoming"
                     )
                     db.add(new_ts)
+                    add_stop_items(db, stop_id, order_ref)
                     new_stop_ids.append(stop_id)
             
             # Update denormalized fields on Order

@@ -717,19 +717,19 @@ export interface GeoPoint {
 export const KANDY_HUB_COORDS: GeoPoint = { lat: 7.2906, lng: 80.6337 };
 
 export const STOP_COORDS: Record<string, GeoPoint> = {
-  OUT042: { lat: 7.1666, lng: 80.5666 },
-  OUT047: { lat: 7.2931, lng: 80.6350 },
-  OUT049: { lat: 7.2936, lng: 80.6360 },
-  OUT052: { lat: 7.2941, lng: 80.6380 },
-  OUT055: { lat: 7.2880, lng: 80.6200 },
-  OUT058: { lat: 7.2850, lng: 80.6250 },
-  OUT061: { lat: 7.2667, lng: 80.6000 },
-  OUT064: { lat: 7.0500, lng: 80.5333 },
-  OUT070: { lat: 7.2941, lng: 80.6380 },
-  OUT071: { lat: 7.1666, lng: 80.5666 },
-  OUT072: { lat: 7.2936, lng: 80.6360 },
-  OUT073: { lat: 7.2667, lng: 80.6000 },
-  OUT074: { lat: 7.0500, lng: 80.5333 },
+  OUT042: { lat: 7.2885, lng: 80.6322 },
+  OUT047: { lat: 7.2925, lng: 80.6345 },
+  OUT049: { lat: 7.2948, lng: 80.6365 },
+  OUT052: { lat: 7.2965, lng: 80.6390 },
+  OUT055: { lat: 7.2938, lng: 80.6425 },
+  OUT058: { lat: 7.2890, lng: 80.6400 },
+  OUT061: { lat: 7.2860, lng: 80.6355 },
+  OUT064: { lat: 7.2880, lng: 80.6318 },
+  OUT070: { lat: 7.2940, lng: 80.6370 },
+  OUT071: { lat: 7.2962, lng: 80.6350 },
+  OUT072: { lat: 7.2985, lng: 80.6325 },
+  OUT073: { lat: 7.2950, lng: 80.6285 },
+  OUT074: { lat: 7.2915, lng: 80.6305 },
 };
 
 export function getStopCoords(outletId: string): GeoPoint {
