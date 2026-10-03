@@ -424,8 +424,8 @@ def start_loading(db: Session, trip_id: str, loader_depot: str, user_id: str):
     _ensure_vehicle_temperature_compatible(db, trip)
 
     check = _ensure_load_check(db, trip, user_id)
-        for stop in db.query(TripStop).filter(TripStop.trip_id == trip_id).all():
-            _add_order_event(db, order_id=stop.order_id, event_type="loading_started", actor_id=user_id)
+    for stop in db.query(TripStop).filter(TripStop.trip_id == trip_id).all():
+        _add_order_event(db, order_id=stop.order_id, event_type="loading_started", actor_id=user_id)
 
     db.commit()
     db.refresh(check)

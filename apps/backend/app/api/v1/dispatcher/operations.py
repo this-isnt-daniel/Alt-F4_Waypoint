@@ -57,13 +57,11 @@ def get_fleet_visibility(
     Fleet Visibility: Get all vehicles, their current status, and last known location.
     """
     query = db.query(Vehicle)
-    if depot_id:
-        query = query.filter(Vehicle.depot_id == depot_id)
-    else:
-        # Default to dispatcher's depot
-        if current_user.depot_id:
-            query = query.filter(Vehicle.depot_id == current_user.depot_id)
-            
+    if depot_id and depot_id != current_user.depot_id:
+        raise HTTPException(status_code=403, detail="Cannot view fleet of another depot")
+    
+    if current_user.depot_id:
+        query = query.filter(Vehicle.depot_id == current_user.depot_id)
     if status:
         query = query.filter(Vehicle.status == status)
         

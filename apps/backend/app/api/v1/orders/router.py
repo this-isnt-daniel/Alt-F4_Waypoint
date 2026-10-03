@@ -47,11 +47,33 @@ class UrgentOrderInsertRequest(BaseModel):
 def get_order_timeline(
     order_id: str,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
+    from app.models.outlet import Outlet
+    from app.models.trip import Trip, TripStop
+    
+    order = db.query(Order).filter(Order.order_id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    outlet = db.query(Outlet).filter(Outlet.outlet_id == order.outlet_id).first()
+    
+    if current_user.role == "store_manager":
+        if order.outlet_id != current_user.outlet_id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this order")
+    elif current_user.role in ("dispatcher", "loader"):
+        if outlet and outlet.depot_id != current_user.depot_id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this order")
+    elif current_user.role == "driver":
+        # Check if the order is assigned to a trip this driver owns
+        trip_stop = db.query(TripStop).join(Trip).filter(
+            TripStop.order_id == order_id,
+            Trip.driver_id == current_user.user_id
+        ).first()
+        if not trip_stop:
+            raise HTTPException(status_code=403, detail="Not authorized to view this order")
+    else:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     events = db.query(DeliveryEvent).filter(DeliveryEvent.order_id == order_id).order_by(DeliveryEvent.occurred_at).all()
-    if not events:
-        order = db.query(Order).filter(Order.order_id == order_id).first()
-        if not order:
-            raise HTTPException(status_code=404, detail="Order not found")
     return events

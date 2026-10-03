@@ -20,7 +20,6 @@ from app.api.v1.driver.router import router as pd_router
 from app.api.v1.endpoints import platform_auth
 from app.api.v1.loader.router import router as loader_router
 from app.api.v1.orders.router import router as orders_router
-from app.api.v1.plans.router import router as plans_router
 from app.api.v1.store_manager.router import router as sm_router
 from app.api.v1.vehicles.router import router as vehicles_router
 from app.config import CORS_ORIGINS
@@ -71,7 +70,6 @@ app.include_router(platform_auth.router, prefix="/api/v1/auth", tags=["Platform 
 app.include_router(sm_router, prefix="/api/v1/store-manager", tags=["Store Manager"])
 app.include_router(disp_router, prefix="/api/v1/dispatcher", tags=["Dispatcher"])
 app.include_router(disp_router, prefix="/dispatcher", tags=["Dispatcher Direct"])
-app.include_router(plans_router, prefix="/api/v1/plans", tags=["Plans"])
 app.include_router(vehicles_router, prefix="/api/v1/vehicles", tags=["Vehicles"])
 app.include_router(loader_router, prefix="/api/v1/loader", tags=["Loader"])
 app.include_router(pd_router, prefix="/api/v1/driver-platform", tags=["Platform Driver"])

@@ -233,7 +233,7 @@ def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, 
             )
             db.add(d)
             
-    order.status = "delivered_with_discrepancy" if (has_discrepancy or not request.items_ok) else "delivered"
+    order.status = "delivered"
     
     event = DeliveryEvent(
         event_id=str(uuid.uuid4()),
