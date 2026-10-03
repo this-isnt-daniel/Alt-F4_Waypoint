@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, false
 from app.db.base import Base
 
 class ProofOfDelivery(Base):
@@ -9,12 +9,12 @@ class ProofOfDelivery(Base):
     stop_id = Column(String, ForeignKey("trip_stop.stop_id"), nullable=False)
     delivered_by = Column(String, ForeignKey("user.user_id"), nullable=False)
     delivered_at = Column(DateTime(timezone=True), nullable=False)
-    otp_code = Column(String, nullable=True)
-    otp_verified = Column(Boolean, default=False)
+    otp_code = Column(String, nullable=False)
+    otp_verified = Column(Boolean, nullable=False, default=False, server_default=false())
     signature_url = Column(String, nullable=True)
     photo_url = Column(String, nullable=True)
     notes = Column(String, nullable=True)
-    recorded_offline = Column(Boolean, default=False)
+    recorded_offline = Column(Boolean, nullable=False, default=False, server_default=false())
     synced_at = Column(DateTime(timezone=True), nullable=True)
     client_op_id = Column(String, nullable=True, unique=True)
 

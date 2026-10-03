@@ -29,8 +29,9 @@ from app.models import (
 )
 from app.schemas.loader import LoadCheckItemInput, SaveLoadItemRequest, SubmitLoadCheckRequest
 from app.schemas.dispatcher import DeferOrderRequest
-from app.schemas.driver import DepartTripRequest
-from app.services import delivery_service, loader_service, planning_service
+from app.schemas.driver import DepartRequest
+from app.services import driver_service, loader_service, planning_service
+from app.services.driver_service import DriverActionError
 
 
 ALLOWED_STATUSES = {
@@ -565,15 +566,17 @@ def test_vehicle_unavailable_before_and_after_loading(db_session):
 def test_driver_departure_before_and_after_loader_completion(db_session):
     db, fx = db_session
     trip, _, lines = fx.make_trip()
+    trip.driver_id = "U_DRIVER"
+    db.commit()
+    driver = db.query(User).filter(User.user_id == "U_DRIVER").one()
 
-    assert_http(
-        400,
-        delivery_service.depart_trip,
-        db,
-        trip.trip_id,
-        DepartTripRequest(client_op_id="depart-1", departed_at=datetime.now(timezone.utc)),
-        "U_DRIVER",
-    )
+    def depart(op_id):
+        request = DepartRequest(client_event_id=op_id, departed_at=datetime.now(timezone.utc))
+        return driver_service.run_event(db, driver, "trip.departed", trip.trip_id, request, op_id)
+
+    with pytest.raises(DriverActionError) as exc:
+        depart("depart-1")
+    assert exc.value.status_code == 400
 
     loader_service.submit_load_check(
         db,
@@ -582,13 +585,8 @@ def test_driver_departure_before_and_after_loader_completion(db_session):
         "DEP1",
         "U_LOADER",
     )
-    result = delivery_service.depart_trip(
-        db,
-        trip.trip_id,
-        DepartTripRequest(client_op_id="depart-2", departed_at=datetime.now(timezone.utc)),
-        "U_DRIVER",
-    )
-    assert result.status == "out_for_delivery"
+    result = depart("depart-2")
+    assert result.trip_status == "out_for_delivery"
 
 
 def test_api_role_wrong_depot_and_duplicate_client_op_id(api_client, db_session):
@@ -671,6 +669,13 @@ def test_full_platform_flow_store_manager_dispatcher_loader_driver(api_client, d
     workbench = api_client.get(f"/api/v1/loader/trips/{trip_id}/workbench", headers=loader_headers)
     assert workbench.status_code == 200
     line_id = workbench.json()["stops"][0]["items"][0]["line_item_id"]
+
+    assign = api_client.post(
+        f"/api/v1/dispatcher/trips/{trip_id}/assign-driver",
+        headers=dispatcher_headers,
+        json={"driver_id": "U_DRIVER"},
+    )
+    assert assign.status_code == 200
 
     before_depart = api_client.post(
         f"/api/v1/driver-platform/trips/{trip_id}/depart",

@@ -336,7 +336,7 @@ def _build_workbench(db: Session, trip: Trip) -> LoaderWorkbench:
         stops_by_id[stop.stop_id].items.append(
             LoadItem(
                 line_item_id=line.line_item_id,
-                stop_item_id=stop_item.stop_item_id if stop_item else None,
+                stop_item_id=stop_item.item_id if stop_item else None,
                 order_id=line.order_id,
                 product_id=line.product_id,
                 product_name=product.name if product else None,

@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from app.models.order import Order
 from app.models.trip import Trip, TripStop
 from app.models.events import DeliveryEvent
+from app.services.manifest_service import add_stop_items
 from app.models.deferral import Deferral
 from app.models.outlet import Outlet
 from app.schemas.dispatcher import ProposedPlanResponse, DeferOrderRequest
@@ -74,6 +75,7 @@ def confirm_plan(db: Session, run_id: str, client_op_id: str, dispatcher_depot: 
                 temp_req=order.temp_req
             )
             db.add(trip_stop)
+            add_stop_items(db, trip_stop.stop_id, order.order_id)
             
             # Denormalize onto Order
             order.trip_id = trip_id

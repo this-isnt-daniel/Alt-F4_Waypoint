@@ -29,8 +29,9 @@ from app.models.order import Order as DbOrder, OrderLine as DbOrderLine
 from app.models.outlet import Outlet as DbOutlet
 from app.models.plan import DraftPlan
 from app.models.product import Product as DbProduct
-from app.models.trip import Trip as DbTrip, TripStop as DbTripStop, TripStopItem as DbTripStopItem
+from app.models.trip import Trip as DbTrip, TripStop as DbTripStop
 from app.models.vehicle import Vehicle as DbVehicle
+from app.services.manifest_service import add_stop_items, delete_stop_items
 
 from waypoint_optimizer.domain import (
     Brand,
@@ -622,7 +623,9 @@ def approve_draft_plan_operation(
                 # Clean up existing stop for this order if any
                 existing_stop = db.query(DbTripStop).filter(DbTripStop.order_id == db_order.order_id).first()
                 if existing_stop:
+                    delete_stop_items(db, existing_stop.stop_id)
                     db.delete(existing_stop)
+                    db.flush()
 
                 db_stop_id = f"STOP-{uuid.uuid4().hex[:8].upper()}"
                 new_stop = DbTripStop(
@@ -637,18 +640,13 @@ def approve_draft_plan_operation(
                 )
                 db.add(new_stop)
 
-                # Link TripStopItem if line items present
-                for item in stop.get("line_items_delivered", []):
-                    if item.get("order_ref") == o_ref:
-                        li_id = item.get("line_item_id")
-                        if li_id:
-                            db.add(
-                                DbTripStopItem(
-                                    stop_item_id=f"STI-{uuid.uuid4().hex[:8].upper()}",
-                                    stop_id=db_stop_id,
-                                    line_item_id=li_id,
-                                )
-                            )
+                # Link TripStopItems (all of the order's lines unless the optimizer listed specific ones)
+                listed_lines = [
+                    item.get("line_item_id")
+                    for item in stop.get("line_items_delivered", [])
+                    if item.get("order_ref") == o_ref and item.get("line_item_id")
+                ]
+                add_stop_items(db, db_stop_id, db_order.order_id, listed_lines or None)
 
                 # Update Order state
                 db_order.trip_id = trip_obj.trip_id

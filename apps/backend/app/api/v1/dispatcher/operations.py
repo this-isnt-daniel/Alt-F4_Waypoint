@@ -28,13 +28,18 @@ class VehicleOperationalResponse(BaseModel):
 class DriverEventResponse(BaseModel):
     event_id: str
     client_event_id: str
-    trip_id: str
+    driver_id: str
+    trip_id: Optional[str]
     stop_id: Optional[str]
-    type: str
-    occurred_at: datetime
+    kind: str
+    occurred_at: Optional[datetime]
     received_at: datetime
-    sync_status: str
-    payload: str
+    applied_at: Optional[datetime]
+    status: str
+    row_version_before: Optional[int]
+    row_version_after: Optional[int]
+    error: Optional[str]
+    payload: Optional[str]
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -83,7 +88,7 @@ def get_active_trips(
         query = query.filter(Trip.trip_date == date.today())
         
     # We want active or planned trips
-    query = query.filter(Trip.status.in_(["planned", "departed", "in_progress"]))
+    query = query.filter(Trip.status.in_(["planned", "loaded", "out_for_delivery", "departed", "in_progress"]))
     
     return query.all()
 
@@ -128,5 +133,60 @@ def get_shared_timeline(
     elif vehicle_id:
         query = query.join(Trip, DriverEvent.trip_id == Trip.trip_id).filter(Trip.vehicle_id == vehicle_id)
         
-    query = query.order_by(DriverEvent.occurred_at.desc()).limit(limit)
+    query = query.order_by(DriverEvent.received_at.desc()).limit(limit)
     return query.all()
+
+
+class AssignDriverRequest(BaseModel):
+    driver_id: str
+
+
+class AssignDriverResponse(BaseModel):
+    trip_id: str
+    driver_id: str
+    trip_no: int
+    trip_date: date
+    status: str
+
+
+@router.post("/trips/{trip_id}/assign-driver", response_model=AssignDriverResponse)
+def assign_driver(
+    trip_id: str,
+    request: AssignDriverRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Assign (or reassign) the driver who owns this trip in the Driver app.
+    Allowed until the trip departs; the driver must belong to the trip's depot.
+    """
+    trip = db.query(Trip).filter(Trip.trip_id == trip_id).with_for_update().first()
+    if not trip or trip.depot_id != current_user.depot_id:
+        raise HTTPException(status_code=404, detail="Trip not found in your depot")
+    if trip.status not in ("planned", "loading", "loaded"):
+        raise HTTPException(status_code=400, detail=f"Cannot reassign a trip that is '{trip.status}'")
+
+    driver = db.query(User).filter(User.user_id == request.driver_id, User.role == "driver").first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    if driver.depot_id and driver.depot_id != trip.depot_id:
+        raise HTTPException(status_code=400, detail="Driver belongs to a different depot")
+
+    clash = db.query(Trip).filter(
+        Trip.driver_id == driver.user_id,
+        Trip.trip_date == trip.trip_date,
+        Trip.trip_no == trip.trip_no,
+        Trip.trip_id != trip.trip_id,
+    ).first()
+    if clash:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Driver already has trip {trip.trip_no} on {trip.trip_date} ({clash.trip_id})",
+        )
+
+    trip.driver_id = driver.user_id
+    db.commit()
+    return AssignDriverResponse(
+        trip_id=trip.trip_id, driver_id=driver.user_id, trip_no=trip.trip_no,
+        trip_date=trip.trip_date, status=trip.status,
+    )

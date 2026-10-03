@@ -11,6 +11,7 @@ from .delivery import ProofOfDelivery, ReceiptConfirmation, Discrepancy
 from .deferral import Deferral
 from .events import DeliveryEvent, DriverEvent, Conflict
 from .route import RouteChange
+from .returns import ReturnCustody
 from .incident import VehicleIncident
 from .plan import DraftPlan
 from .road_geometry import RoadGeometry
