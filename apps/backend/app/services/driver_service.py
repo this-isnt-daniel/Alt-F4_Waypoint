@@ -540,6 +540,9 @@ def _handle_outcome(db: Session, ctx: EventContext, stop_id: str, cmd: s.Outcome
     stop.status = "skipped" if cmd.outcome == "failed" else "delivered"
     stop.skip_reason = cmd.reason if cmd.outcome == "failed" else None
     stop.completed_at = _aware(cmd.finished_at) or ctx.occurred_at
+    order = db.query(Order).filter(Order.order_id == stop.order_id).first()
+    if order and cmd.outcome == "delivered":
+        order.status = "delivered"
     db.flush()
 
     return_record = None

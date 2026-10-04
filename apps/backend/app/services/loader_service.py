@@ -32,7 +32,7 @@ from app.schemas.loader import (
 
 EDITABLE_TRIP_STATUSES = {"planned"}
 READ_ONLY_TRIP_STATUSES = {"loaded", "out_for_delivery", "completed"}
-COMPLETED_ITEM_STATUSES = {"verified", "short", "over", "damaged", "missing", "substituted"}
+COMPLETED_ITEM_STATUSES = {"verified", "short", "over", "damaged", "missing", "substituted", "ok", "shortfall"}
 
 
 def _now():

@@ -13,6 +13,8 @@ engine = create_engine(DATABASE_URL)
 
 @pytest.fixture(scope="module")
 def db_session():
+    from seed import seed
+    seed()
     with Session(engine) as session:
         yield session
 

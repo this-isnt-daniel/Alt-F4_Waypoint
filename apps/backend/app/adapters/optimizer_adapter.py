@@ -155,23 +155,27 @@ def convert_db_order_to_optimizer(
         district = (db_outlet.district if db_outlet and db_outlet.district else "Colombo")
         depot = (db_outlet.depot_id if db_outlet and db_outlet.depot_id else "DEP1")
 
-        try:
-            dock_type = (
-                DockType(db_outlet.dock_type.lower())
-                if db_outlet and db_outlet.dock_type
-                else DockType.NORMAL
+        if not db_outlet or not db_outlet.dock_type:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Outlet {db_order.outlet_id} is missing required dock_type configuration.",
             )
-        except ValueError:
-            dock_type = DockType.NORMAL
+        try:
+            dock_type = DockType(db_outlet.dock_type.lower())
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Outlet {db_order.outlet_id} has invalid dock_type: {db_outlet.dock_type!r}.",
+            ) from e
 
         try:
             parking_constraint = (
                 ParkingConstraint(db_outlet.park_constraint.lower())
                 if db_outlet and db_outlet.park_constraint
-                else ParkingConstraint.NONE
+                else ParkingConstraint.NORMAL
             )
         except ValueError:
-            parking_constraint = ParkingConstraint.NONE
+            parking_constraint = ParkingConstraint.NORMAL
 
         mall_window = db_outlet.mall_window if db_outlet else None
         window_open_time = db_order.window_open or (db_outlet.window_open if db_outlet else None)
@@ -823,6 +827,7 @@ def approve_draft_plan_operation(
             )
             db.add(trip_obj)
 
+        db.flush()
         trips_created.append(trip_obj.trip_id)
 
         stops = proposed_trip.get("driver_itinerary") or proposed_trip.get("stops", [])

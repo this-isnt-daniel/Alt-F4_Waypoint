@@ -34,6 +34,8 @@ class Trip(Base):
         CheckConstraint("status IN ('planned', 'loaded', 'out_for_delivery', 'completed')", name="check_trip_status"),
     )
 
+    stops = relationship("TripStop", backref="trip", order_by="TripStop.stop_seq")
+
 class TripStop(Base):
     __tablename__ = "trip_stop"
 
@@ -62,6 +64,14 @@ class TripStop(Base):
     arrival_lng = Column(Numeric, nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     skip_reason = Column(String, nullable=True)
+
+    @property
+    def sequence(self) -> int:
+        return self.stop_seq
+
+    @property
+    def expected_arrival(self):
+        return self.eta
 
 class TripStopItem(Base):
     __tablename__ = "trip_stop_item"
