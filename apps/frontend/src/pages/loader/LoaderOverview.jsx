@@ -9,18 +9,17 @@ import LoaderSettings from './LoaderSettings';
 
 export default function LoaderOverview({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('Workbench');
-  const [activeVehicleId, setActiveVehicleId] = useState(null);
+  const [activeTripId, setActiveTripId] = useState(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
 
-  const handleOpenTrip = (vehicleId, readOnly = false) => {
-    setActiveVehicleId(vehicleId);
+  const handleOpenTrip = (tripId, readOnly = false) => {
+    setActiveTripId(tripId);
     setIsReadOnly(readOnly);
     setActiveTab('Workbench');
   };
 
   // Derive location context from user depot
-  const isPeliyagoda = user?.depot === 'peliyagoda';
-  const depotName = isPeliyagoda ? 'Peliyagoda Central Depot' : 'Kandy Regional Hub';
+  const depotName = user?.depot || 'Loader depot';
 
   return (
     <div className="w-full h-dvh bg-white flex flex-col overflow-hidden font-sans">
@@ -76,7 +75,7 @@ export default function LoaderOverview({ user, onLogout }) {
         <main className="flex-1 bg-white overflow-y-auto relative flex flex-col min-h-0">
           {activeTab === 'Home' && <LoaderHome user={user} />}
           {activeTab === 'Queue' && <LoaderQueue user={user} onOpenTrip={handleOpenTrip} />}
-          {activeTab === 'Workbench' && <LoaderWorkbench user={user} vehicleId={activeVehicleId} readOnly={isReadOnly} />}
+          {activeTab === 'Workbench' && <LoaderWorkbench user={user} tripId={activeTripId} readOnly={isReadOnly} />}
           {activeTab === 'Deferrals' && <LoaderDeferrals user={user} />}
           {activeTab === 'Settings' && <LoaderSettings user={user} />}
         </main>

@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
+import { apiFetch } from '../../lib/api';
+import { safeStorage } from '../../lib/security';
 
 const USERS = {
-  peliyagoda: { id: 1, name: 'J. Silva', depot: 'peliyagoda', bay: 'Bay Lead A', username: 'peliyagoda_loader', password: 'password123' },
-  kandy: { id: 2, name: 'S. Bandara', depot: 'kandy', bay: null, username: 'kandy_loader', password: 'password123' }
+  dep1: { id: 1, name: 'Loader One', depot: 'DEP1', bay: 'Bay Lead A', username: 'loader1', password: 'pass' },
+  dep2: { id: 2, name: 'Other Loader', depot: 'DEP2', bay: null, username: 'loader2', password: 'pass' }
 };
 
 export default function LoaderLogin({ onLogin }) {
-  const [username, setUsername] = useState(USERS.peliyagoda.username);
-  const [password, setPassword] = useState(USERS.peliyagoda.password);
-
+  const [username, setUsername] = useState(USERS.dep1.username);
+  const [password, setPassword] = useState(USERS.dep1.password);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -17,22 +18,23 @@ export default function LoaderLogin({ onLogin }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
     try {
-      const { apiFetch } = await import('../../lib/api');
-      const { safeStorage } = await import('../../lib/security');
-      const response = await apiFetch('/auth/login', {
+      const token = await apiFetch('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password })
       });
-      safeStorage.set('token', response.access_token);
-      
-      const me = await apiFetch('/auth/me');
+      safeStorage.set('token', token.access_token);
+
+      const profile = await apiFetch('/auth/me');
       onLogin({
-        id: me.user_id,
-        name: me.name || username,
-        depot: me.depot_id,
-        username: me.username,
-        role: me.role
+        id: profile.user_id,
+        name: profile.name || username,
+        depot: profile.depot_id,
+        bay: profile.depot_id === 'DEP1' ? 'Bay Lead A' : null,
+        token: token.access_token,
+        username: profile.username,
+        role: profile.role
       });
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -69,36 +71,41 @@ export default function LoaderLogin({ onLogin }) {
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
-              onClick={() => { setUsername(USERS.peliyagoda.username); setPassword(USERS.peliyagoda.password); }}
+              onClick={() => { setUsername(USERS.dep1.username); setPassword(USERS.dep1.password); }}
               className={`flex-1 py-2 px-2 text-[12px] font-bold border rounded transition-colors ${
-                username === USERS.peliyagoda.username 
-                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                username === USERS.dep1.username
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
                   : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              Peliyagoda
+              DEP1
             </button>
             <button
               type="button"
-              onClick={() => { setUsername(USERS.kandy.username); setPassword(USERS.kandy.password); }}
+              onClick={() => { setUsername(USERS.dep2.username); setPassword(USERS.dep2.password); }}
               className={`flex-1 py-2 px-2 text-[12px] font-bold border rounded transition-colors ${
-                username === USERS.kandy.username 
-                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                username === USERS.dep2.username
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
                   : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              Kandy
+              DEP2
             </button>
           </div>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded">{error}</div>}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Username</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full h-10 px-3 border border-slate-300 rounded text-[14px] text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
@@ -107,8 +114,8 @@ export default function LoaderLogin({ onLogin }) {
           <div>
             <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Password</label>
             {/* Using type="text" to keep it visible for judges so they know what is typed as requested */}
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full h-10 px-3 border border-slate-300 rounded text-[14px] text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
@@ -117,9 +124,10 @@ export default function LoaderLogin({ onLogin }) {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full h-11 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-[14px] font-bold rounded shadow-sm hover:shadow transition-all flex items-center justify-center"
+              disabled={loading}
+              className="w-full h-11 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-[14px] font-bold rounded shadow-sm hover:shadow transition-all flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Log In
+              {loading ? 'Signing in...' : 'Log In'}
             </button>
           </div>
         </form>
