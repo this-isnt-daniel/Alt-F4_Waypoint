@@ -1,5 +1,13 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 
 # Guarantee test database paths are set BEFORE any app modules are imported
-os.environ["DATABASE_URL"] = "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint_test"
+# Do not override DATABASE_URL if already set by CI / execution environment
+if "DATABASE_URL" not in os.environ:
+    env_file = Path(__file__).resolve().parent.parent / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+    os.environ.setdefault("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint_test")
+
 

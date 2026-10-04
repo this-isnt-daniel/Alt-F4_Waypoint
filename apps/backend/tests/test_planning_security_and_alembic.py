@@ -189,7 +189,6 @@ def test_1_alembic_check_passes():
     """Requirement 1: alembic check passes with 0 exit code."""
     import os
     env = os.environ.copy()
-    env.pop("DATABASE_URL", None)
 
     import pathlib
     backend_dir = pathlib.Path(__file__).parent.parent.resolve()
