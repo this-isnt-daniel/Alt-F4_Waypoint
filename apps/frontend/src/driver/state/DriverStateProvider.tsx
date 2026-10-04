@@ -159,8 +159,8 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
               const { mapBackendStopToDriverStop } = await import("./mapper");
               const mappedStops = detail.stops.map(mapBackendStopToDriverStop);
               setCurrentTripStops(mappedStops);
-              setCurrentTripSequence(mappedStops.map(s => s.outletId));
-              setTrip1Sequence(mappedStops.map(s => s.outletId));
+              setCurrentTripSequence(mappedStops.map((s: any) => s.outletId));
+              setTrip1Sequence(mappedStops.map((s: any) => s.outletId));
             }
           }
         } catch (err) {
@@ -215,6 +215,12 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
     setConnectionState(next);
   }, []);
 
+  const updateSyncRecord = useCallback((id: string, patch: Partial<SyncRecord>) => {
+    setSyncRecords((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    );
+  }, []);
+
   const addSyncRecord = useCallback(
     (record: Omit<SyncRecord, "id" | "createdAt">) => {
       const newRecord: SyncRecord = {
@@ -229,7 +235,7 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
       setSyncRecords((prev) => [newRecord, ...prev]);
 
       // Fire off API request in background
-      if (connectionState === "online") {
+      if (connection === "online") {
         import("@/driver/api").then(({ postDriverEvent }) => {
           let kind = "unknown";
           let payload: any = {};
@@ -240,7 +246,7 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
           }
           
           if (kind !== "unknown") {
-            postDriverEvent(kind, record.outletId, payload, newRecord.id)
+            postDriverEvent(kind, record.outletId || "", payload, newRecord.id)
               .then(() => {
                 updateSyncRecord(newRecord.id, { state: "synced" });
               })
@@ -251,16 +257,7 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [connectionState, updateSyncRecord],
-  );
-
-  const updateSyncRecord = useCallback(
-    (id: string, patch: Partial<SyncRecord>) => {
-      setSyncRecords((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
-      );
-    },
-    [],
+    [connection, updateSyncRecord],
   );
 
   const startTrip1 = useCallback(() => {

@@ -253,7 +253,9 @@ export default function DispatcherRoster({ onLogout }) {
           volumeM3: v.vol_cap_m3,
           fuelQuota: v.fuel_quota_l,
           checked: v.status === 'available',
-          isLockedUnavailable: v.status !== 'available'
+          isLockedUnavailable: v.status !== 'available',
+          unavailableSource: v.status !== 'available' ? 'Dispatcher Portal' : '',
+          unavailableReason: v.status !== 'available' ? 'Marked Unavailable' : ''
         }));
         setFleetList(formatted);
       })

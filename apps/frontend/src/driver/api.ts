@@ -1,4 +1,4 @@
-import { apiFetch } from "./api";
+import { apiFetch } from "@/lib/api";
 
 // Fetch today's summary of trips (returns TodayTripsResponse)
 export async function fetchTodayTrips() {
