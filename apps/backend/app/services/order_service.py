@@ -357,6 +357,8 @@ def get_order_eta(db: Session, order_id: str, outlet_id: str) -> dict:
     order = get_store_manager_order(db, order_id, outlet_id)
     
     driver_name = None
+    driver_phone = None
+    delivery_otp = None
     vehicle_id = None
     stop_status = None
     
@@ -364,14 +366,32 @@ def get_order_eta(db: Session, order_id: str, outlet_id: str) -> dict:
         trip = db.query(Trip).filter(Trip.trip_id == order.trip_id).first()
         if trip:
             vehicle_id = trip.vehicle_id
-            if trip.driver_id:
-                driver = db.query(User).filter(User.user_id == trip.driver_id).first()
+            
+            # Fetch driver details: prefer trip's driver, fallback to vehicle's driver
+            active_driver_id = trip.driver_id
+            if not active_driver_id and vehicle_id:
+                vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == vehicle_id).first()
+                if vehicle:
+                    active_driver_id = vehicle.driver_id
+            
+            if active_driver_id:
+                driver = db.query(User).filter(User.user_id == active_driver_id).first()
                 if driver:
                     driver_name = driver.name
+                    driver_phone = driver.phone
                     
         stop = db.query(TripStop).filter(TripStop.order_id == order_id).first()
         if stop:
             stop_status = stop.status
+            # Check for POD to get OTP
+            from app.models.delivery import ProofOfDelivery
+            pod = db.query(ProofOfDelivery).filter(ProofOfDelivery.order_id == order_id).first()
+            if pod and pod.otp_code:
+                # format OTP with space for UI e.g., "123 456"
+                if len(pod.otp_code) == 6:
+                    delivery_otp = f"{pod.otp_code[:3]} {pod.otp_code[3:]}"
+                else:
+                    delivery_otp = pod.otp_code
             if not order.exp_arrival and stop.eta:
                 order.exp_arrival = stop.eta
 
@@ -386,6 +406,8 @@ def get_order_eta(db: Session, order_id: str, outlet_id: str) -> dict:
         "trip_id": order.trip_id,
         "vehicle_id": vehicle_id,
         "driver_name": driver_name,
+        "driver_phone": driver_phone,
+        "delivery_otp": delivery_otp,
         "stop_seq": order.stop_seq,
         "stop_status": stop_status,
         "defer_count": order.defer_count,

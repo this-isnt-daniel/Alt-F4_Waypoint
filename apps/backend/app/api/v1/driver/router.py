@@ -128,6 +128,26 @@ def sync_events(request: s.SyncRequest, db: Session = Depends(get_db), driver: U
     return driver_service.sync_events(db, driver, request)
 
 
+class LocationPingRequest(s.BaseModel):
+    lat: float
+    lng: float
+    vehicle_id: str
+
+@router.post("/location")
+def update_location(request: LocationPingRequest, db: Session = Depends(get_db), driver: User = Depends(driver_role)):
+    """Update driver's current location to track the vehicle they are driving."""
+    from app.models.vehicle import Vehicle
+    from datetime import datetime, timezone
+    
+    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == request.vehicle_id).first()
+    if vehicle:
+        vehicle.last_lat = request.lat
+        vehicle.last_lng = request.lng
+        vehicle.last_seen_at = datetime.now(timezone.utc)
+        db.commit()
+    return {"status": "ok"}
+
+
 # ── Dispatcher route changes ─────────────────────────────────────────────
 
 @router.get("/changes", response_model=s.ChangesResponse)

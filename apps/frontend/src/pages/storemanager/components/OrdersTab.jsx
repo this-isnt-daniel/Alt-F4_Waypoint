@@ -1,12 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Phone, Map } from 'lucide-react';
 import { ORDER_STAGES, getStageIndex } from '../data/orders';
+import { CATEGORIES } from '../data/catalogue';
 import { useOrders } from '../useOrders';
 import DeliveryMap from './DeliveryMap';
 
+/** Build a flat product_id → { name, unit } lookup from catalogue */
+function buildProductLookup() {
+  const map = {};
+  for (const cat of CATEGORIES) {
+    for (const sub of cat.subcategories || []) {
+      for (const p of sub.products || []) {
+        map[p.id] = { name: p.name, unit: p.unit || 'unit' };
+      }
+    }
+  }
+  return map;
+}
+const PRODUCT_LOOKUP = buildProductLookup();
+
 export default function OrdersTab({ selectedOrderId }) {
+  // ── All hooks MUST be before any conditional return ──
   const { orders: ACTIVE_ORDERS, deferrals: DEFERRED_ORDERS, loading } = useOrders();
-  if (loading) return <div className="p-8">Loading...</div>;
   const [expandedMapId, setExpandedMapId] = useState(null);
 
   useEffect(() => {
@@ -14,6 +29,8 @@ export default function OrdersTab({ selectedOrderId }) {
       setExpandedMapId(selectedOrderId);
     }
   }, [selectedOrderId]);
+
+  if (loading) return <div className="p-8 text-slate-500">Loading orders...</div>;
 
   const allOrders = [
     ...ACTIVE_ORDERS,
@@ -190,12 +207,20 @@ function OrderCard({ order, isMapExpanded, onToggleMap, isFocused }) {
       {/* Items preview */}
       <div className="px-4 pb-3 border-t border-slate-100 pt-3">
         <div className="space-y-1">
-          {order.items.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between text-[12px]">
-              <span className="text-slate-600">{item.name}</span>
-              <span className="font-semibold text-slate-800 tabular-nums">{item.qty} {item.unit}</span>
-            </div>
-          ))}
+          {(order.items || []).map((item, idx) => {
+            // API returns { product_id, quantity } — look up name/unit from catalogue
+            const productId = item.product_id || item.productId;
+            const catalogueEntry = productId ? PRODUCT_LOOKUP[productId] : null;
+            const displayName = item.name || catalogueEntry?.name || productId || 'Unknown Product';
+            const displayUnit = item.unit || catalogueEntry?.unit || 'unit';
+            const displayQty  = item.qty ?? item.quantity ?? 0;
+            return (
+              <div key={idx} className="flex items-center justify-between text-[12px]">
+                <span className="text-slate-600">{displayName}</span>
+                <span className="font-semibold text-slate-800 tabular-nums">{displayQty} {displayUnit}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

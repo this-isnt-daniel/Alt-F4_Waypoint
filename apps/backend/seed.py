@@ -31,50 +31,75 @@ def seed_network(session):
     for d in depots:
         session.execute(insert(Depot).values(**d).on_conflict_do_nothing(index_elements=['depot_id']))
 
+    outlets = [
+        {"outlet_id": "OUT001", "name": "Colpetty Fresh", "brand": "fresh", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "street", "park_constraint": "normal", "window_open": "04:00", "window_close": "08:00"},
+        {"outlet_id": "OUT-VAN-01", "name": "Pettah Narrow", "brand": "fresh", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "street", "park_constraint": "van_only", "window_open": "04:00", "window_close": "08:00"},
+        {"outlet_id": "OUT-MALL-01", "name": "One Galle Face Style", "brand": "style", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "mall_bay", "park_constraint": "mall_dock", "window_open": "10:00", "window_close": "14:00"},
+        {"outlet_id": "OUT-KANDY-01", "name": "Kandy Tech", "brand": "tech", "depot_id": "kandy", "district": "Kandy", "dock_type": "rear_dock", "park_constraint": "normal", "window_open": "09:00", "window_close": "18:00"},
+        {"outlet_id": "OUT-KANDY-02", "name": "Kandy Bulky", "brand": "tech", "depot_id": "kandy", "district": "Kandy", "dock_type": "rear_dock", "park_constraint": "normal", "window_open": "09:00", "window_close": "18:00"}
+    ]
+    for i in range(15):
+        outlets.append({"outlet_id": f"OUT-STRESS-CAP-{i}", "name": f"Stress Fresh {i}", "brand": "fresh", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "street", "park_constraint": "normal", "window_open": "04:00", "window_close": "08:00"})
+    
+    for o in outlets:
+        session.execute(insert(Outlet).values(**o).on_conflict_do_nothing(index_elements=['outlet_id']))
+
     # Load canonical outlets if provided
     outlets_csv = "/app/data/outlets.csv" if os.path.exists("/app/data/outlets.csv") else "data/outlets.csv"
     if os.path.exists(outlets_csv):
         with open(outlets_csv, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                session.execute(insert(Outlet).values(**row).on_conflict_do_nothing(index_elements=['outlet_id']))
-    else:
-        outlets = [
-            {"outlet_id": "OUT-1001", "name": "Colpetty Fresh", "brand": "fresh", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "street", "park_constraint": "normal", "window_open": "04:00", "window_close": "08:00"},
-            {"outlet_id": "OUT-VAN-01", "name": "Pettah Narrow", "brand": "fresh", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "street", "park_constraint": "van_only", "window_open": "04:00", "window_close": "08:00"},
-            {"outlet_id": "OUT-MALL-01", "name": "One Galle Face Style", "brand": "style", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "mall_bay", "park_constraint": "mall_dock", "window_open": "10:00", "window_close": "14:00"},
-            {"outlet_id": "OUT-KANDY-01", "name": "Kandy Tech", "brand": "tech", "depot_id": "kandy", "district": "Kandy", "dock_type": "rear_dock", "park_constraint": "normal", "window_open": "09:00", "window_close": "18:00"},
-            {"outlet_id": "OUT-KANDY-02", "name": "Kandy Bulky", "brand": "tech", "depot_id": "kandy", "district": "Kandy", "dock_type": "rear_dock", "park_constraint": "normal", "window_open": "09:00", "window_close": "18:00"}
-        ]
-        for i in range(15):
-            outlets.append({"outlet_id": f"OUT-STRESS-CAP-{i}", "name": f"Stress Fresh {i}", "brand": "fresh", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "street", "park_constraint": "normal", "window_open": "04:00", "window_close": "08:00"})
-        
-        for o in outlets:
-            session.execute(insert(Outlet).values(**o).on_conflict_do_nothing(index_elements=['outlet_id']))
+                mapped = dict(row)
+                if 'window_open_time' in mapped: mapped['window_open'] = mapped.pop('window_open_time')
+                if 'window_close_time' in mapped: mapped['window_close'] = mapped.pop('window_close_time')
+                if 'depot' in mapped: mapped['depot_id'] = mapped.pop('depot')
+                if 'parking_constraint' in mapped: mapped['park_constraint'] = mapped.pop('parking_constraint')
+                
+                if 'name' not in mapped or not mapped['name']:
+                    mapped['name'] = f"{mapped.get('brand', 'Waypoint')} Outlet {mapped['outlet_id']}"
+                if 'brand' in mapped:
+                    mapped['brand'] = mapped['brand'].lower()
+                if 'depot_id' in mapped:
+                    mapped['depot_id'] = mapped['depot_id'].lower()
+                
+                session.execute(insert(Outlet).values(**mapped).on_conflict_do_nothing(index_elements=['outlet_id']))
 
 def seed_vehicles(session):
+    vehicles = [
+        {"vehicle_id": "VEH-GOLDEN", "depot_id": "peliyagoda", "type": "truck", "temp": "reefer", "weight_cap_kg": 5000, "vol_cap_m3": 25, "status": "available", "fuel_quota_l": 500, "km_per_l": 5.0, "driver_id": "USR-DRIV"},
+        {"vehicle_id": "VEH-VAN-01", "depot_id": "peliyagoda", "type": "van", "temp": "ambient", "weight_cap_kg": 1500, "vol_cap_m3": 8, "status": "available", "fuel_quota_l": 200, "km_per_l": 10.0, "driver_id": "USR-DRIV-2"},
+        {"vehicle_id": "VEH-FUEL-01", "depot_id": "peliyagoda", "type": "truck", "temp": "ambient", "weight_cap_kg": 5000, "vol_cap_m3": 25, "status": "available", "fuel_quota_l": 10, "km_per_l": 4.0, "driver_id": None},
+        {"vehicle_id": "VEH-WORKSHOP", "depot_id": "peliyagoda", "type": "truck", "temp": "reefer", "weight_cap_kg": 5000, "vol_cap_m3": 25, "status": "in_workshop", "fuel_quota_l": 500, "km_per_l": 5.0, "driver_id": None},
+        {"vehicle_id": "VEH-KANDY", "depot_id": "kandy", "type": "van", "temp": "ambient", "weight_cap_kg": 2000, "vol_cap_m3": 10, "status": "available", "fuel_quota_l": 300, "km_per_l": 8.0, "driver_id": None},
+    ]
+    for v in vehicles:
+        session.execute(insert(Vehicle).values(**v).on_conflict_do_update(
+            index_elements=['vehicle_id'], 
+            set_={'status': v['status'], 'fuel_quota_l': v['fuel_quota_l']}
+        ))
+
     vehicles_csv = "/app/data/vehicles.csv" if os.path.exists("/app/data/vehicles.csv") else "data/vehicles.csv"
     if os.path.exists(vehicles_csv):
         with open(vehicles_csv, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                session.execute(insert(Vehicle).values(**row).on_conflict_do_update(
+                mapped = {
+                    "vehicle_id": row["vehicle_id"],
+                    "type": row["type"],
+                    "temp": row["temp"],
+                    "weight_cap_kg": float(row["weight_cap_kg"]),
+                    "vol_cap_m3": float(row.get("volume_cap_m3", row.get("vol_cap_m3", 10))),
+                    "fuel_quota_l": float(row.get("weekly_fuel_quota_l", row.get("fuel_quota_l", 100))),
+                    "km_per_l": float(row["km_per_l"]),
+                    "depot_id": row.get("depot", row.get("depot_id", "peliyagoda")).lower(),
+                    "status": "available",
+                    "driver_id": None
+                }
+                session.execute(insert(Vehicle).values(**mapped).on_conflict_do_update(
                     index_elements=['vehicle_id'],
-                    set_={'status': row['status'], 'fuel_quota_l': row['fuel_quota_l']}
+                    set_={'status': mapped['status'], 'fuel_quota_l': mapped['fuel_quota_l']}
                 ))
-    else:
-        vehicles = [
-            {"vehicle_id": "VEH-GOLDEN", "depot_id": "peliyagoda", "type": "truck", "temp": "reefer", "weight_cap_kg": 5000, "vol_cap_m3": 25, "status": "available", "fuel_quota_l": 500, "km_per_l": 5.0},
-            {"vehicle_id": "VEH-VAN-01", "depot_id": "peliyagoda", "type": "van", "temp": "ambient", "weight_cap_kg": 1500, "vol_cap_m3": 8, "status": "available", "fuel_quota_l": 200, "km_per_l": 10.0},
-            {"vehicle_id": "VEH-FUEL-01", "depot_id": "peliyagoda", "type": "truck", "temp": "ambient", "weight_cap_kg": 5000, "vol_cap_m3": 25, "status": "available", "fuel_quota_l": 10, "km_per_l": 4.0},
-            {"vehicle_id": "VEH-WORKSHOP", "depot_id": "peliyagoda", "type": "truck", "temp": "reefer", "weight_cap_kg": 5000, "vol_cap_m3": 25, "status": "in_workshop", "fuel_quota_l": 500, "km_per_l": 5.0},
-            {"vehicle_id": "VEH-KANDY", "depot_id": "kandy", "type": "van", "temp": "ambient", "weight_cap_kg": 2000, "vol_cap_m3": 10, "status": "available", "fuel_quota_l": 300, "km_per_l": 8.0},
-        ]
-        for v in vehicles:
-            session.execute(insert(Vehicle).values(**v).on_conflict_do_update(
-                index_elements=['vehicle_id'], 
-                set_={'status': v['status'], 'fuel_quota_l': v['fuel_quota_l']}
-            ))
 
 def seed_products(session):
     products = [
@@ -91,10 +116,11 @@ def seed_products(session):
 def seed_users(session):
     pw_hash = get_password_hash("password123")
     users = [
-        {"user_id": "USR-SM", "username": "storemanager@waypoint.local", "role": "store_manager", "name": "SM Demo", "hashed_pw": pw_hash, "outlet_id": "OUT-1001", "depot_id": None},
-        {"user_id": "USR-DISP", "username": "dispatcher@waypoint.local", "role": "dispatcher", "name": "Dispatcher Demo", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
-        {"user_id": "USR-LOAD", "username": "loader@waypoint.local", "role": "loader", "name": "Loader Demo", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
-        {"user_id": "USR-DRIV", "username": "driver@waypoint.local", "role": "driver", "name": "Driver Demo", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
+        {"user_id": "USR-SM", "username": "storemanager@waypoint.local", "role": "store_manager", "name": "SM Demo", "phone": "+94770000001", "hashed_pw": pw_hash, "outlet_id": "OUT001", "depot_id": None},
+        {"user_id": "USR-DISP", "username": "dispatcher@waypoint.local", "role": "dispatcher", "name": "Dispatcher Demo", "phone": "+94770000002", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
+        {"user_id": "USR-LOAD", "username": "loader@waypoint.local", "role": "loader", "name": "Loader Demo", "phone": "+94770000003", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
+        {"user_id": "USR-DRIV", "username": "driver@waypoint.local", "role": "driver", "name": "Driver Demo", "phone": "+94770000004", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
+        {"user_id": "USR-DRIV-2", "username": "driver2@waypoint.local", "role": "driver", "name": "Kamal Perera", "phone": "+94771112233", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
     ]
     for u in users:
         session.execute(insert(User).values(**u).on_conflict_do_nothing(index_elements=['user_id']))
@@ -124,8 +150,8 @@ def create_order(session, order_id, outlet_id, date, status, lines, created_by, 
         session.execute(insert(DeliveryEvent).values(**ev).on_conflict_do_nothing(index_elements=['event_id']))
 
 def seed_scenario_a_golden(session, demo_date):
-    create_order(session, "GOLDEN-ORD-1", "OUT-1001", demo_date, "confirmed", [("PROD-F-CHILLED", 100, 1.05, 0.002)], created_by="USR-SM", brand="fresh", temp_req="chilled")
-    create_order(session, "GOLDEN-ORD-2", "OUT-1001", demo_date, "confirmed", [("PROD-F-AMBIENT", 50, 5.0, 0.01)], created_by="USR-SM", brand="fresh", temp_req="ambient")
+    create_order(session, "GOLDEN-ORD-1", "OUT001", demo_date, "confirmed", [("PROD-F-CHILLED", 100, 1.05, 0.002)], created_by="USR-SM", brand="fresh", temp_req="chilled")
+    create_order(session, "GOLDEN-ORD-2", "OUT001", demo_date, "confirmed", [("PROD-F-AMBIENT", 50, 5.0, 0.01)], created_by="USR-SM", brand="fresh", temp_req="ambient")
 
 def seed_scenario_b_driver_ready(session, demo_date):
     session.execute(insert(Outlet).values({"outlet_id": "OUT-DRIVER-01", "name": "Driver Outlet", "brand": "fresh", "depot_id": "peliyagoda", "district": "Colombo", "dock_type": "street", "park_constraint": "normal", "window_open": "04:00", "window_close": "08:00"}).on_conflict_do_nothing(index_elements=['outlet_id']))
@@ -220,16 +246,16 @@ def seed_scenario_g_matrix(session, demo_date):
     demo_datetime = datetime.combine(demo_date, datetime.min.time()).replace(tzinfo=timezone.utc)
     cutoff_time = demo_datetime.replace(hour=16, minute=0)
     submitted_time = demo_datetime.replace(hour=16, minute=5)
-    create_order(session, "CUTOFF-001", "OUT-1001", demo_date + timedelta(days=1), "draft", [("PROD-F-AMBIENT", 1, 5.0, 0.01)], created_by="USR-SM", brand="fresh", temp_req="ambient", submitted_at=submitted_time, cutoff_at=cutoff_time)
+    create_order(session, "CUTOFF-001", "OUT001", demo_date + timedelta(days=1), "draft", [("PROD-F-AMBIENT", 1, 5.0, 0.01)], created_by="USR-SM", brand="fresh", temp_req="ambient", submitted_at=submitted_time, cutoff_at=cutoff_time)
 
 def seed():
     with Session(engine) as session:
         demo_date = date.today()
 
         seed_network(session)
+        seed_users(session)
         seed_vehicles(session)
         seed_products(session)
-        seed_users(session)
         
         seed_scenario_a_golden(session, demo_date)
         seed_scenario_b_driver_ready(session, demo_date)

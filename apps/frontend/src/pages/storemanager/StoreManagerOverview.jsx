@@ -5,6 +5,7 @@ import PlaceOrderTab from './components/PlaceOrderTab';
 import OrdersTab from './components/OrdersTab';
 import ReceiptsTab from './components/ReceiptsTab';
 import ReceiptsHistoryTab from './components/ReceiptsHistoryTab';
+import { useOrders } from './useOrders';
 
 /**
  * StoreManagerOverview
@@ -19,8 +20,8 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
   const [orderDate, setOrderDate]     = useState('2026-09-30');
 
   // Delivery arrival & OTP state
-  const [deliveryArrived, setDeliveryArrived] = useState(true);
-  const [deliveryOtp, setDeliveryOtp]         = useState('482 910');
+  const { orders } = useOrders();
+  const arrivedOrder = orders.find(o => o.stopStatus === 'arrived');
   const [showOtpModal, setShowOtpModal]       = useState(false);
 
   const navigate = (tab, params = null) => {
@@ -29,7 +30,6 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
   };
 
   const handleConfirmDelivery = () => {
-    setDeliveryArrived(false);
     setIsConfirmed(true);
     setShowOtpModal(false);
     navigate('receipts');
@@ -83,8 +83,7 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
       basketCount={basket.length}
       user={user}
       outlet={outlet}
-      deliveryArrived={deliveryArrived}
-      deliveryOtp={deliveryOtp}
+      arrivedOrder={arrivedOrder}
       showOtpModal={showOtpModal}
       setShowOtpModal={setShowOtpModal}
       onConfirmDelivery={handleConfirmDelivery}
@@ -97,7 +96,7 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
             setIsConfirmed={setIsConfirmed}
             basket={basket}
             onSetQty={setQty}
-            deliveryArrived={deliveryArrived}
+            deliveryArrived={!!arrivedOrder}
             onOpenOtpModal={() => setShowOtpModal(true)}
           />
         )}

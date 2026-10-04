@@ -22,6 +22,9 @@ class VehicleOperationalResponse(BaseModel):
     last_lat: Optional[float] = None
     last_lng: Optional[float] = None
     last_seen_at: Optional[datetime] = None
+    driver_name: Optional[str] = None
+    driver_phone: Optional[str] = None
+    
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -65,7 +68,21 @@ def get_fleet_visibility(
     if status:
         query = query.filter(Vehicle.status == status)
         
-    return query.all()
+    vehicles = query.all()
+    driver_ids = [v.driver_id for v in vehicles if getattr(v, "driver_id", None)]
+    drivers = db.query(User).filter(User.user_id.in_(driver_ids)).all() if driver_ids else []
+    driver_map = {d.user_id: d for d in drivers}
+    
+    response = []
+    for v in vehicles:
+        v_dict = v.__dict__.copy()
+        driver = driver_map.get(getattr(v, "driver_id", None))
+        if driver:
+            v_dict["driver_name"] = driver.name
+            v_dict["driver_phone"] = driver.phone
+        response.append(VehicleOperationalResponse(**v_dict))
+        
+    return response
 
 @router.get("/trips/active", response_model=List[TripResponse])
 def get_active_trips(
@@ -187,6 +204,12 @@ def assign_driver(
         )
 
     trip.driver_id = driver.user_id
+    
+    # Also update the persistent vehicle assignment
+    vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == trip.vehicle_id).first()
+    if vehicle:
+        vehicle.driver_id = driver.user_id
+        
     db.commit()
     return AssignDriverResponse(
         trip_id=trip.trip_id, driver_id=driver.user_id, trip_no=trip.trip_no,

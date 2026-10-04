@@ -6,7 +6,7 @@ import { safeStorage } from '../../lib/security';
 
 export default function StoreManagerLogin({ onLogin }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [username, setUsername] = useState('fresh_manager');
+  const [username, setUsername] = useState('storemanager@waypoint.local');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
@@ -39,7 +39,7 @@ export default function StoreManagerLogin({ onLogin }) {
         pin: '123456'
       };
       const outlet = {
-        id: me.outlet_id || 'UNKNOWN',
+        id: me.outlet_id || 'OUT001',
         name: me.outlet_id || 'Store Outlet'
       };
 

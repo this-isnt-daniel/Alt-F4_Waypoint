@@ -78,6 +78,8 @@ class OrderETAResponse(BaseModel):
     trip_id: Optional[str] = None
     vehicle_id: Optional[str] = None
     driver_name: Optional[str] = None
+    driver_phone: Optional[str] = None
+    delivery_otp: Optional[str] = None
     stop_seq: Optional[int] = None
     stop_status: Optional[str] = None
     defer_count: int = 0
