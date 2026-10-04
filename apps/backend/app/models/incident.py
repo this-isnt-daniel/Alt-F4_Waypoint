@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, CheckConstraint
 from app.db.base import Base
 
 class VehicleIncident(Base):
@@ -12,3 +12,7 @@ class VehicleIncident(Base):
     reported_by = Column(String, ForeignKey("user.user_id"), nullable=False)
     reported_at = Column(DateTime(timezone=True), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("type IN ('breakdown', 'pre_trip_failure', 'reefer_failure', 'other')", name="check_vehicle_incident_type"),
+    )

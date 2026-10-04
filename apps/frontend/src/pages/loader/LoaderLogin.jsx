@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
-import { fetchLoaderProfile, loginLoader } from './loaderApi';
+import { apiFetch } from '../../lib/api';
+import { safeStorage } from '../../lib/security';
 
 const USERS = {
   dep1: { id: 1, name: 'Loader One', depot: 'DEP1', bay: 'Bay Lead A', username: 'loader1', password: 'pass' },
@@ -10,28 +11,33 @@ const USERS = {
 export default function LoaderLogin({ onLogin }) {
   const [username, setUsername] = useState(USERS.dep1.username);
   const [password, setPassword] = useState(USERS.dep1.password);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError(null);
+
     try {
-      const token = await loginLoader(username, password);
-      const profile = await fetchLoaderProfile(token.access_token);
+      const token = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
+      safeStorage.set('token', token.access_token);
+
+      const profile = await apiFetch('/auth/me');
       onLogin({
         id: profile.user_id,
-        name: profile.name,
+        name: profile.name || username,
         depot: profile.depot_id,
         bay: profile.depot_id === 'DEP1' ? 'Bay Lead A' : null,
         token: token.access_token,
         username: profile.username,
+        role: profile.role
       });
     } catch (err) {
-      const fallback = username === USERS.dep2.username ? USERS.dep2 : USERS.dep1;
-      setError(`${err.message}. Using demo login until the backend is running.`);
-      onLogin(fallback);
+      setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -68,7 +74,7 @@ export default function LoaderLogin({ onLogin }) {
               onClick={() => { setUsername(USERS.dep1.username); setPassword(USERS.dep1.password); }}
               className={`flex-1 py-2 px-2 text-[12px] font-bold border rounded transition-colors ${
                 username === USERS.dep1.username
-                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
                   : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
@@ -79,7 +85,7 @@ export default function LoaderLogin({ onLogin }) {
               onClick={() => { setUsername(USERS.dep2.username); setPassword(USERS.dep2.password); }}
               className={`flex-1 py-2 px-2 text-[12px] font-bold border rounded transition-colors ${
                 username === USERS.dep2.username
-                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
                   : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
@@ -88,12 +94,18 @@ export default function LoaderLogin({ onLogin }) {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Username</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full h-10 px-3 border border-slate-300 rounded text-[14px] text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
@@ -102,23 +114,18 @@ export default function LoaderLogin({ onLogin }) {
           <div>
             <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Password</label>
             {/* Using type="text" to keep it visible for judges so they know what is typed as requested */}
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full h-10 px-3 border border-slate-300 rounded text-[14px] text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
             />
           </div>
-          {error && (
-            <div className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-              {error}
-            </div>
-          )}
           <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-[14px] font-bold rounded shadow-sm hover:shadow transition-all flex items-center justify-center"
+              className="w-full h-11 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-[14px] font-bold rounded shadow-sm hover:shadow transition-all flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? 'Signing in...' : 'Log In'}
             </button>

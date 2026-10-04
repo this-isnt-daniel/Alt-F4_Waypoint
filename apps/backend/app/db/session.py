@@ -1,13 +1,22 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.config import DATABASE_URL
 
-# 1. Fetch credentials from environment variables securely
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint")
+if not DATABASE_URL or DATABASE_URL.startswith("sqlite"):
+    raise RuntimeError(f"Invalid DATABASE_URL configuration. PostgreSQL must be used. Got: {DATABASE_URL}")
 
-# 2. The Engine is the core interface to the database. It handles the connection pool
-#    and translates SQLAlchemy commands into raw SQL for PostgreSQL.
-engine = create_engine(DATABASE_URL)
+try:
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20
+    )
+    # Test connection dialect loading
+    _ = engine.dialect
+except Exception as e:
+    raise RuntimeError(f"Failed to initialize PostgreSQL engine with DATABASE_URL={DATABASE_URL}") from e
 
 # 3. SessionLocal is a factory that generates new Session objects for each web request.
 #    A Session is a "workspace" for your objects before they are committed to the database.

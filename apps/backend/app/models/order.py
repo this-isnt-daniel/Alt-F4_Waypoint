@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Numeric, Date, DateTime, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Numeric, Date, DateTime, Boolean, ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
@@ -34,9 +34,18 @@ class Order(Base):
 
     __table_args__ = (
         UniqueConstraint('outlet_id', 'order_date', 'temp_req', name='uix_order_outlet_date_temp'),
+        CheckConstraint("brand IN ('fresh', 'style', 'tech')", name="check_order_brand"),
+        CheckConstraint("temp_req IN ('ambient', 'chilled')", name="check_order_temp_req"),
+        CheckConstraint("status IN ('draft', 'confirmed', 'planned', 'loaded', 'out_for_delivery', 'delivered', 'deferred')", name="check_order_status"),
     )
 
     lines = relationship("OrderLine", back_populates="order", cascade="all, delete-orphan")
+    urgency_request = relationship("UrgencyRequest", back_populates="order", uselist=False)
+
+    @property
+    def items(self):
+        return self.lines
+
 
 
 class OrderLine(Base):

@@ -3,13 +3,20 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
+from typing import List, Optional
 
 from app.models.product import Product
 from app.models.order import Order, OrderLine
-from app.models.product import Product
+from app.models.outlet import Outlet
 from app.models.events import DeliveryEvent
 from app.models.delivery import ReceiptConfirmation, Discrepancy
-from app.schemas.store_manager import CreateOrderRequest, ConfirmReceiptRequest
+from app.models.deferral import Deferral
+from app.models.trip import Trip, TripStop
+from app.models.user import User
+from app.models.vehicle import Vehicle
+from app.models.urgency import UrgencyRequest
+from app.schemas.store_manager import CreateOrderRequest, UpdateOrderRequest, ConfirmReceiptRequest
+
 
 def create_or_update_draft_order(db: Session, request: CreateOrderRequest, store_manager_outlet: str, user_id: str) -> Order:
     # 1. Verify scope
@@ -44,13 +51,17 @@ def create_or_update_draft_order(db: Session, request: CreateOrderRequest, store
         )
         db.add(order)
         
-    # Derive Delivery Window once at creation
-    if request.brand.lower() == "fresh":
-        order.delivery_window_start = "03:30"
-        order.delivery_window_end = "08:00"
+    # Derive Delivery Window
+    outlet = db.query(Outlet).filter(Outlet.outlet_id == request.outlet_id).first()
+    if outlet and outlet.window_open and outlet.window_close:
+        order.window_open = outlet.window_open
+        order.window_close = outlet.window_close
+    elif request.brand.lower() == "fresh":
+        order.window_open = "03:30"
+        order.window_close = "08:00"
     else:
-        order.delivery_window_start = "08:00"
-        order.delivery_window_end = "18:00"
+        order.window_open = "08:00"
+        order.window_close = "18:00"
         
     # Add items
     for item in request.items:
@@ -71,7 +82,55 @@ def create_or_update_draft_order(db: Session, request: CreateOrderRequest, store
     return order
 
 
-def confirm_order(db: Session, order_id: str, store_manager_outlet: str) -> Order:
+def update_draft_order(db: Session, order_id: str, request: UpdateOrderRequest, store_manager_outlet: str) -> Order:
+    order = db.query(Order).filter(Order.order_id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    if order.outlet_id != store_manager_outlet:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this order")
+        
+    if order.status != "draft":
+        raise HTTPException(status_code=400, detail="Only draft orders can be updated")
+        
+    # Replace lines
+    db.query(OrderLine).filter(OrderLine.order_id == order_id).delete()
+    
+    for item in request.items:
+        product = db.query(Product).filter(Product.product_id == item.product_id).first()
+        if not product:
+            raise HTTPException(status_code=400, detail=f"Product {item.product_id} not found")
+            
+        line = OrderLine(
+            line_item_id=str(uuid.uuid4()),
+            order_id=order.order_id,
+            product_id=item.product_id,
+            quantity=item.quantity
+        )
+        db.add(line)
+        
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+def cancel_draft_order(db: Session, order_id: str, store_manager_outlet: str):
+    order = db.query(Order).filter(Order.order_id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    if order.outlet_id != store_manager_outlet:
+        raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
+        
+    if order.status != "draft":
+        raise HTTPException(status_code=400, detail="Only draft orders can be cancelled")
+        
+    db.delete(order)
+    db.commit()
+    return {"message": "Order cancelled successfully"}
+
+
+def confirm_order(db: Session, order_id: str, store_manager_outlet: str, user_id: Optional[str] = None) -> Order:
     order = db.query(Order).filter(Order.order_id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -114,7 +173,7 @@ def confirm_order(db: Session, order_id: str, store_manager_outlet: str) -> Orde
         event_type="order_confirmed",
         occurred_at=now,
         actor_role="store_manager",
-        actor_id=store_manager_outlet # In a real app we'd pass user_id, using outlet_id as placeholder if user_id not in args
+        actor_id=user_id or store_manager_outlet
     )
     db.add(event)
     
@@ -124,21 +183,40 @@ def confirm_order(db: Session, order_id: str, store_manager_outlet: str) -> Orde
 
 
 def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, store_manager_outlet: str, user_id: str):
-    # Idempotency check
-    existing_receipt = db.query(ReceiptConfirmation).filter_by(client_op_id=request.client_op_id).first()
-    if existing_receipt:
-        return existing_receipt
-        
+    # 1. Order existence check
     order = db.query(Order).filter(Order.order_id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
         
+    # 2. Outlet authorization check (foreign outlet blocked before idempotency check)
     if order.outlet_id != store_manager_outlet:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
-    if order.status not in ["out_for_delivery", "delivered_pending"]:  # Simplified for demonstration
-        # Actually schema doesn't specify delivered_pending, out_for_delivery is sufficient for this foundation
-        pass
+
+    # 3. Hardened idempotency check via client_op_id
+    if request.client_op_id:
+        existing_receipt = db.query(ReceiptConfirmation).filter_by(client_op_id=request.client_op_id).first()
+        if existing_receipt:
+            # Check ownership: do NOT leak receipt belonging to another outlet or user
+            existing_receipt_order = db.query(Order).filter(Order.order_id == existing_receipt.order_id).first()
+            if (
+                existing_receipt.confirmed_by != user_id
+                or not existing_receipt_order
+                or existing_receipt_order.outlet_id != store_manager_outlet
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Not authorized to access or replay this operation",
+                )
+            
+            # Different order_id -> 409 Conflict
+            if existing_receipt.order_id != order_id:
+                raise HTTPException(
+                    status_code=409,
+                    detail="client_op_id has already been used for a different order",
+                )
+
+            # Same client_op_id, same order_id, same Store Manager/outlet -> return existing receipt
+            return existing_receipt
         
     now = datetime.now(timezone.utc)
     receipt = ReceiptConfirmation(
@@ -152,21 +230,58 @@ def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, 
     )
     db.add(receipt)
     
+    has_discrepancy = False
     if request.discrepancies:
         for disc in request.discrepancies:
+            has_discrepancy = True
+            p_id = getattr(disc, "product_id", None) or (disc.get("product_id") if isinstance(disc, dict) else None)
+            exp_q = getattr(disc, "expected_qty", None) or (disc.get("expected_qty") if isinstance(disc, dict) else None)
+            act_q = getattr(disc, "actual_qty", None) or (disc.get("actual_qty") if isinstance(disc, dict) else None)
+            rep_q = getattr(disc, "reported_qty", None) or (disc.get("reported_qty") if isinstance(disc, dict) else None)
+            r_code = getattr(disc, "reason_code", None) or (disc.get("reason_code") if isinstance(disc, dict) else None)
+            n_val = getattr(disc, "note", None) or (disc.get("note") if isinstance(disc, dict) else None)
+            
+            calc_reported = rep_q if rep_q is not None else ((exp_q - act_q) if exp_q is not None and act_q is not None else 0)
+            
+            # Map legacy/UI reason codes to canonical Discrepancy.type
+            canonical_type = "other"
+            if r_code in ("short", "short_quantity", "short_qty"):
+                canonical_type = "short_qty"
+            elif r_code in ("missing",):
+                canonical_type = "missing"
+            elif r_code in ("damaged",):
+                canonical_type = "damaged"
+            elif r_code in ("substituted", "wrong_item"):
+                canonical_type = "wrong_item"
+            
+            # Preserve original reason in note if it's being mapped to 'other' or modified
+            final_note = n_val or ""
+            if r_code and r_code not in ("short_qty", "missing", "damaged", "wrong_item", "other"):
+                prefix = f"Original receipt reason: {r_code}"
+                final_note = f"{prefix}; {final_note}" if final_note else prefix
+
             d = Discrepancy(
                 discrepancy_id=str(uuid.uuid4()),
+                order_id=order_id,
+                raised_by=user_id,
                 source_stage="receipt",
                 confirm_id=receipt.confirm_id,
-                product_id=disc.get("product_id"),
-                expected_qty=disc.get("expected_qty"),
-                actual_qty=disc.get("actual_qty"),
-                reason_code=disc.get("reason_code")
+                product_id=p_id or "UNKNOWN",
+                type=canonical_type,
+                reported_qty=calc_reported,
+                status="open",
+                note=final_note if final_note else None
             )
             db.add(d)
             
     order.status = "delivered"
     
+    # Resolve approved urgency request on final delivery
+    urgency = db.query(UrgencyRequest).filter(UrgencyRequest.order_id == order_id).first()
+    if urgency and urgency.status == "approved":
+        urgency.status = "resolved"
+        urgency.resolved_at = now
+
     event = DeliveryEvent(
         event_id=str(uuid.uuid4()),
         order_id=order_id,
@@ -185,3 +300,95 @@ def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, 
         
     db.refresh(receipt)
     return receipt
+
+
+def get_store_manager_orders(
+    db: Session,
+    outlet_id: str,
+    status_filter: Optional[str] = None,
+    order_date_filter: Optional[str] = None,
+    brand_filter: Optional[str] = None
+) -> List[Order]:
+    query = db.query(Order).filter(Order.outlet_id == outlet_id)
+    if status_filter:
+        query = query.filter(Order.status == status_filter)
+    if order_date_filter:
+        query = query.filter(Order.order_date == order_date_filter)
+    if brand_filter:
+        query = query.filter(Order.brand == brand_filter)
+        
+    return query.order_by(Order.order_date.desc()).all()
+
+
+def get_store_manager_order(db: Session, order_id: str, outlet_id: str) -> Order:
+    order = db.query(Order).filter(Order.order_id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.outlet_id != outlet_id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this order")
+    return order
+
+
+def get_store_manager_products(
+    db: Session,
+    brand_filter: Optional[str] = None,
+    temp_req_filter: Optional[str] = None
+) -> List[Product]:
+    query = db.query(Product).filter(Product.active == True)
+    if brand_filter:
+        query = query.filter(Product.brand == brand_filter)
+    if temp_req_filter:
+        query = query.filter(Product.temp_req == temp_req_filter)
+    return query.all()
+
+
+def get_store_manager_outlet(db: Session, outlet_id: str) -> Outlet:
+    outlet = db.query(Outlet).filter(Outlet.outlet_id == outlet_id).first()
+    if not outlet:
+        raise HTTPException(status_code=404, detail="Outlet not found")
+    return outlet
+
+
+def get_store_manager_deferrals(db: Session, outlet_id: str) -> List[Deferral]:
+    return db.query(Deferral).filter(Deferral.outlet_id == outlet_id).order_by(Deferral.created_at.desc()).all()
+
+
+def get_order_eta(db: Session, order_id: str, outlet_id: str) -> dict:
+    order = get_store_manager_order(db, order_id, outlet_id)
+    
+    driver_name = None
+    vehicle_id = None
+    stop_status = None
+    
+    if order.trip_id:
+        trip = db.query(Trip).filter(Trip.trip_id == order.trip_id).first()
+        if trip:
+            vehicle_id = trip.vehicle_id
+            if trip.driver_id:
+                driver = db.query(User).filter(User.user_id == trip.driver_id).first()
+                if driver:
+                    driver_name = driver.name
+                    
+        stop = db.query(TripStop).filter(TripStop.order_id == order_id).first()
+        if stop:
+            stop_status = stop.status
+            if not order.exp_arrival and stop.eta:
+                order.exp_arrival = stop.eta
+
+    return {
+        "order_id": order.order_id,
+        "outlet_id": order.outlet_id,
+        "status": order.status,
+        "window_open": order.window_open,
+        "window_close": order.window_close,
+        "exp_arrival": order.exp_arrival,
+        "actual_arrival": order.actual_arrival,
+        "trip_id": order.trip_id,
+        "vehicle_id": vehicle_id,
+        "driver_name": driver_name,
+        "stop_seq": order.stop_seq,
+        "stop_status": stop_status,
+        "defer_count": order.defer_count,
+        "deferred_prev": order.deferred_prev,
+    }
+

@@ -51,7 +51,6 @@ The portal is driven by a single-page state engine (implemented in `DispatcherRo
 | `sortBy` | `string` | `'vehicleId'` \| `'fuel'` \| `'type'` \| `'fill'` | `RouteAllocationBoard` | Sorts vehicle lanes. |
 | `trayFilter` | `string` | `'all'` \| `'Waypoint Fresh'` \| `'Waypoint Style'` \| `'Waypoint Tech'` | `RouteAllocationBoard` | Brand filter for unassigned tray. |
 | `dragCard` | `object` \| `null`| `{ card, sourceType, sourceVehicleId }` | `RouteAllocationBoard` | Currently dragged card payload. |
-| `splitPopover` | `string` \| `null`| Order ID or `null` | `RouteAllocationBoard` | Displays multi-vehicle split order breakdown dialog. |
 | `showConfirmModal` | `boolean` | `true` \| `false` (Default: `false`) | `RouteAllocationBoard` | Toggles the two-step manual override confirmation modal. |
 
 ---
@@ -70,7 +69,6 @@ flowchart TD
     D -->|Click 'Manual Allocation'| G[Route Allocation Board - Fullscreen D&D]
     
     G -->|Drag & Drop Cards between Tray & Vehicles| G
-    G -->|Click Order Tag| H[Split Order Popover Inspector]
     G -->|Click 'Confirm Allocation' once tray is empty| I[AllocationConfirmModal - Step 1: Warning]
     
     I -->|Click 'Go to Fleet Availability'| C
@@ -160,7 +158,7 @@ flowchart TD
       - Stops grouped by sequence: `Stop 1 · Nugegoda`, `Stop 2 · Maharagama`.
       - Dividers between stops.
       - **ProductCard Component**:
-        - Order Tag: Unique background/border color hashed by `orderId`. If the order is split across vehicles, displays `· split` badge.
+        - Order Tag: Unique background/border color hashed by `orderId`.
         - Stop metadata: `Stop X - Outlet Name`.
         - Product name (2-line clamp).
         - Quantity badge.
@@ -172,11 +170,6 @@ flowchart TD
   - Docked at viewport bottom with z-index elevation.
   - Header: Counter (`Unassigned line items (X)`), category filters (`All`, `Waypoint Fresh`, `Waypoint Style`, `Waypoint Tech`), completion badge (`All items placed`).
   - Horizontal drag-and-drop shelf: Holds unassigned cards. Dragging from vehicle back to tray unassigns the card.
-- **Split Order Popover (`SplitPopover.jsx`)**:
-  - Clicking any Order Tag launches a popover showing:
-    - Total items placed for that Order ID.
-    - Number of distinct vehicles carrying parts of the order.
-    - Breakdown list: Vehicle ID → Destination Stop.
 
 ---
 
@@ -352,4 +345,4 @@ When asking Claude to enhance or redesign any part of this system, use the follo
 > 1. Adhere strictly to the color tokens, state variables, and role gates documented in the spec.  
 > 2. Respect the two-step manual allocation override safeguards (warning step → typed 'confirm' step → redirect to Overview).  
 > 3. Enforce cold-chain vs ambient vehicle compatibility constraints.  
-> 4. Ensure micro-interactions (dropzone highlights, split-order popovers, hover inspection wireframe cards) preserve all documented fields."*
+> 4. Ensure micro-interactions (dropzone highlights, hover inspection wireframe cards) preserve all documented fields."*

@@ -30,8 +30,8 @@ from app.schemas.loader import (
 )
 
 
-EDITABLE_TRIP_STATUSES = {"planned", "loading"}
-READ_ONLY_TRIP_STATUSES = {"loaded", "out_for_delivery", "cancelled", "vehicle_unavailable"}
+EDITABLE_TRIP_STATUSES = {"planned"}
+READ_ONLY_TRIP_STATUSES = {"loaded", "out_for_delivery", "completed"}
 COMPLETED_ITEM_STATUSES = {"verified", "short", "over", "damaged", "missing", "substituted"}
 
 
@@ -86,7 +86,7 @@ def _line_index_for_trip(db: Session, trip_id: str):
     return {line.line_item_id: (stop, line, product, outlet, stop_item) for stop, line, product, outlet, stop_item in _line_rows_for_trip(db, trip_id)}
 
 
-def _ensure_load_check(db: Session, trip: Trip, user_id: str, status: str = "in_progress") -> LoadCheck:
+def _ensure_load_check(db: Session, trip: Trip, user_id: str, status: str = "ok") -> LoadCheck:
     existing = db.query(LoadCheck).filter(LoadCheck.trip_id == trip.trip_id).first()
     if existing:
         return existing
@@ -172,7 +172,7 @@ def _ensure_vehicle_temperature_compatible(db: Session, trip: Trip):
         return
 
     rows = _line_rows_for_trip(db, trip.trip_id)
-    cold_items = sorted({line.product_id for _, line, product, _, _ in rows if product and product.temp_req == "reefer"})
+    cold_items = sorted({line.product_id for _, line, product, _, _ in rows if product and product.temp_req == "chilled"})
     if cold_items:
         raise HTTPException(
             status_code=400,
@@ -188,6 +188,15 @@ def _upsert_load_item(
     status: str,
     note: Optional[str],
 ) -> LoadCheckItem:
+    # Map request status to canonical LoadCheckItem status
+    canonical_status = "ok"
+    if status == "verified":
+        canonical_status = "ok"
+    elif status == "damaged":
+        canonical_status = "damaged"
+    elif status in ("short", "missing", "over", "substituted"):
+        canonical_status = "shortfall"
+
     item = _get_load_item(db, check.check_id, line.line_item_id)
     if not item:
         item = LoadCheckItem(
@@ -196,15 +205,17 @@ def _upsert_load_item(
             line_item_id=line.line_item_id,
             exp_qty=line.quantity,
             loaded_qty=loaded_qty,
-            status=status,
+            status=canonical_status,
             note=note,
         )
         db.add(item)
     else:
         item.loaded_qty = loaded_qty
-        item.status = status
+        item.status = canonical_status
         item.note = note
     db.flush()
+    # We still return the item, but we might need to know the original status for _sync_discrepancy. 
+    # The original status is passed to _sync_discrepancy anyway.
     return item
 
 
@@ -230,8 +241,21 @@ def _sync_discrepancy(
     if status == "substituted" and qty_delta == 0:
         qty_delta = check_item.loaded_qty
 
+    # Map request status to canonical Discrepancy type
+    canonical_type = "other"
+    if status == "short":
+        canonical_type = "short_qty"
+    elif status == "missing":
+        canonical_type = "missing"
+    elif status == "damaged":
+        canonical_type = "damaged"
+    elif status == "substituted":
+        canonical_type = "wrong_item"
+    elif status == "over":
+        canonical_type = "other"
+
     if existing:
-        existing.type = status
+        existing.type = canonical_type
         existing.reported_qty = qty_delta
         existing.status = "open"
         existing.note = reason
@@ -244,7 +268,7 @@ def _sync_discrepancy(
         source_stage="loading",
         chk_item_id=check_item.chk_item_id,
         product_id=line.product_id,
-        type=status,
+        type=canonical_type,
         reported_qty=qty_delta,
         status="open",
         note=reason,
@@ -262,6 +286,10 @@ def _add_order_event(
     note: Optional[str] = None,
     client_op_id: Optional[str] = None,
 ):
+    from app.schemas.enums import DeliveryEventType
+    if not any(event_type == e.value for e in DeliveryEventType):
+        raise ValueError(f"Invalid delivery event type: {event_type}")
+
     if client_op_id:
         existing = db.query(DeliveryEvent).filter(DeliveryEvent.client_op_id == client_op_id).first()
         if existing:
@@ -320,7 +348,7 @@ def _build_workbench(db: Session, trip: Trip) -> LoaderWorkbench:
                 temp_req=stop.temp_req,
                 status=stop.status,
                 items=[],
-                complete=stop.status in {"loaded", "loading_complete"},
+                complete=stop.status in {"delivered", "skipped"},
             )
 
         saved = item_by_line.get(line.line_item_id)
@@ -336,7 +364,7 @@ def _build_workbench(db: Session, trip: Trip) -> LoaderWorkbench:
         stops_by_id[stop.stop_id].items.append(
             LoadItem(
                 line_item_id=line.line_item_id,
-                stop_item_id=stop_item.stop_item_id if stop_item else None,
+                stop_item_id=stop_item.item_id if stop_item else None,
                 order_id=line.order_id,
                 product_id=line.product_id,
                 product_name=product.name if product else None,
@@ -379,7 +407,7 @@ def get_loader_queue(db: Session, loader_depot: str) -> list[LoaderQueueTrip]:
         db.query(Trip)
         .filter(
             Trip.depot_id == loader_depot,
-            Trip.status.in_(["planned", "loading", "loaded", "out_for_delivery", "vehicle_unavailable"]),
+            Trip.status.in_(["planned", "loaded", "out_for_delivery", "completed"]),
         )
         .order_by(Trip.trip_date, Trip.trip_no, Trip.vehicle_id)
         .all()
@@ -424,11 +452,6 @@ def start_loading(db: Session, trip_id: str, loader_depot: str, user_id: str):
     _ensure_vehicle_temperature_compatible(db, trip)
 
     check = _ensure_load_check(db, trip, user_id)
-    if trip.status == "planned":
-        trip.status = "loading"
-        for stop in db.query(TripStop).filter(TripStop.trip_id == trip_id).all():
-            _add_order_event(db, order_id=stop.order_id, event_type="loading_started", actor_id=user_id)
-
     db.commit()
     db.refresh(check)
     return check
@@ -464,8 +487,6 @@ def save_load_item(
     _validate_item_state(line.quantity, request.loaded_qty, request.status, request.discrepancy_reason)
 
     check = _ensure_load_check(db, trip, user_id)
-    if trip.status == "planned":
-        trip.status = "loading"
 
     check_item = _upsert_load_item(db, check, line, request.loaded_qty, request.status, request.note)
     _sync_discrepancy(
@@ -476,14 +497,7 @@ def save_load_item(
         status=request.status,
         reason=request.discrepancy_reason,
     )
-    _add_order_event(
-        db,
-        order_id=line.order_id,
-        event_type="load_item_checked",
-        actor_id=user_id,
-        note=f"{line.product_id}: {request.status}",
-        client_op_id=request.client_op_id,
-    )
+
 
     db.commit()
     return _find_load_item_response(db, trip_id, line_item_id, loader_depot)
@@ -514,8 +528,7 @@ def complete_stop(db: Session, trip_id: str, stop_id: str, loader_depot: str, us
         raise HTTPException(status_code=400, detail=f"Stop has unchecked items: {pending}")
 
     stop_model = db.query(TripStop).filter(TripStop.stop_id == stop_id, TripStop.trip_id == trip_id).first()
-    stop_model.status = "loading_complete"
-    _add_order_event(db, order_id=stop_model.order_id, event_type="stop_loading_completed", actor_id=user_id)
+
     db.commit()
     return stop_model
 
@@ -554,7 +567,7 @@ def submit_load_check(
     check.client_op_id = request.client_op_id
     check.checked_by = user_id
     check.checked_at = _now()
-    check.status = "completed"
+    check.status = "shortfall" if any(item.status in DISCREPANCY_STATUSES for item in request.items) else "ok"
 
     for item in request.items:
         stop, line, _, _, _ = line_index[item.line_item_id]
@@ -568,18 +581,10 @@ def submit_load_check(
             status=item.status,
             reason=item.discrepancy_reason,
         )
-        _add_order_event(
-            db,
-            order_id=line.order_id,
-            event_type="load_item_checked",
-            actor_id=user_id,
-            note=f"{line.product_id}: {item.status}",
-        )
 
     trip.status = "loaded"
     stops = db.query(TripStop).filter(TripStop.trip_id == trip_id).all()
     for stop in stops:
-        stop.status = "loaded"
         order = db.query(Order).filter(Order.order_id == stop.order_id).first()
         if order:
             order.status = "loaded"
@@ -602,38 +607,42 @@ def mark_vehicle_unavailable(
     loader_depot: str,
     user_id: str,
 ) -> Trip:
-    if db.query(DeliveryEvent).filter(DeliveryEvent.client_op_id == request.client_op_id).first():
+    from app.models.incident import VehicleIncident
+    # Idempotency check could look for an incident with the same trip_id and time window, but we don't have client_op_id on VehicleIncident.
+    # Alternatively, just check if trip.status hasn't progressed and vehicle is already in_workshop.
+    # But for now, we'll just check if the incident already exists for this trip_id with "pre_trip_failure"
+    if db.query(VehicleIncident).filter(VehicleIncident.trip_id == trip_id, VehicleIncident.type == "pre_trip_failure").first():
         return _get_trip_for_loader(db, trip_id, loader_depot)
-
     trip = _get_trip_for_loader(db, trip_id, loader_depot)
     if trip.status in {"loaded", "out_for_delivery"}:
         raise HTTPException(status_code=400, detail=f"Cannot mark vehicle unavailable after trip is {trip.status}")
-    if trip.status in {"cancelled", "vehicle_unavailable"}:
+    if trip.status == "completed":
         raise HTTPException(status_code=400, detail=f"Trip is already {trip.status}")
 
     vehicle = _get_vehicle(db, trip.vehicle_id)
     if vehicle:
-        vehicle.status = "unavailable"
-
-    trip.status = "vehicle_unavailable"
+        vehicle.status = "in_workshop"
     stops = db.query(TripStop).filter(TripStop.trip_id == trip_id).all()
     for index, stop in enumerate(stops):
         order = db.query(Order).filter(Order.order_id == stop.order_id).first()
-        if order and order.status in {"planned", "loading"}:
+        if order and order.status == "planned":
             # Return the order to dispatcher-owned planning state without deleting
             # the historical TripStop, so the incident remains auditable.
             order.status = "confirmed"
             order.trip_id = None
             order.stop_seq = None
-        _add_order_event(
-            db,
-            order_id=stop.order_id,
-            event_type="vehicle_unavailable",
-            actor_id=user_id,
-            note=f"{request.reason}. {request.note or ''}".strip(),
-            client_op_id=request.client_op_id if index == 0 else None,
-        )
-
+            
+    from app.models.incident import VehicleIncident
+    incident = VehicleIncident(
+        incident_id=str(uuid.uuid4()),
+        vehicle_id=trip.vehicle_id,
+        trip_id=trip_id,
+        type="pre_trip_failure",
+        detail=f"{request.reason}. {request.note or ''}".strip(),
+        reported_by=user_id,
+        reported_at=_now(),
+    )
+    db.add(incident)
     db.commit()
     db.refresh(trip)
     return trip

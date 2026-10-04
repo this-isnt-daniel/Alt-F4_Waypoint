@@ -16,10 +16,8 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
-lib/
-!**/src/lib/**
-lib64/
+/lib/
+!apps/frontend/**
 parts/
 sdist/
 var/
@@ -31,6 +29,7 @@ wheels/
 .ven/
 venv/
 ENV/
+*.txt
 
 # Node / Frontend
 node_modules/

@@ -88,3 +88,18 @@ class EventSyncStatus(str, Enum):
     conflict = "conflict"
     failed = "failed"
     already_applied = "already_applied"
+
+class UrgencyRequestStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    resolved = "resolved"
+
+class UrgencyReason(str, Enum):
+    stockout_risk = "stockout_risk"
+    store_operation_impact = "store_operation_impact"
+    chilled_shortage = "chilled_shortage"
+    time_bound_event = "time_bound_event"
+    recovery_after_failed_delivery = "recovery_after_failed_delivery"
+    other = "other"
+

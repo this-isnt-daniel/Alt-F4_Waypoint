@@ -9,7 +9,7 @@ export function SyncCentreScreen() {
   
   const pendingCount = syncRecords.filter(r => r.state === "pending").length;
   const syncedRecords = syncRecords.filter(r => r.state === "synced");
-  const lastSynced = syncedRecords.length > 0 ? syncedRecords[0].createdAt : "Never";
+  const lastSynced = syncedRecords.length > 0 ? syncedRecords[0]?.createdAt : "Never";
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-slate-50 px-5 py-6">

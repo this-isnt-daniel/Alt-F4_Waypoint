@@ -49,7 +49,7 @@ def override_db():
         User(user_id="U1", name="Manager One", username="manager1", hashed_pw=get_password_hash("pass"), role="store_manager", outlet_id="OUT1"),
         User(user_id="U2", name="Dispatcher One", username="disp1", hashed_pw=get_password_hash("pass"), role="dispatcher", depot_id="DEP1"),
         User(user_id="U3", name="Loader One", username="loader1", hashed_pw=get_password_hash("pass"), role="loader", depot_id="DEP1"),
-        User(user_id="U4", name="Driver One", username="driver1", hashed_pw=get_password_hash("pass"), role="driver")
+        User(user_id="U4", name="Driver One", username="driver1", hashed_pw=get_password_hash("pass"), role="driver", depot_id="DEP1")
     ]
     db.add_all(users)
     
@@ -147,6 +147,10 @@ def test_integration_flow(client, override_db):
     line = override_db.query(OrderLine).filter(OrderLine.order_id == order_id).first()
     assert line is not None
     
+    # FLOW 3b: Dispatcher assigns the driver who owns the trip in the Driver app
+    res = client.post(f"/api/v1/dispatcher/trips/{trip_id}/assign-driver", headers=disp_headers, json={"driver_id": "U4"})
+    assert res.status_code == 200
+
     # FLOW 4: Loader loads
     load_headers = {"Authorization": f"Bearer {loader_token}"}
     res = client.post(f"/api/v1/loader/trips/{trip_id}/load", headers=load_headers, json={
@@ -175,7 +179,13 @@ def test_integration_flow(client, override_db):
     # Get stop ID
     from app.models.trip import TripStop
     stop = override_db.query(TripStop).filter(TripStop.trip_id == trip_id).first()
-    
+
+    res = client.post(f"/api/v1/driver-platform/stops/{stop.stop_id}/arrive", headers=driver_headers, json={
+        "client_event_id": "arr1",
+        "base_row_version": stop.row_version,
+    })
+    assert res.status_code == 200
+
     res = client.post(f"/api/v1/driver-platform/stops/{stop.stop_id}/pod", headers=driver_headers, json={
         "client_op_id": "pod1",
         "order_id": order_id,
@@ -189,7 +199,7 @@ def test_integration_flow(client, override_db):
     # FLOW 7: Store Manager confirms receipt
     res = client.post(f"/api/v1/store-manager/orders/{order_id}/receipt", headers=sm_headers, json={
         "client_op_id": "rec1",
-        "pod_id": res.json()["pod_id"],
+        "pod_id": res.json()["pod"]["pod_id"],
         "items_ok": True
     })
     assert res.status_code == 200

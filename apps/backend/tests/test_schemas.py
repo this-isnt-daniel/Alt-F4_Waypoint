@@ -32,7 +32,11 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True)
+def setup_schema_db():
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    app.dependency_overrides.pop(get_db, None)
 
 client = TestClient(app)
 
@@ -74,36 +78,3 @@ def test_empty_items_list_rejected():
             items=[]
         )
 
-def test_demo_endpoint_valid_request():
-    response = client.post("/api/v1/demo/orders", json={
-      "outlet_id": "OUT001",
-      "brand": "fresh",
-      "temp_req": "ambient",
-      "order_date": "2026-10-02",
-      "items": [
-        {
-          "product_id": "P001",
-          "quantity": 10
-        }
-      ]
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert data["outlet_id"] == "OUT001"
-    assert len(data["items"]) == 1
-    assert data["items"][0]["quantity"] == 10
-
-def test_demo_endpoint_invalid_quantity():
-    response = client.post("/api/v1/demo/orders", json={
-      "outlet_id": "OUT001",
-      "brand": "fresh",
-      "temp_req": "ambient",
-      "order_date": "2026-10-02",
-      "items": [
-        {
-          "product_id": "P001",
-          "quantity": 0
-        }
-      ]
-    })
-    assert response.status_code == 422

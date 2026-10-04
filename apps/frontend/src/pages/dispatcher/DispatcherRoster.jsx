@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { apiFetch } from '../../lib/api';
 
 // Fix for default Leaflet icon paths in Vite/Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -156,64 +157,29 @@ export default function DispatcherRoster({ onLogout }) {
   const [expandedActiveTripIds, setExpandedActiveTripIds] = useState(new Set(['VEH014']));
 
   // Contingency Dispatch Disrupted Orders Dataset (Breakdowns & Damaged POD)
-  const contingencyDisruptedOrders = [
-    {
-      id: 'ORD-30088',
-      incidentVehicle: 'VEH011',
-      type: 'Van',
-      refrigeration: 'Reefer',
-      tripLabel: 'Trip 1 of 2',
-      cargoLine: 'Fresh - Chilled Chicken 390 kg',
-      reasonPill: 'Vehicle Breakdown',
-      reasonDetail: 'Hydraulic lock & starter failure during pre-trip dock staging at Bay 3',
-      destination: 'OUT-3012 Maharagama',
-      reportedTime: '08:15 AM - 09:45 AM',
-      driver: 'N. Perera',
-      freshWindow: 'Window closes in 45 min'
-    },
-    {
-      id: 'ORD-30095',
-      incidentVehicle: 'VEH006',
-      type: 'Truck',
-      refrigeration: 'Reefer',
-      tripLabel: 'Trip 1 of 2',
-      cargoLine: 'Fresh - Cold Chain Dairy 440 kg',
-      reasonPill: 'Vehicle Breakdown',
-      reasonDetail: 'Axle shear & steering linkage failure en route on A1 Highway km 14',
-      destination: 'OUT-5021 Mount Lavinia',
-      reportedTime: '08:35 AM - 10:15 AM',
-      driver: 'K. Gunawardena',
-      freshWindow: 'Cold chain alert (+3.2°C)'
-    },
-    {
-      id: 'ORD-30114',
-      incidentVehicle: 'VEH009',
-      type: 'Truck',
-      refrigeration: 'Ambient',
-      tripLabel: 'Trip 2 of 2',
-      cargoLine: 'Grocery - Highland Butter 280 kg',
-      reasonPill: 'Damaged Goods at POD',
-      reasonDetail: 'Pallet shrinkwrap rupture & package crushing upon unloading at receiving dock',
-      destination: 'OUT-2041 Wattala',
-      reportedTime: '08:45 AM - 10:30 AM',
-      driver: 'Receiving Mgr (Wattala)',
-      freshWindow: 'Quarantined for claims inspection'
-    },
-    {
-      id: 'ORD-30129',
-      incidentVehicle: 'VEH011',
-      type: 'Van',
-      refrigeration: 'Ambient',
-      tripLabel: 'Trip 2 of 2',
-      cargoLine: 'Style - Dry Lentils & Dhal 620 kg',
-      reasonPill: 'Vehicle Breakdown',
-      reasonDetail: 'Stranded at Bay 3 due to VEH011 starter motor burnout',
-      destination: 'OUT-1029 Liberty Plaza',
-      reportedTime: '08:20 AM - 09:50 AM',
-      driver: 'Lead Loader (Bay 3)',
-      freshWindow: 'Dry ambient safe (staged)'
-    }
-  ];
+  const [contingencyDisruptedOrders, setContingencyDisruptedOrders] = useState([]);
+
+  useEffect(() => {
+    apiFetch('/dispatcher/incidents')
+      .then(data => {
+        const formatted = data.map((inc, i) => ({
+          id: inc.incident_id,
+          incidentVehicle: inc.vehicle_id,
+          type: 'Truck', // Ideally joined from vehicles API
+          refrigeration: 'Reefer', 
+          tripLabel: inc.trip_id || `Trip ${i+1}`,
+          cargoLine: 'Fresh Produce / Dairy',
+          reasonPill: inc.type,
+          reasonDetail: inc.detail,
+          destination: 'Depot / Current Stop',
+          reportedTime: new Date(inc.reported_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          driver: 'N/A', // inc.reported_by is an ID, ideally join User name
+          freshWindow: 'Window Alert'
+        }));
+        setContingencyDisruptedOrders(formatted);
+      })
+      .catch(err => console.error("Failed to fetch incidents:", err));
+  }, []);
 
   // Active Contingency Recovery Trips (Matching user screenshot)
   const contingencyActiveTrips = [
@@ -273,692 +239,82 @@ export default function DispatcherRoster({ onLogout }) {
   const [hoveredUnavailableVehicle, setHoveredUnavailableVehicle] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Initial Fleet Data for Fleet Availability
-  const initialFleet = [
-    { 
-      id: 'VEH102', 
-      depot: 'Kandy', 
-      type: 'Truck', 
-      refrigeration: 'Reefer', 
-      payloadKg: 5000, 
-      volumeM3: 15.0, 
-      fuelQuota: 85, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH105', 
-      depot: 'Kandy', 
-      type: 'Van', 
-      refrigeration: 'Ambient', 
-      payloadKg: 2000, 
-      volumeM3: 8.0, 
-      fuelQuota: 45, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH108', 
-      depot: 'Kandy', 
-      type: 'Truck', 
-      refrigeration: 'Reefer', 
-      payloadKg: 5500, 
-      volumeM3: 16.0, 
-      fuelQuota: 30, 
-      checked: false,
-      isLockedUnavailable: true,
-      unavailableSource: 'Driver Portal',
-      unavailableReason: 'Tire puncture reported on A1 highway.',
-      reportedBy: 'K. Bandara',
-      expectedReturn: 'Today, 2:00 PM',
-      maintenanceType: 'Tire Replacement'
-    },
-    { id: 'VEH110', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 4500, volumeM3: 12.0, fuelQuota: 55, checked: true, isLockedUnavailable: false },
-    { id: 'VEH111', depot: 'Kandy', type: 'Van', refrigeration: 'Reefer', payloadKg: 2000, volumeM3: 8.0, fuelQuota: 78, checked: true, isLockedUnavailable: false },
-    { id: 'VEH112', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 6000, volumeM3: 18.0, fuelQuota: 92, checked: true, isLockedUnavailable: false },
-    { id: 'VEH113', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 1500, volumeM3: 6.0, fuelQuota: 45, checked: true, isLockedUnavailable: false },
-    { id: 'VEH114', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 5000, volumeM3: 15.0, fuelQuota: 88, checked: true, isLockedUnavailable: false },
-    { id: 'VEH115', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 2000, volumeM3: 8.0, fuelQuota: 34, checked: true, isLockedUnavailable: false },
-    { id: 'VEH116', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 4500, volumeM3: 12.0, fuelQuota: 61, checked: true, isLockedUnavailable: false },
-    { id: 'VEH117', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 6000, volumeM3: 18.5, fuelQuota: 75, checked: true, isLockedUnavailable: false },
-    { id: 'VEH118', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 1500, volumeM3: 6.0, fuelQuota: 82, checked: true, isLockedUnavailable: false },
-    { id: 'VEH119', depot: 'Kandy', type: 'Van', refrigeration: 'Reefer', payloadKg: 2000, volumeM3: 8.0, fuelQuota: 12, checked: false, isLockedUnavailable: true, unavailableSource: 'Driver Portal', unavailableReason: 'AC compressor failure.', reportedBy: 'M. Silva', expectedReturn: 'Tomorrow, 10:00 AM', maintenanceType: 'AC Repair' },
-    { id: 'VEH120', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 4500, volumeM3: 12.0, fuelQuota: 95, checked: true, isLockedUnavailable: false },
-    { id: 'VEH121', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 5000, volumeM3: 15.0, fuelQuota: 41, checked: true, isLockedUnavailable: false },
-    { id: 'VEH122', depot: 'Kandy', type: 'Van', refrigeration: 'Ambient', payloadKg: 1500, volumeM3: 6.0, fuelQuota: 28, checked: true, isLockedUnavailable: false },
-    { id: 'VEH123', depot: 'Kandy', type: 'Truck', refrigeration: 'Ambient', payloadKg: 6000, volumeM3: 18.0, fuelQuota: 66, checked: true, isLockedUnavailable: false },
-    { id: 'VEH124', depot: 'Kandy', type: 'Truck', refrigeration: 'Reefer', payloadKg: 5000, volumeM3: 15.0, fuelQuota: 73, checked: true, isLockedUnavailable: false },
-    { 
-      id: 'VEH001', 
-      depot: 'Peliyagoda', 
-      type: 'Truck', 
-      refrigeration: 'Reefer', 
-      payloadKg: 6000, 
-      volumeM3: 18.5, 
-      fuelQuota: 62, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH002', 
-      depot: 'Peliyagoda', 
-      type: 'Truck', 
-      refrigeration: 'Reefer', 
-      payloadKg: 6000, 
-      volumeM3: 18.5, 
-      fuelQuota: 91, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH003', 
-      depot: 'Peliyagoda', 
-      type: 'Van', 
-      refrigeration: 'Ambient', 
-      payloadKg: 1500, 
-      volumeM3: 6.0, 
-      fuelQuota: 45, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH004', 
-      depot: 'Peliyagoda', 
-      type: 'Van', 
-      refrigeration: 'Ambient', 
-      payloadKg: 1500, 
-      volumeM3: 6.0, 
-      fuelQuota: 72, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH005', 
-      depot: 'Peliyagoda', 
-      type: 'Truck', 
-      refrigeration: 'Ambient', 
-      payloadKg: 4500, 
-      volumeM3: 12.0, 
-      fuelQuota: 33, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH006', 
-      depot: 'Peliyagoda', 
-      type: 'Truck', 
-      refrigeration: 'Reefer', 
-      payloadKg: 4500, 
-      volumeM3: 12.0, 
-      fuelQuota: 88, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH007', 
-      depot: 'Peliyagoda', 
-      type: 'Van', 
-      refrigeration: 'Ambient', 
-      payloadKg: 1500, 
-      volumeM3: 6.0, 
-      fuelQuota: 95, 
-      checked: false,
-      isLockedUnavailable: true,
-      unavailableSource: 'Driver Portal',
-      unavailableReason: 'Brake hydraulic pressure anomaly detected during pre-trip inspection.',
-      reportedBy: 'K. Gunawardena',
-      expectedReturn: 'Today, 4:30 PM (Bay 2 Maint)',
-      maintenanceType: 'Brake Fluid Bleed & Pressure Test'
-    },
-    { 
-      id: 'VEH008', 
-      depot: 'Peliyagoda', 
-      type: 'Van', 
-      refrigeration: 'Ambient', 
-      payloadKg: 1500, 
-      volumeM3: 6.0, 
-      fuelQuota: 58, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH009', 
-      depot: 'Peliyagoda', 
-      type: 'Truck', 
-      refrigeration: 'Reefer', 
-      payloadKg: 6000, 
-      volumeM3: 18.5, 
-      fuelQuota: 40, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH010', 
-      depot: 'Peliyagoda', 
-      type: 'Van', 
-      refrigeration: 'Reefer', 
-      payloadKg: 2000, 
-      volumeM3: 8.0, 
-      fuelQuota: 12, 
-      checked: false,
-      isLockedUnavailable: true,
-      unavailableSource: 'Loader Portal',
-      unavailableReason: 'Chiller evaporator temperature sensor failed staging test (reading +8°C instead of +2°C).',
-      reportedBy: 'S. Perera (Bay 4 Chilled)',
-      expectedReturn: 'Tomorrow, 08:00 AM (Technician En Route)',
-      maintenanceType: 'Sensor Swap & Cold-Chain Diagnostics'
-    },
-    { 
-      id: 'VEH011', 
-      depot: 'Peliyagoda', 
-      type: 'Truck', 
-      refrigeration: 'Ambient', 
-      payloadKg: 4500, 
-      volumeM3: 12.0, 
-      fuelQuota: 67, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH012', 
-      depot: 'Peliyagoda', 
-      type: 'Van', 
-      refrigeration: 'Ambient', 
-      payloadKg: 1500, 
-      volumeM3: 6.0, 
-      fuelQuota: 50, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-    { 
-      id: 'VEH013', 
-      depot: 'Peliyagoda', 
-      type: 'Van', 
-      refrigeration: 'Ambient', 
-      payloadKg: 1500, 
-      volumeM3: 6.0, 
-      fuelQuota: 79, 
-      checked: false,
-      isLockedUnavailable: true,
-      unavailableSource: 'Loader Portal',
-      unavailableReason: 'Rear hydraulic tail-lift lock lever cracked during pallet offload; safety interlock engaged.',
-      reportedBy: 'M. Fernando (Dock Supervisor)',
-      expectedReturn: 'Today, 6:00 PM (Hydraulic Bay)',
-      maintenanceType: 'Tail-lift Latch Weld & Safety Test'
-    },
-    { 
-      id: 'VEH014', 
-      depot: 'Peliyagoda', 
-      type: 'Truck', 
-      refrigeration: 'Reefer', 
-      payloadKg: 4500, 
-      volumeM3: 12.0, 
-      fuelQuota: 54, 
-      checked: true,
-      isLockedUnavailable: false
-    },
-  ];
+  const [fleetList, setFleetList] = useState([]);
 
-  const [fleetList, setFleetList] = useState(initialFleet);
+  useEffect(() => {
+    apiFetch('/dispatcher/vehicles')
+      .then(data => {
+        const formatted = data.map(v => ({
+          id: v.vehicle_id,
+          depot: v.depot_id === 'peliyagoda' ? 'Peliyagoda' : (v.depot_id === 'kandy' ? 'Kandy' : v.depot_id),
+          type: v.type.charAt(0).toUpperCase() + v.type.slice(1),
+          refrigeration: v.temp === 'reefer' ? 'Reefer' : 'Ambient',
+          payloadKg: v.weight_cap_kg,
+          volumeM3: v.vol_cap_m3,
+          fuelQuota: v.fuel_quota_l,
+          checked: v.status === 'available',
+          isLockedUnavailable: v.status !== 'available',
+          unavailableSource: v.status !== 'available' ? 'Dispatcher Portal' : '',
+          unavailableReason: v.status !== 'available' ? 'Marked Unavailable' : ''
+        }));
+        setFleetList(formatted);
+      })
+      .catch(err => console.error("Failed to fetch vehicles:", err));
+  }, []);
 
   // Proposed Vehicle Assignments Dataset with Stops and Shop Items
-  const initialVehicleAssignments = [
-    {
-      id: 'VEH014',
-      type: 'Van',
-      refrigeration: 'Reefer',
-      activeLeg: 'Trip 1 of 2',
-      tripLock: 'Fresh - Colombo Central',
-      currentDestination: 'OUT-4089 Nugegoda',
-      startTime: '07:45 AM',
-      endTime: '11:15 AM',
-      stopsCount: 5,
-      tripStatus: 'En Route',
-      driverName: 'Sunil Bandara',
-      driverPhone: '+94 77 123 4567',
-      departureTime: '07:45 AM',
-      totalCrates: 68,
-      payloadKg: 1450,
-      stops: [
-        {
-          id: 'OUT-1029',
-          name: 'Liberty Plaza Express',
-          eta: '08:15 AM',
-          status: 'Completed',
-          crates: 12,
-          weightKg: 240,
-          cargo: 'Chilled Dairy & Yogurts',
-          items: [
-            { sku: 'DAI-204', name: 'Anchor Full Cream Milk 1L', category: 'Dairy', quantity: '4 Crates (48 Units)', weight: '48 kg' },
-            { sku: 'DAI-309', name: 'Highland Set Yogurt 80g', category: 'Dairy', quantity: '5 Crates (120 Units)', weight: '24 kg' },
-            { sku: 'DAI-112', name: 'Pelwatte Salted Butter 200g', category: 'Dairy', quantity: '3 Crates (60 Units)', weight: '12 kg' }
-          ]
-        },
-        {
-          id: 'OUT-1044',
-          name: 'Kollupitiya Central',
-          eta: '08:50 AM',
-          status: 'Completed',
-          crates: 8,
-          weightKg: 180,
-          cargo: 'Fresh Farm Produce',
-          items: [
-            { sku: 'VEG-102', name: 'Hydroponic Butterhead Lettuce', category: 'Fresh Produce', quantity: '3 Crates (36 Packs)', weight: '18 kg' },
-            { sku: 'VEG-108', name: 'Bell Peppers (Red & Yellow)', category: 'Fresh Produce', quantity: '3 Crates (45 kg)', weight: '45 kg' },
-            { sku: 'FRU-205', name: 'Strawberries Fresh Pack 250g', category: 'Fresh Produce', quantity: '2 Crates (40 Punnets)', weight: '10 kg' }
-          ]
-        },
-        {
-          id: 'OUT-2088',
-          name: 'Havelock City Store',
-          eta: '09:20 AM',
-          status: 'Completed',
-          crates: 14,
-          weightKg: 320,
-          cargo: 'Dairy & Poultry Packs',
-          items: [
-            { sku: 'DAI-401', name: 'Kotmale Fresh Milk 1L Bottle', category: 'Dairy', quantity: '6 Crates (72 Units)', weight: '72 kg' },
-            { sku: 'MEA-105', name: 'Bairaha Chilled Chicken Breasts 500g', category: 'Poultry', quantity: '5 Crates (50 Packs)', weight: '35 kg' },
-            { sku: 'DAI-220', name: 'Cheddar Cheese Slices 200g', category: 'Dairy', quantity: '3 Crates (45 Packs)', weight: '15 kg' }
-          ]
-        },
-        {
-          id: 'OUT-4089',
-          name: 'Nugegoda Supermarket',
-          eta: '09:55 AM (Now)',
-          status: 'En Route',
-          crates: 18,
-          weightKg: 390,
-          cargo: 'Berries, Dairy & Cream',
-          items: [
-            { sku: 'FRU-301', name: 'Imported Strawberries Grade A 250g', category: 'Berries', quantity: '6 Crates (120 Punnets)', weight: '30 kg' },
-            { sku: 'DAI-502', name: 'Fresh Whipping Cream 250ml', category: 'Dairy', quantity: '5 Crates (100 Units)', weight: '28 kg' },
-            { sku: 'DAI-610', name: 'Highland Strawberry Drinking Yogurt 200ml', category: 'Dairy', quantity: '4 Crates (96 Bottles)', weight: '22 kg' },
-            { sku: 'MEA-204', name: 'Fresh Marinated Chicken Drumsticks', category: 'Poultry', quantity: '3 Crates (30 Packs)', weight: '36 kg' }
-          ]
-        },
-        {
-          id: 'OUT-3012',
-          name: 'Maharagama Central',
-          eta: '10:45 AM',
-          status: 'Scheduled',
-          crates: 16,
-          weightKg: 320,
-          cargo: 'Chilled Meats & Delicatessen',
-          items: [
-            { sku: 'MEA-301', name: 'Farm Fresh Chilled Whole Chicken', category: 'Poultry', quantity: '8 Crates (48 Birds)', weight: '72 kg' },
-            { sku: 'DEL-102', name: 'Smoked Chicken Sausages 500g', category: 'Delicatessen', quantity: '5 Crates (50 Packs)', weight: '25 kg' },
-            { sku: 'DAI-330', name: 'Ambewela Chilled Gouda 200g', category: 'Dairy', quantity: '3 Crates (45 Packs)', weight: '12 kg' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'VEH009',
-      type: 'Truck',
-      refrigeration: 'Reefer',
-      activeLeg: 'Trip 2 of 2',
-      tripLock: 'Fresh - Gampaha',
-      currentDestination: 'OUT-2041 Wattala',
-      startTime: '07:15 AM',
-      endTime: '11:00 AM',
-      stopsCount: 5,
-      tripStatus: 'Returning to Depot',
-      driverName: 'Kamal Wickramasinghe',
-      driverPhone: '+94 71 987 6543',
-      departureTime: '07:15 AM',
-      totalCrates: 138,
-      payloadKg: 4200,
-      stops: [
-        {
-          id: 'OUT-2010',
-          name: 'Kelaniya Express',
-          eta: '07:45 AM',
-          status: 'Completed',
-          crates: 25,
-          weightKg: 310,
-          cargo: 'Pasteurized Milks',
-          items: [
-            { sku: 'DAI-101', name: 'Pasteurized Whole Milk Crates 1L', category: 'Dairy', quantity: '15 Crates (180 Bottles)', weight: '185 kg' },
-            { sku: 'DAI-103', name: 'Low Fat Fresh Milk 1L', category: 'Dairy', quantity: '10 Crates (120 Bottles)', weight: '122 kg' }
-          ]
-        },
-        {
-          id: 'OUT-2018',
-          name: 'Kiribathgoda Center',
-          eta: '08:30 AM',
-          status: 'Completed',
-          crates: 30,
-          weightKg: 510,
-          cargo: 'Fresh Vegetables',
-          items: [
-            { sku: 'VEG-201', name: 'Fresh Upcountry Carrots', category: 'Fresh Produce', quantity: '12 Crates (240 kg)', weight: '240 kg' },
-            { sku: 'VEG-204', name: 'Green Beans (Premium Select)', category: 'Fresh Produce', quantity: '10 Crates (150 kg)', weight: '150 kg' },
-            { sku: 'VEG-209', name: 'Leeks Pre-trimmed Cartons', category: 'Fresh Produce', quantity: '8 Crates (120 kg)', weight: '120 kg' }
-          ]
-        },
-        {
-          id: 'OUT-2025',
-          name: 'Mahabage Market',
-          eta: '09:10 AM',
-          status: 'Completed',
-          crates: 20,
-          weightKg: 165,
-          cargo: 'Poultry Portions',
-          items: [
-            { sku: 'MEA-112', name: 'Chilled Chicken Curry Cuts 1kg', category: 'Poultry', quantity: '12 Crates (120 Packs)', weight: '120 kg' },
-            { sku: 'MEA-118', name: 'Chicken Gizzard & Liver 500g', category: 'Poultry', quantity: '8 Crates (80 Packs)', weight: '45 kg' }
-          ]
-        },
-        {
-          id: 'OUT-2033',
-          name: 'Ja-Ela Supercenter',
-          eta: '09:50 AM',
-          status: 'Completed',
-          crates: 35,
-          weightKg: 175,
-          cargo: 'Dairy & Meats',
-          items: [
-            { sku: 'DAI-211', name: 'Highland Pasteurized Butter 200g', category: 'Dairy', quantity: '15 Crates (300 Blocks)', weight: '60 kg' },
-            { sku: 'MEA-210', name: 'Prime Beef Sirloin Steaks 500g', category: 'Meats', quantity: '10 Crates (80 Packs)', weight: '40 kg' },
-            { sku: 'DAI-225', name: 'Full Cream Sweetened Curd Clay Pots', category: 'Dairy', quantity: '10 Crates (60 Pots)', weight: '75 kg' }
-          ]
-        },
-        {
-          id: 'OUT-2041',
-          name: 'Wattala Mega Store',
-          eta: '10:35 AM',
-          status: 'Completed',
-          crates: 28,
-          weightKg: 390,
-          cargo: 'Fresh Produce Crates',
-          items: [
-            { sku: 'FRU-101', name: 'Fresh Cavendish Bananas', category: 'Produce', quantity: '14 Crates (210 kg)', weight: '210 kg' },
-            { sku: 'FRU-105', name: 'Papaya Solo Red Lady', category: 'Produce', quantity: '14 Crates (180 kg)', weight: '180 kg' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'VEH041',
-      type: 'Truck',
-      refrigeration: 'Ambient',
-      activeLeg: 'Trip 1 of 2',
-      tripLock: 'Style - Colombo',
-      currentDestination: 'OUT-1029 Liberty Plaza',
-      startTime: '08:00 AM',
-      endTime: '11:45 AM',
-      stopsCount: 4,
-      tripStatus: 'At Dock - Unloading',
-      driverName: 'Rohan Silva',
-      driverPhone: '+94 76 345 6789',
-      departureTime: '08:00 AM',
-      totalCrates: 165,
-      payloadKg: 3800,
-      stops: [
-        {
-          id: 'OUT-1011',
-          name: 'Pettah Main Branch',
-          eta: '08:15 AM',
-          status: 'Completed',
-          crates: 45,
-          weightKg: 325,
-          cargo: 'Dry Grocery Essentials',
-          items: [
-            { sku: 'GRO-101', name: 'Basmati Rice 5kg Master Bags', category: 'Dry Groceries', quantity: '25 Master Bags', weight: '125 kg' },
-            { sku: 'GRO-105', name: 'Refined White Sugar 1kg Bundles', category: 'Dry Groceries', quantity: '20 Bundles (200 kg)', weight: '200 kg' }
-          ]
-        },
-        {
-          id: 'OUT-1019',
-          name: 'Fort Station Point',
-          eta: '08:50 AM',
-          status: 'Completed',
-          crates: 30,
-          weightKg: 165,
-          cargo: 'Packaged Goods & Apparel',
-          items: [
-            { sku: 'BEV-102', name: 'Ceylon BOPF Tea Master Cartons', category: 'Beverages', quantity: '15 Cartons', weight: '90 kg' },
-            { sku: 'APP-201', name: 'Waypoint Basic Cotton Tees Assorted', category: 'Apparel', quantity: '15 Master Boxes', weight: '75 kg' }
-          ]
-        },
-        {
-          id: 'OUT-1029',
-          name: 'Liberty Plaza Express',
-          eta: '09:30 AM (Dock 2)',
-          status: 'At Dock - Unloading',
-          crates: 50,
-          weightKg: 275,
-          cargo: 'Departmental Cartons',
-          items: [
-            { sku: 'APP-304', name: 'Men Linen Shirts Collection', category: 'Apparel', quantity: '20 Master Cartons', weight: '100 kg' },
-            { sku: 'HOU-101', name: 'Kitchenware Stainless Cook Sets', category: 'Homeware', quantity: '15 Boxes', weight: '120 kg' },
-            { sku: 'GRO-202', name: 'Imported Roasted Cashew 250g Cans', category: 'Snacks', quantity: '15 Cartons (180 Cans)', weight: '55 kg' }
-          ]
-        },
-        {
-          id: 'OUT-1044',
-          name: 'Kollupitiya Central',
-          eta: '10:30 AM',
-          status: 'Scheduled',
-          crates: 40,
-          weightKg: 200,
-          cargo: 'Dry Groceries & Snacks',
-          items: [
-            { sku: 'GRO-303', name: 'Assorted Biscuit Tins & Family Packs', category: 'Snacks', quantity: '20 Master Cartons', weight: '140 kg' },
-            { sku: 'BEV-205', name: 'Instant Coffee Granules 100g Jars', category: 'Beverages', quantity: '20 Cartons (240 Jars)', weight: '60 kg' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'VEH027',
-      type: 'Truck',
-      refrigeration: 'Reefer',
-      activeLeg: 'Trip 1 of 2',
-      tripLock: 'Fresh - Gampaha',
-      currentDestination: 'OUT-2041 Wattala Mall',
-      startTime: '08:15 AM',
-      endTime: '12:00 PM',
-      stopsCount: 3,
-      tripStatus: 'Delayed (+14m)',
-      driverName: 'Nalin Jayasinghe',
-      driverPhone: '+94 70 876 5432',
-      departureTime: '08:15 AM',
-      totalCrates: 110,
-      payloadKg: 3200,
-      stops: [
-        {
-          id: 'OUT-2005',
-          name: 'Peliyagoda North Hub',
-          eta: '08:45 AM',
-          status: 'Completed',
-          crates: 30,
-          weightKg: 300,
-          cargo: 'Fresh Farm Produce',
-          items: [
-            { sku: 'VEG-301', name: 'Fresh Tomato Plum Grade A', category: 'Fresh Produce', quantity: '15 Crates (180 kg)', weight: '180 kg' },
-            { sku: 'VEG-305', name: 'Green Chili Hot Select', category: 'Fresh Produce', quantity: '15 Crates (120 kg)', weight: '120 kg' }
-          ]
-        },
-        {
-          id: 'OUT-2041',
-          name: 'Wattala Mall Supercenter',
-          eta: '10:14 AM (Delayed +14m)',
-          status: 'Delayed',
-          crates: 42,
-          weightKg: 170,
-          cargo: 'Chilled Dairy & Yogurts',
-          items: [
-            { sku: 'DAI-312', name: 'Chilled Probiotic Drinking Yogurts', category: 'Dairy', quantity: '22 Crates (264 Bottles)', weight: '70 kg' },
-            { sku: 'DAI-318', name: 'Cottage Cheese Paneer Blocks 500g', category: 'Dairy', quantity: '20 Crates (200 Blocks)', weight: '100 kg' }
-          ]
-        },
-        {
-          id: 'OUT-2055',
-          name: 'Kandana Central',
-          eta: '11:20 AM',
-          status: 'Scheduled',
-          crates: 38,
-          weightKg: 125,
-          cargo: 'Meats & Seafood',
-          items: [
-            { sku: 'SEA-101', name: 'Chilled Yellowfin Tuna Steaks 500g', category: 'Seafood', quantity: '20 Crates (160 Packs)', weight: '80 kg' },
-            { sku: 'MEA-222', name: 'Smoked Bacon Rashers Vacuum 250g', category: 'Meats', quantity: '18 Crates (180 Packs)', weight: '45 kg' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'VEH001',
-      type: 'Truck',
-      refrigeration: 'Reefer',
-      activeLeg: 'Trip 1 of 2',
-      tripLock: 'Fresh - Negombo Corridor',
-      currentDestination: 'OUT-3044 Negombo Town',
-      startTime: '07:30 AM',
-      endTime: '12:15 PM',
-      stopsCount: 5,
-      tripStatus: 'En Route',
-      driverName: 'Duminda Perera',
-      driverPhone: '+94 72 456 7890',
-      departureTime: '07:30 AM',
-      totalCrates: 117,
-      payloadKg: 3500,
-      stops: [
-        {
-          id: 'OUT-3011',
-          name: 'Seeduwa Junction',
-          eta: '08:15 AM',
-          status: 'Completed',
-          crates: 20,
-          weightKg: 240,
-          cargo: 'Chilled Milk Crates',
-          items: [
-            { sku: 'DAI-108', name: 'Pasteurized Homogenized Milk 1L', category: 'Dairy', quantity: '20 Crates (240 Units)', weight: '240 kg' }
-          ]
-        },
-        {
-          id: 'OUT-3022',
-          name: 'Katunayake Express',
-          eta: '08:55 AM',
-          status: 'Completed',
-          crates: 25,
-          weightKg: 250,
-          cargo: 'Fresh Meats',
-          items: [
-            { sku: 'MEA-140', name: 'Chilled Chicken Curry Portions', category: 'Poultry', quantity: '25 Crates (250 Packs)', weight: '250 kg' }
-          ]
-        },
-        {
-          id: 'OUT-3044',
-          name: 'Negombo Town Supercenter',
-          eta: '09:45 AM',
-          status: 'En Route',
-          crates: 35,
-          weightKg: 236,
-          cargo: 'Produce & Dairy',
-          items: [
-            { sku: 'VEG-401', name: 'English Cucumber & Bell Peppers', category: 'Produce', quantity: '20 Crates (200 kg)', weight: '200 kg' },
-            { sku: 'DAI-230', name: 'Natural Flavored Yogurts 80g', category: 'Dairy', quantity: '15 Crates (360 Cups)', weight: '36 kg' }
-          ]
-        },
-        {
-          id: 'OUT-3055',
-          name: 'Kochchikade Outlet',
-          eta: '10:40 AM',
-          status: 'Scheduled',
-          crates: 22,
-          weightKg: 76,
-          cargo: 'Chilled Goods',
-          items: [
-            { sku: 'DAI-340', name: 'Chilled Garlic Butter Tubs 250g', category: 'Dairy', quantity: '12 Crates (144 Tubs)', weight: '36 kg' },
-            { sku: 'MEA-150', name: 'Chicken Breakfast Sausages 400g', category: 'Meats', quantity: '10 Crates (100 Packs)', weight: '40 kg' }
-          ]
-        },
-        {
-          id: 'OUT-3066',
-          name: 'Wennappuwa Hub',
-          eta: '11:30 AM',
-          status: 'Scheduled',
-          crates: 15,
-          weightKg: 110,
-          cargo: 'Dairy Crates',
-          items: [
-            { sku: 'DAI-410', name: 'Set Curd Traditional Clay Pots', category: 'Dairy', quantity: '15 Crates (90 Pots)', weight: '110 kg' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'VEH004',
-      type: 'Van',
-      refrigeration: 'Ambient',
-      activeLeg: 'Trip 1 of 1',
-      tripLock: 'Ambient - Colombo South',
-      currentDestination: 'OUT-5021 Mount Lavinia Hub',
-      startTime: '08:00 AM',
-      endTime: '10:45 AM',
-      stopsCount: 4,
-      tripStatus: 'En Route',
-      driverName: 'Anura Rathnayake',
-      driverPhone: '+94 78 567 8901',
-      departureTime: '08:00 AM',
-      totalCrates: 78,
-      payloadKg: 1300,
-      stops: [
-        {
-          id: 'OUT-5001',
-          name: 'Wellawatte Market',
-          eta: '08:30 AM',
-          status: 'Completed',
-          crates: 15,
-          weightKg: 150,
-          cargo: 'Dry Groceries',
-          items: [
-            { sku: 'GRO-401', name: 'Red Split Lentils (Dhal) 1kg Packs', category: 'Dry Groceries', quantity: '15 Bundles (150 kg)', weight: '150 kg' }
-          ]
-        },
-        {
-          id: 'OUT-5012',
-          name: 'Dehiwala Central',
-          eta: '09:10 AM',
-          status: 'Completed',
-          crates: 20,
-          weightKg: 80,
-          cargo: 'Beverages',
-          items: [
-            { sku: 'BEV-301', name: 'Pure Ceylon Ginger Tea Bags 50s', category: 'Beverages', quantity: '20 Cartons (200 Boxes)', weight: '80 kg' }
-          ]
-        },
-        {
-          id: 'OUT-5018',
-          name: 'Ratmalana Express',
-          eta: '09:40 AM',
-          status: 'Completed',
-          crates: 18,
-          weightKg: 115,
-          cargo: 'Household Cartons',
-          items: [
-            { sku: 'HOU-201', name: 'Dishwashing Liquid Lemon 500ml', category: 'Household', quantity: '18 Cartons (216 Bottles)', weight: '115 kg' }
-          ]
-        },
-        {
-          id: 'OUT-5021',
-          name: 'Mount Lavinia Hub',
-          eta: '10:05 AM',
-          status: 'En Route',
-          crates: 25,
-          weightKg: 95,
-          cargo: 'General Dry Cartons',
-          items: [
-            { sku: 'GRO-502', name: 'Coconut Milk Powder 300g Pouches', category: 'Dry Groceries', quantity: '15 Cartons (180 Pouches)', weight: '60 kg' },
-            { sku: 'GRO-508', name: 'Roasted Curry Powder 250g Packs', category: 'Spices', quantity: '10 Cartons (120 Packs)', weight: '35 kg' }
-          ]
-        }
-      ]
-    }
-  ];
+  const [vehicleAssignments, setVehicleAssignments] = useState([]);
+
+  useEffect(() => {
+    apiFetch('/dispatcher/trips/active')
+      .then(data => {
+        // Group trips by vehicle (or just list them as assignments)
+        const mapped = data.map(trip => {
+          let totalCrates = 0;
+          const stops = trip.stops.map((stop, index) => {
+            let stopCrates = 0;
+            const items = stop.items.map(i => {
+              stopCrates += i.quantity;
+              return { sku: i.product_id, name: i.product_id, category: 'General', quantity: `${i.quantity} Units`, weight: 'N/A' };
+            });
+            totalCrates += stopCrates;
+            
+            return {
+              id: stop.outlet_id,
+              name: `Outlet ${stop.outlet_id}`,
+              eta: stop.expected_arrival || 'N/A',
+              status: stop.status === 'in_progress' ? 'En Route' : (stop.status === 'upcoming' ? 'Scheduled' : 'Completed'),
+              crates: stopCrates,
+              weightKg: 0,
+              cargo: 'Mixed Goods',
+              items: items
+            };
+          });
+
+          return {
+            id: trip.vehicle_id || 'Unassigned',
+            type: 'Vehicle',
+            refrigeration: trip.temp_type === 'reefer' ? 'Reefer' : 'Ambient',
+            activeLeg: `Trip ${trip.trip_id}`,
+            tripLock: 'Fresh / Style',
+            currentDestination: stops.length > 0 ? stops[stops.length-1].id : 'Depot',
+            startTime: '06:00 AM',
+            endTime: '12:00 PM',
+            stopsCount: stops.length,
+            tripStatus: trip.status === 'in_progress' ? 'Active' : 'Planned',
+            driverName: 'Driver',
+            driverPhone: 'N/A',
+            departureTime: '06:00 AM',
+            totalCrates: totalCrates,
+            weightKg: 0,
+            temperature: trip.temp_type === 'reefer' ? '+4.2°C' : 'N/A',
+            stops: stops
+          };
+        });
+        setVehicleAssignments(mapped);
+      })
+      .catch(err => console.error("Failed to fetch trips:", err));
+  }, []);
 
   // Proposed Outlet Assignments Dataset
   const initialOutletAssignments = [
@@ -1410,8 +766,8 @@ export default function DispatcherRoster({ onLogout }) {
   ];
 
   const currentVehicleAssignments = recoveryDeployed
-    ? [...recoveryVehicleAssignments, ...initialVehicleAssignments]
-    : initialVehicleAssignments;
+    ? [...recoveryVehicleAssignments, ...vehicleAssignments]
+    : vehicleAssignments;
 
   // Filtered Vehicle Assignments for Workbench
   const filteredVehicleAssignments = currentVehicleAssignments.filter((va) => {
@@ -1610,7 +966,7 @@ export default function DispatcherRoster({ onLogout }) {
             <div 
               onClick={() => {
                 setActiveNav('Route Allocation & Capacity');
-                setActiveSubTab('Fleet Availability');
+                setActiveSubTab(isAllocationConfirmed ? 'Allocation Workbench' : 'Fleet Availability');
               }}
               className="flex items-center gap-2.5 cursor-pointer"
             >
@@ -1643,7 +999,7 @@ export default function DispatcherRoster({ onLogout }) {
                     onClick={() => {
                       setActiveNav(tab.id);
                       if (tab.id === 'Route Allocation & Capacity') {
-                        setActiveSubTab('Fleet Availability');
+                        setActiveSubTab(isAllocationConfirmed ? 'Allocation Workbench' : 'Fleet Availability');
                       }
                     }}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
@@ -3742,6 +3098,7 @@ export default function DispatcherRoster({ onLogout }) {
           setTimeout(() => {
             setShowConfirmToast(false);
           }, 4000);
+          setActiveNav('Route Allocation & Capacity');
           setActiveSubTab('Allocation Workbench');
         }}
       />

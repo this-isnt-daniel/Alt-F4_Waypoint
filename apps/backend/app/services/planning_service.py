@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from app.models.order import Order
 from app.models.trip import Trip, TripStop
 from app.models.events import DeliveryEvent
+from app.services.manifest_service import add_stop_items
 from app.models.deferral import Deferral
 from app.models.outlet import Outlet
 from app.schemas.dispatcher import ProposedPlanResponse, DeferOrderRequest
@@ -28,14 +29,16 @@ def create_optimization_run(db: Session, depot_id: str, target_date: str, brand:
     _mock_planning_runs[run_id] = plan
     return plan
 
-def get_optimization_run(run_id: str) -> ProposedPlanResponse:
+def get_optimization_run(db: Session, run_id: str, depot_id: str) -> ProposedPlanResponse:
     plan = _mock_planning_runs.get(run_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Planning run not found")
+    if plan.depot_id != depot_id:
+        raise HTTPException(status_code=403, detail="Cannot access plan for a different depot")
     return plan
 
 def confirm_plan(db: Session, run_id: str, client_op_id: str, dispatcher_depot: str, user_id: str):
-    plan = get_optimization_run(run_id)
+    plan = get_optimization_run(db, run_id, dispatcher_depot)
     if plan.depot_id != dispatcher_depot:
         raise HTTPException(status_code=403, detail="Cannot confirm plan for a different depot")
         
@@ -59,8 +62,11 @@ def confirm_plan(db: Session, run_id: str, client_op_id: str, dispatcher_depot: 
             if not order:
                 raise HTTPException(status_code=400, detail=f"Order {stop.order_id} not found")
             
-            if order.status != "confirmed":
-                raise HTTPException(status_code=400, detail=f"Order {stop.order_id} is not in confirmed state")
+            if order.status not in ("confirmed", "deferred"):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Order {stop.order_id} is not in confirmed or deferred state (current: {order.status})"
+                )
                 
             # Assign canonical TripStop
             trip_stop = TripStop(
@@ -74,11 +80,13 @@ def confirm_plan(db: Session, run_id: str, client_op_id: str, dispatcher_depot: 
                 temp_req=order.temp_req
             )
             db.add(trip_stop)
+            add_stop_items(db, trip_stop.stop_id, order.order_id)
             
             # Denormalize onto Order
             order.trip_id = trip_id
             order.stop_seq = stop.sequence
             order.status = "planned"
+            order.deferred_prev = False
             
             # Event
             db.add(DeliveryEvent(
@@ -130,7 +138,7 @@ def defer_order(db: Session, request: DeferOrderRequest, dispatcher_depot: str, 
         order_id=request.order_id,
         outlet_id=request.outlet_id,
         original_date=request.original_date,
-        new_date=request.new_date or request.original_date,
+        new_date=request.new_date,
         reason=request.reason,
         created_at=now,
         created_by=user_id,

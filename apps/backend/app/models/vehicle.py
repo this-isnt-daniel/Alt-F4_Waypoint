@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Numeric, Integer, ForeignKey, DateTime
+from sqlalchemy import Column, String, Numeric, Integer, ForeignKey, DateTime, CheckConstraint
 from app.db.base import Base
 
 class Vehicle(Base):
@@ -18,3 +18,9 @@ class Vehicle(Base):
     last_lat = Column(Numeric, nullable=True)
     last_lng = Column(Numeric, nullable=True)
     last_seen_at = Column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("type IN ('truck', 'van')", name="check_vehicle_type"),
+        CheckConstraint("temp IN ('reefer', 'ambient')", name="check_vehicle_temp"),
+        CheckConstraint("status IN ('available', 'in_workshop')", name="check_vehicle_status"),
+    )

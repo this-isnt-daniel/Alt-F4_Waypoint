@@ -54,7 +54,7 @@ class DiscrepancyType(str, Enum):
     MISSING = "missing"
     DAMAGED = "damaged"
     WRONG_ITEM = "wrong_item"
-    SHORT_QUANTITY = "short_quantity"
+    SHORT_QTY = "short_qty"
     OTHER = "other"
 
 class TripStatus(str, Enum):

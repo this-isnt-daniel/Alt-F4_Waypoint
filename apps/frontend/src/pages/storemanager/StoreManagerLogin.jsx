@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
+import { apiFetch } from '../../lib/api';
+import { safeStorage } from '../../lib/security';
 
 export default function StoreManagerLogin({ onLogin }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -9,7 +11,7 @@ export default function StoreManagerLogin({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username.trim()) {
       setError('Please enter your username');
@@ -20,20 +22,31 @@ export default function StoreManagerLogin({ onLogin }) {
       return;
     }
 
-    // Authenticated user & outlet for Waypoint Fresh
-    const manager = {
-      id: 'SM-014-01',
-      name: 'A. Perera',
-      username: username.trim(),
-      role: 'Store Manager',
-      pin: '123456'
-    };
-    const outlet = {
-      id: 'NGD-014',
-      name: 'Nugegoda Outlet'
-    };
+    try {
+      const response = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
+      safeStorage.set('token', response.access_token);
+      
+      const me = await apiFetch('/auth/me');
+      
+      const manager = {
+        id: me.user_id,
+        name: me.name || username,
+        username: me.username,
+        role: me.role,
+        pin: '123456'
+      };
+      const outlet = {
+        id: me.outlet_id || 'UNKNOWN',
+        name: me.outlet_id || 'Store Outlet'
+      };
 
-    onLogin(manager, outlet);
+      onLogin(manager, outlet);
+    } catch (err) {
+      setError(err.message || 'Login failed');
+    }
   };
 
   return (

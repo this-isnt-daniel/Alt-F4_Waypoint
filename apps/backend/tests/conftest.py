@@ -1,4 +1,5 @@
 import os
 
-# Guarantee test database path is set BEFORE any app modules are imported
-os.environ["DATABASE_PATH"] = "test_waypoint_driver.db"
+# Guarantee test database paths are set BEFORE any app modules are imported
+os.environ["DATABASE_URL"] = "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint_test"
+

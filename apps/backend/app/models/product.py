@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Numeric, Boolean
+from sqlalchemy import Column, String, Numeric, Boolean, CheckConstraint
 from app.db.base import Base
 
 class Product(Base):
@@ -13,3 +13,8 @@ class Product(Base):
     unit_wt_kg = Column(Numeric, nullable=True)
     unit_vol_m3 = Column(Numeric, nullable=True)
     active = Column(Boolean, nullable=False, default=True)
+
+    __table_args__ = (
+        CheckConstraint("brand IN ('fresh', 'style', 'tech')", name="check_product_brand"),
+        CheckConstraint("temp_req IN ('ambient', 'chilled')", name="check_product_temp_req"),
+    )

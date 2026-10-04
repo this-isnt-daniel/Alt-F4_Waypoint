@@ -19,6 +19,7 @@ import {
   TRIP_2_STOPS,
   type DriverStop,
 } from "@/driver/data/driverContent";
+import { safeStorage } from "@/lib/security";
 
 export interface DriverStateContextValue {
   connection: ConnectionState;
@@ -139,9 +140,35 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
     initial.syncReviewForwarded,
   );
 
-  const trip2Sequence = useMemo(() => TRIP_2_STOPS.map((s) => s.outletId), []);
-  const currentTripSequence = activeTripId === 2 ? trip2Sequence : trip1Sequence;
-  const currentTripStops = activeTripId === 2 ? TRIP_2_STOPS : TRIP_1_STOPS;
+  const [currentTripStops, setCurrentTripStops] = useState<DriverStop[]>(TRIP_1_STOPS);
+  const [currentTripSequence, setCurrentTripSequence] = useState<string[]>(
+    TRIP_1_STOPS.map((s) => s.outletId),
+  );
+
+  useEffect(() => {
+    // Initial fetch from backend if logged in
+    const token = safeStorage.get("token");
+    if (token) {
+      import("@/driver/api").then(async ({ fetchTodayTrips, fetchTripDetail }) => {
+        try {
+          const today = await fetchTodayTrips();
+          if (today && today.trips && today.trips.length > 0) {
+            const firstTrip = today.trips[0];
+            const detail = await fetchTripDetail(firstTrip.trip_id);
+            if (detail && detail.stops) {
+              const { mapBackendStopToDriverStop } = await import("./mapper");
+              const mappedStops = detail.stops.map(mapBackendStopToDriverStop);
+              setCurrentTripStops(mappedStops);
+              setCurrentTripSequence(mappedStops.map((s: any) => s.outletId));
+              setTrip1Sequence(mappedStops.map((s: any) => s.outletId));
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch driver data", err);
+        }
+      });
+    }
+  }, []);
 
   const applyScenario = useCallback(
     (scenarioId: ScenarioId, params: Record<string, string> = {}) => {
@@ -188,6 +215,12 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
     setConnectionState(next);
   }, []);
 
+  const updateSyncRecord = useCallback((id: string, patch: Partial<SyncRecord>) => {
+    setSyncRecords((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    );
+  }, []);
+
   const addSyncRecord = useCallback(
     (record: Omit<SyncRecord, "id" | "createdAt">) => {
       const newRecord: SyncRecord = {
@@ -200,17 +233,31 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
         }),
       };
       setSyncRecords((prev) => [newRecord, ...prev]);
-    },
-    [],
-  );
 
-  const updateSyncRecord = useCallback(
-    (id: string, patch: Partial<SyncRecord>) => {
-      setSyncRecords((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
-      );
+      // Fire off API request in background
+      if (connection === "online") {
+        import("@/driver/api").then(({ postDriverEvent }) => {
+          let kind = "unknown";
+          let payload: any = {};
+          
+          if (record.type === "delivery") {
+            kind = "arrive"; // Map to actual API commands
+            payload = { base_row_version: 1, arrived_at: new Date().toISOString() };
+          }
+          
+          if (kind !== "unknown") {
+            postDriverEvent(kind, record.outletId || "", payload, newRecord.id)
+              .then(() => {
+                updateSyncRecord(newRecord.id, { state: "synced" });
+              })
+              .catch(() => {
+                updateSyncRecord(newRecord.id, { state: "failed" });
+              });
+          }
+        });
+      }
     },
-    [],
+    [connection, updateSyncRecord],
   );
 
   const startTrip1 = useCallback(() => {

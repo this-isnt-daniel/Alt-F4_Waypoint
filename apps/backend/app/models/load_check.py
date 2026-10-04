@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, CheckConstraint
 from app.db.base import Base
 
 class LoadCheck(Base):
@@ -12,6 +12,10 @@ class LoadCheck(Base):
     note = Column(String, nullable=True)
     client_op_id = Column(String, nullable=True, unique=True)
 
+    __table_args__ = (
+        CheckConstraint("status IN ('ok', 'shortfall')", name="check_load_check_status"),
+    )
+
 class LoadCheckItem(Base):
     __tablename__ = "load_check_item"
     
@@ -22,3 +26,7 @@ class LoadCheckItem(Base):
     loaded_qty = Column(Integer, nullable=False)
     status = Column(String, nullable=False)
     note = Column(String, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('ok', 'shortfall', 'damaged')", name="check_load_check_item_status"),
+    )

@@ -30,7 +30,7 @@ def override_get_db():
     if not db.query(User).filter_by(username="manager1").first():
         db.add(User(
             user_id="U1", username="manager1", role="store_manager",
-            outlet_id="O1", name="Manager One", hashed_pw=get_password_hash("password123")
+            outlet_id="OUT001", name="Manager One", hashed_pw=get_password_hash("password123")
         ))
         db.add(User(
             user_id="U2", username="disp1", role="dispatcher",
@@ -47,12 +47,21 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True)
+def setup_auth_db():
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    app.dependency_overrides.pop(get_db, None)
 
 test_router = APIRouter()
 @test_router.get("/api/v1/test/store-manager-only", dependencies=[require_role("store_manager")])
 def sm_only():
     return {"msg": "success"}
+
+@test_router.get("/api/v1/test/raise-integrity")
+def raise_integrity():
+    from sqlalchemy.exc import IntegrityError
+    raise IntegrityError("mock error", params=None, orig=None)
 
 app.include_router(test_router)
 client = TestClient(app)
@@ -114,13 +123,6 @@ def test_role_forbidden():
     assert res2.status_code == 403
 
 def test_global_409_handler():
-    payload = {
-        "outlet_id": "OUT001",
-        "brand": "fresh",
-        "temp_req": "ambient",
-        "order_date": "2026-10-02",
-        "items": [{"product_id": "P001", "quantity": 10}]
-    }
-    client.post("/api/v1/demo/orders", json=payload)
-    res = client.post("/api/v1/demo/orders", json=payload) 
+    # Hit the test endpoint that raises an IntegrityError
+    res = client.get("/api/v1/test/raise-integrity")
     assert res.status_code == 409
