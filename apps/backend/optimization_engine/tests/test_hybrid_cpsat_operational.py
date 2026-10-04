@@ -104,8 +104,9 @@ def _make_synth_order(
     volume: float = 1.0,
     units: int = 1,
     window_close: str = "23:59",
-    deferred_yesterday: bool = True,
-    days_since: int = 5,
+    deferred_prev: bool = True,
+    defer_count: int = 5,
+    is_urgent: bool = False,
 ) -> Order:
     """Order whose outlet_id is always in the synthetic reference registry."""
     oid = f"SYNTH-OUT-{int(ref.lstrip('SYNTH-ORDER-').lstrip('O') or '0') % 10:02d}"
@@ -132,8 +133,9 @@ def _make_synth_order(
         order_units=units,
         order_weight_kg=weight,
         order_volume_m3=volume,
-        deferred_yesterday=deferred_yesterday,
-        days_since_last_served=days_since,
+        deferred_prev=deferred_prev,
+        defer_count=defer_count,
+        is_urgent=is_urgent,
         line_items=[li],
     )
 
@@ -286,8 +288,8 @@ class TestCpsatAcceptanceRejection:
         baseline is preserved unchanged.
         """
         ref = _make_synth_ref(weight_cap=5000.0)
-        o1 = _make_synth_order("O01", weight=100.0, deferred_yesterday=False)
-        o_heavy = _make_synth_order("O02", weight=99_999.0, deferred_yesterday=True, days_since=10)
+        o1 = _make_synth_order("O01", weight=100.0, deferred_prev=False)
+        o_heavy = _make_synth_order("O02", weight=99_999.0, deferred_prev=True, defer_count=10)
 
         plan_greedy = generate_daily_draft_plan(
             orders=[o1, o_heavy],
@@ -340,8 +342,8 @@ class TestCpsatAcceptanceRejection:
         no improvement). The original greedy plan is preserved without modification.
         """
         ref = _make_synth_ref(weight_cap=5000.0)
-        o_normal = _make_synth_order("O01", weight=100.0, deferred_yesterday=False)
-        o_huge = _make_synth_order("O02", weight=99_000.0, deferred_yesterday=True, days_since=7)
+        o_normal = _make_synth_order("O01", weight=100.0, deferred_prev=False)
+        o_huge = _make_synth_order("O02", weight=99_000.0, deferred_prev=True, defer_count=7)
 
         plan = generate_daily_draft_plan(
             orders=[o_normal, o_huge],
@@ -427,7 +429,7 @@ class TestCpsatFallbackSafety:
         """
         ref = _make_synth_ref(weight_cap=160.0)
         o1 = _make_synth_order("O01", weight=140.0)
-        o2 = _make_synth_order("O02", weight=99_999.0, deferred_yesterday=True, days_since=10)
+        o2 = _make_synth_order("O02", weight=99_999.0, deferred_prev=True, defer_count=10)
 
         plan = generate_daily_draft_plan(
             orders=[o1, o2],
@@ -593,8 +595,9 @@ class TestRealReferenceHybrid:
                 order_units=10,
                 order_weight_kg=50.0,
                 order_volume_m3=0.5,
-                deferred_yesterday=bool(i % 2 == 0),
-                days_since_last_served=i,
+                deferred_prev=bool(i % 2 == 0),
+                defer_count=i,
+                is_urgent=False,
                 line_items=[li],
             ))
         return orders
@@ -789,8 +792,9 @@ class TestRealReferenceHybrid:
                 order_units=10,
                 order_weight_kg=2100.0,
                 order_volume_m3=2.0,
-                deferred_yesterday=True,
-                days_since_last_served=i + 1,
+                deferred_prev=True,
+                defer_count=i + 1,
+                is_urgent=False,
                 line_items=[li],
             ))
 

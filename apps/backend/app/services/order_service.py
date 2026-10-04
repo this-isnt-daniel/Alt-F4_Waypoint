@@ -14,6 +14,7 @@ from app.models.deferral import Deferral
 from app.models.trip import Trip, TripStop
 from app.models.user import User
 from app.models.vehicle import Vehicle
+from app.models.urgency import UrgencyRequest
 from app.schemas.store_manager import CreateOrderRequest, UpdateOrderRequest, ConfirmReceiptRequest
 
 
@@ -182,17 +183,40 @@ def confirm_order(db: Session, order_id: str, store_manager_outlet: str, user_id
 
 
 def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, store_manager_outlet: str, user_id: str):
-    # Idempotency check
-    existing_receipt = db.query(ReceiptConfirmation).filter_by(client_op_id=request.client_op_id).first()
-    if existing_receipt:
-        return existing_receipt
-        
+    # 1. Order existence check
     order = db.query(Order).filter(Order.order_id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
         
+    # 2. Outlet authorization check (foreign outlet blocked before idempotency check)
     if order.outlet_id != store_manager_outlet:
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    # 3. Hardened idempotency check via client_op_id
+    if request.client_op_id:
+        existing_receipt = db.query(ReceiptConfirmation).filter_by(client_op_id=request.client_op_id).first()
+        if existing_receipt:
+            # Check ownership: do NOT leak receipt belonging to another outlet or user
+            existing_receipt_order = db.query(Order).filter(Order.order_id == existing_receipt.order_id).first()
+            if (
+                existing_receipt.confirmed_by != user_id
+                or not existing_receipt_order
+                or existing_receipt_order.outlet_id != store_manager_outlet
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Not authorized to access or replay this operation",
+                )
+            
+            # Different order_id -> 409 Conflict
+            if existing_receipt.order_id != order_id:
+                raise HTTPException(
+                    status_code=409,
+                    detail="client_op_id has already been used for a different order",
+                )
+
+            # Same client_op_id, same order_id, same Store Manager/outlet -> return existing receipt
+            return existing_receipt
         
     now = datetime.now(timezone.utc)
     receipt = ReceiptConfirmation(
@@ -252,6 +276,12 @@ def confirm_receipt(db: Session, order_id: str, request: ConfirmReceiptRequest, 
             
     order.status = "delivered"
     
+    # Resolve approved urgency request on final delivery
+    urgency = db.query(UrgencyRequest).filter(UrgencyRequest.order_id == order_id).first()
+    if urgency and urgency.status == "approved":
+        urgency.status = "resolved"
+        urgency.resolved_at = now
+
     event = DeliveryEvent(
         event_id=str(uuid.uuid4()),
         order_id=order_id,

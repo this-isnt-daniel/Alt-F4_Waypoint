@@ -15,3 +15,4 @@ from .returns import ReturnCustody
 from .incident import VehicleIncident
 from .plan import DraftPlan
 from .road_geometry import RoadGeometry
+from .urgency import UrgencyRequest

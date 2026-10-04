@@ -138,10 +138,22 @@ def validate_inputs(
                 message=f"Order {o.order_ref!r} order_units ({o.order_units}) must be a non-negative integer.",
                 entity_id=o.order_ref,
             ))
-        if not isinstance(o.days_since_last_served, int) or o.days_since_last_served < 0:
+        if not isinstance(o.deferred_prev, bool):
             errors.append(InputErrorDetail(
-                field="days_since_last_served",
-                message=f"Order {o.order_ref!r} days_since_last_served ({o.days_since_last_served}) must be non-negative integer.",
+                field="deferred_prev",
+                message=f"Order {o.order_ref!r} deferred_prev ({o.deferred_prev!r}) must be a boolean.",
+                entity_id=o.order_ref,
+            ))
+        if not isinstance(o.defer_count, int) or o.defer_count < 0:
+            errors.append(InputErrorDetail(
+                field="defer_count",
+                message=f"Order {o.order_ref!r} defer_count ({o.defer_count}) must be a non-negative integer.",
+                entity_id=o.order_ref,
+            ))
+        if not isinstance(o.is_urgent, bool):
+            errors.append(InputErrorDetail(
+                field="is_urgent",
+                message=f"Order {o.order_ref!r} is_urgent ({o.is_urgent!r}) must be a boolean.",
                 entity_id=o.order_ref,
             ))
 
@@ -394,10 +406,22 @@ def validate_operational_inputs(
                 message=f"Order {o.order_ref!r} order_units ({o.order_units}) must be non-negative integer.",
                 entity_id=o.order_ref,
             ))
-        if not isinstance(o.days_since_last_served, int) or o.days_since_last_served < 0:
+        if not isinstance(o.deferred_prev, bool):
             errors.append(InputErrorDetail(
-                field="days_since_last_served",
-                message=f"Order {o.order_ref!r} days_since_last_served ({o.days_since_last_served}) must be non-negative integer.",
+                field="deferred_prev",
+                message=f"Order {o.order_ref!r} deferred_prev ({o.deferred_prev!r}) must be a boolean.",
+                entity_id=o.order_ref,
+            ))
+        if not isinstance(o.defer_count, int) or o.defer_count < 0:
+            errors.append(InputErrorDetail(
+                field="defer_count",
+                message=f"Order {o.order_ref!r} defer_count ({o.defer_count}) must be a non-negative integer.",
+                entity_id=o.order_ref,
+            ))
+        if not isinstance(o.is_urgent, bool):
+            errors.append(InputErrorDetail(
+                field="is_urgent",
+                message=f"Order {o.order_ref!r} is_urgent ({o.is_urgent!r}) must be a boolean.",
                 entity_id=o.order_ref,
             ))
 

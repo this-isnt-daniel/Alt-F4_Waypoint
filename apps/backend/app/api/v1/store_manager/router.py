@@ -15,7 +15,8 @@ from app.schemas.store_manager import (
     OrderETAResponse
 )
 from app.schemas.shared import OrderResponse
-from app.services import order_service
+from app.schemas.urgency import CreateUrgencyRequest, UrgencyRequestResponse
+from app.services import order_service, urgency_service
 
 router = APIRouter()
 
@@ -141,4 +142,36 @@ def get_order_eta(
 ):
     """Get live tracking and estimated arrival time (ETA) for an order."""
     return order_service.get_order_eta(db, order_id, current_user.outlet_id)
+
+
+@router.post("/orders/{order_id}/urgency-request", response_model=UrgencyRequestResponse, status_code=201, dependencies=[Depends(store_manager_role)])
+def request_order_urgency(
+    order_id: str,
+    request: CreateUrgencyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Submit business urgency request for an existing confirmed or deferred order."""
+    return urgency_service.create_order_urgency_request(
+        db=db,
+        order_id=order_id,
+        request=request,
+        store_manager_outlet=current_user.outlet_id,
+        user_id=current_user.user_id,
+    )
+
+
+@router.get("/orders/{order_id}/urgency-request", response_model=UrgencyRequestResponse, dependencies=[Depends(store_manager_role)])
+def get_order_urgency(
+    order_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get the current urgency request for an order."""
+    return urgency_service.get_order_urgency_request(
+        db=db,
+        order_id=order_id,
+        store_manager_outlet=current_user.outlet_id,
+    )
+
 

@@ -76,8 +76,9 @@ Supplied as an iterable collection of confirmed order transactions received prio
 | `order_id` / `order_ref` | `string` | **Yes** | Stable unique order identifier (e.g. `"ORD0001"`). Preserves leading zeros. |
 | `outlet_id` | `string` | **Yes** | Foreign key referencing authoritative `outlets.csv` (e.g. `"OUT001"`). |
 | `temp_requirement` | `string` | **Yes** | `"ambient"` or `"chilled"`. (`chilled` requires a refrigerated vehicle). |
-| `deferred_yesterday` | `boolean` | **Yes** | `true` if order was deferred on the previous operating day. |
-| `days_since_last_served`| `integer` | **Yes** | Consecutive days since outlet last received a delivery ($\ge 0$). |
+| `deferred_prev` | `boolean` | Optional (default: `false`) | `true` if order was deferred on the previous operating cycle. Accepts `deferred_yesterday` as deprecated alias. |
+| `defer_count` | `integer` | Optional (default: `0`) | Total number of times this order has been deferred ($\ge 0$). |
+| `is_urgent` | `boolean` | Optional (default: `false`) | `true` only if Dispatcher-approved urgency request exists. |
 | `line_items` | `list[LineItem]` | Optional | Line-item breakdown. If omitted, the order is treated as an atomic single item. |
 
 #### 2.2.1 Line-Item Specification (`LineItem`)
@@ -136,7 +137,7 @@ The engine produces an immutable, strict JSON-serializable draft plan containing
   - `fully_deferred_orders`: Orders with $0\%$ quantity assigned.
 - `quantity_totals`: Total requested, assigned, and deferred units across all line items.
 - `metrics`: Total weight, volume, distance (km), fuel (L), vehicles used, and deferral penalty.
-- `priority_boosted_orders`: Explicit list of orders receiving priority weighting, detailing the trigger (e.g. `deferred_yesterday`, `days_since_last_served >= 3`).
+- `priority_boosted_orders`: Explicit list of orders receiving priority weighting, detailing the trigger (e.g. `deferred_prev`, `defer_count=N`, `approved_urgency`).
 
 ### 3.2 Trip Records (`trips`)
 Each trip is an actionable route assigned to a specific vehicle:
@@ -375,8 +376,9 @@ def reallocate_broken_vehicle(
       "order_ref": "ORD0001",
       "outlet_id": "OUT001",
       "temp_requirement": "ambient",
-      "deferred_yesterday": false,
-      "days_since_last_served": 1,
+      "deferred_prev": false,
+      "defer_count": 0,
+      "is_urgent": false,
       "line_items": [
         {
           "line_item_id": "ITEM-001-A",
@@ -392,8 +394,9 @@ def reallocate_broken_vehicle(
       "order_ref": "ORD0002",
       "outlet_id": "OUT002",
       "temp_requirement": "chilled",
-      "deferred_yesterday": true,
-      "days_since_last_served": 3,
+      "deferred_prev": true,
+      "defer_count": 2,
+      "is_urgent": true,
       "line_items": [
         {
           "line_item_id": "ITEM-002-A",
@@ -443,7 +446,7 @@ def reallocate_broken_vehicle(
   "priority_boosted_orders": [
     {
       "order_ref": "ORD0002",
-      "reason": "deferred_yesterday (days_since_last_served=3)"
+      "reason": "deferred_prev; defer_count=2; approved_urgency"
     }
   ],
   "metrics": {

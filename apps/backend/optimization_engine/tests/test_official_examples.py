@@ -113,8 +113,9 @@ def _make_fresh_order(
         order_units=10,
         order_weight_kg=weight_kg,
         order_volume_m3=volume_m3,
-        deferred_yesterday=False,
-        days_since_last_served=0,
+        deferred_prev=False,
+        defer_count=0,
+        is_urgent=False,
     )
 
 
@@ -383,7 +384,7 @@ class TestEdgeCases:
             mall_window=None, window_open_time=None, window_close_time=None,
             temp_requirement=TempRequirement.AMBIENT,
             order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-            deferred_yesterday=False, days_since_last_served=0,
+            deferred_prev=False, defer_count=0, is_urgent=False,
         )
         order2 = Order(
             order_ref="O2", outlet_id="same_outlet", brand=Brand.FRESH,
@@ -392,7 +393,7 @@ class TestEdgeCases:
             mall_window=None, window_open_time=None, window_close_time=None,
             temp_requirement=TempRequirement.AMBIENT,
             order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-            deferred_yesterday=False, days_since_last_served=0,
+            deferred_prev=False, defer_count=0, is_urgent=False,
         )
         result = calculate_trip_minutes([order1, order2], gampaha_travel, fresh_allowances)
         # outbound=37, inter_stop=9*(2-1)=9, handling=15+15=30 → 71

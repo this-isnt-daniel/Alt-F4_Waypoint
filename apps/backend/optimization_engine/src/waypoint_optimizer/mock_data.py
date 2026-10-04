@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Sequence
+from typing import Any, Sequence
 
 from waypoint_optimizer.config import OFFICIAL_DEPOT
 from waypoint_optimizer.domain import (
@@ -168,24 +168,29 @@ def generate_orders(
     chilled_fraction: float = 0.20,
     van_only_fraction: float = 0.15,
     mall_fraction: float = 0.10,
-    deferred_yesterday_fraction: float = 0.12,
+    deferred_prev_fraction: float = 0.12,
+    is_urgent_fraction: float = 0.05,
     seed: int = 42,
+    **kwargs: Any,
 ) -> list[Order]:
     """
     Generate synthetic orders across all brands, districts, and constraint types.
 
     Args:
-        n_orders:                  Number of orders to generate.
-        depot:                     Depot for all orders.
-        chilled_fraction:          Fraction of orders requiring chilled transport.
-        van_only_fraction:         Fraction of orders with van_only parking.
-        mall_fraction:             Fraction of orders with mall bay dock/mall_dock parking.
-        deferred_yesterday_fraction: Fraction of orders deferred from yesterday.
-        seed:                      Random seed.
+        n_orders:                Number of orders to generate.
+        depot:                   Depot for all orders.
+        chilled_fraction:        Fraction of orders requiring chilled transport.
+        van_only_fraction:       Fraction of orders with van_only parking.
+        mall_fraction:           Fraction of orders with mall bay dock/mall_dock parking.
+        deferred_prev_fraction:  Fraction of orders deferred from previous cycle.
+        is_urgent_fraction:      Fraction of orders with approved urgency.
+        seed:                    Random seed.
 
     ASSUMPTION: Weight/volume distributions, dock type mix, and all other
     values are synthetic. Not official competition data.
     """
+    if "deferred_yesterday_fraction" in kwargs:
+        deferred_prev_fraction = kwargs["deferred_yesterday_fraction"]
     rng = random.Random(seed)
 
     brand_weights = {Brand.FRESH: 0.45, Brand.STYLE: 0.35, Brand.TECH: 0.20}
@@ -243,9 +248,10 @@ def generate_orders(
             weight = rng.uniform(100, 1500)
             volume = rng.uniform(0.3, 5.0)
 
-        # Repeat-deferral signals
-        was_deferred = rng.random() < deferred_yesterday_fraction
-        days_since = rng.randint(0, 14) if not was_deferred else rng.randint(1, 5)
+        # Repeat-deferral and urgency signals
+        was_deferred = rng.random() < deferred_prev_fraction
+        defer_count = rng.randint(1, 3) if was_deferred else 0
+        is_urgent = rng.random() < is_urgent_fraction
 
         outlet_id = f"OUT{rng.randint(100, 999)}"
         order_ref = f"ORD{i+1:04d}"
@@ -265,8 +271,9 @@ def generate_orders(
             order_units=rng.randint(1, 50),
             order_weight_kg=round(weight, 1),
             order_volume_m3=round(volume, 3),
-            deferred_yesterday=was_deferred,
-            days_since_last_served=days_since,
+            deferred_prev=was_deferred,
+            defer_count=defer_count,
+            is_urgent=is_urgent,
         ))
 
     return orders

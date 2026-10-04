@@ -111,16 +111,20 @@ def build_recovery_proposal(db: Session, depot_id: str, user_id: str, incident_i
     if db_vehicles:
         optimizer_fleet = [convert_db_vehicle_to_optimizer(v, ref_data) for v in db_vehicles if v.vehicle_id != incident.vehicle_id]
     else:
-        optimizer_fleet = [v for v in ref_data.vehicles if v.id != incident.vehicle_id]
+        optimizer_fleet = [v for v in ref_data.vehicles if v.vehicle_id != incident.vehicle_id]
         
     optimizer_fleet = [_ensure_live_fleet_state(v) for v in optimizer_fleet]
 
-    # Authoritative orders for the date (scoped to depot)
-    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(
-        DbOrder.order_date == trip.trip_date,
-        DbOutlet.depot_id == depot_id
-    )
-    optimizer_orders = [convert_db_order_to_optimizer(o, ref_data, db) for o in order_query.all()]
+    # Authoritative orders using canonical eligibility (includes deferred carry-overs)
+    from app.adapters.optimizer_adapter import _get_depot_outlet_ids, _get_eligible_orders_for_date
+    ref_outlet_ids = _get_depot_outlet_ids(depot_id, ref_data, db)
+    db_orders = _get_eligible_orders_for_date(db, trip.trip_date, ref_outlet_ids)
+    from app.adapters.optimizer_adapter import get_approved_urgent_order_ids
+    approved_urgent_ids = get_approved_urgent_order_ids(db, [o.order_id for o in db_orders])
+    optimizer_orders = [
+        convert_db_order_to_optimizer(o, ref_data, db, is_urgent=(o.order_id in approved_urgent_ids))
+        for o in db_orders
+    ]
 
     context = OperationalContext(
         planning_date=trip.trip_date.isoformat(),

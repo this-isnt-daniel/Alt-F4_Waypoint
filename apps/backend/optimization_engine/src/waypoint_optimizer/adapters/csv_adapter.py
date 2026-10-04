@@ -14,7 +14,7 @@ Supported CSV schemas:
                    dock_type, parking_constraint, mall_window,
                    window_open_time, window_close_time, temp_requirement,
                    order_units, order_weight_kg, order_volume_m3,
-                   deferred_yesterday, days_since_last_served
+                   deferred_prev, defer_count, is_urgent
 
   Fleet availability CSV: scenario, vehicle_id, status
 
@@ -189,7 +189,7 @@ def load_orders_with_outlets(
     Contract:
       Required fields in orders CSV:
         order_ref, outlet_id, order_units, order_weight_kg, order_volume_m3,
-        temp_requirement, deferred_yesterday, days_since_last_served
+        temp_requirement, deferred_prev, defer_count, is_urgent
 
       Authoritative outlet attributes (brand, district, depot, dock_type,
       parking_constraint, mall_window, window_open_time, window_close_time)
@@ -302,15 +302,34 @@ def load_orders_with_outlets(
                 f"Order {order_ref!r} has invalid order_volume_m3: {row.get('order_volume_m3')!r}."
             ) from e
 
-        deferred_yesterday = _bool_field(row.get("deferred_yesterday", "0"))
+        # deferred_prev (with deprecated alias deferred_yesterday accepted)
+        # days_since_last_served is NOT accepted: raise migration error
+        if "days_since_last_served" in row:
+            raise InputValidationError(
+                f"Order {order_ref!r}: field 'days_since_last_served' has been removed. "
+                "Use 'defer_count' (total number of deferrals, >= 0) instead. "
+                "Note: defer_count counts deferral occurrences, not days."
+            )
+        if "deferred_prev" in row:
+            deferred_prev = _bool_field(row.get("deferred_prev", "0"))
+        elif "deferred_yesterday" in row:
+            deferred_prev = _bool_field(row.get("deferred_yesterday", "0"))
+        else:
+            deferred_prev = False
+
+        # defer_count (canonical integer >= 0)
         try:
-            days_served = int(row.get("days_since_last_served", "0").strip() or "0")
-            if days_served < 0:
-                raise ValueError("days_since_last_served must be >= 0")
+            defer_count_raw = row.get("defer_count", "0").strip() or "0"
+            defer_count = int(defer_count_raw)
+            if defer_count < 0:
+                raise ValueError("defer_count must be >= 0")
         except ValueError as e:
             raise InputValidationError(
-                f"Order {order_ref!r} has invalid days_since_last_served: {row.get('days_since_last_served')!r}."
+                f"Order {order_ref!r} has invalid defer_count: {row.get('defer_count')!r}."
             ) from e
+
+        # is_urgent (dispatcher-approved urgency signal)
+        is_urgent = _bool_field(row.get("is_urgent", "0"))
 
         orders.append(Order(
             order_ref=order_ref,
@@ -327,8 +346,9 @@ def load_orders_with_outlets(
             order_units=units,
             order_weight_kg=weight,
             order_volume_m3=vol,
-            deferred_yesterday=deferred_yesterday,
-            days_since_last_served=days_served,
+            deferred_prev=deferred_prev,
+            defer_count=defer_count,
+            is_urgent=is_urgent,
         ))
 
     return orders
@@ -375,6 +395,25 @@ def orders_from_csv(
                 "Provide authoritative outlets to load_orders_with_outlets() or supply full fields."
             )
 
+        # Reject legacy field that has different semantics from defer_count
+        if "days_since_last_served" in row:
+            raise InputValidationError(
+                f"Order {order_ref!r}: field 'days_since_last_served' has been removed. "
+                "Use 'defer_count' (total number of deferrals, >= 0) instead. "
+                "Note: defer_count counts deferral occurrences, not days."
+            )
+
+        # defer_count: canonical integer >= 0 (guard in self-contained path too)
+        try:
+            defer_count_raw = row.get("defer_count", "0").strip() or "0"
+            defer_count = int(defer_count_raw)
+            if defer_count < 0:
+                raise ValueError("defer_count must be >= 0")
+        except ValueError as e:
+            raise InputValidationError(
+                f"Order {order_ref!r} has invalid defer_count: {row.get('defer_count')!r}."
+            ) from e
+
         orders.append(Order(
             order_ref=order_ref,
             outlet_id=row["outlet_id"].strip(),
@@ -390,8 +429,9 @@ def orders_from_csv(
             order_units=int(row["order_units"].strip()),
             order_weight_kg=float(row["order_weight_kg"].strip()),
             order_volume_m3=float(row["order_volume_m3"].strip()),
-            deferred_yesterday=_bool_field(row.get("deferred_yesterday", "0")),
-            days_since_last_served=int(row.get("days_since_last_served", "0").strip() or "0"),
+            deferred_prev=_bool_field(row.get("deferred_prev", row.get("deferred_yesterday", "0"))),
+            defer_count=defer_count,
+            is_urgent=_bool_field(row.get("is_urgent", "0")),
         ))
     return orders
 
@@ -732,7 +772,7 @@ def scenario_to_csv_dir(
         "dock_type", "parking_constraint", "mall_window",
         "window_open_time", "window_close_time", "temp_requirement",
         "order_units", "order_weight_kg", "order_volume_m3",
-        "deferred_yesterday", "days_since_last_served",
+        "deferred_prev", "defer_count", "is_urgent",
     ]
     with open(out_path / "orders.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=order_fields)
@@ -754,8 +794,9 @@ def scenario_to_csv_dir(
                 "order_units": o.order_units,
                 "order_weight_kg": o.order_weight_kg,
                 "order_volume_m3": o.order_volume_m3,
-                "deferred_yesterday": "1" if o.deferred_yesterday else "0",
-                "days_since_last_served": o.days_since_last_served,
+                "deferred_prev": "1" if o.deferred_prev else "0",
+                "defer_count": o.defer_count,
+                "is_urgent": "1" if o.is_urgent else "0",
             })
 
     # 2. fleet_availability.csv

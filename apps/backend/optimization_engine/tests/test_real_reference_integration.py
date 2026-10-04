@@ -75,8 +75,9 @@ def make_order_from_real_outlet(
     volume_m3: float = 1.0,
     temp: TempRequirement = TempRequirement.AMBIENT,
     line_items: list[LineItem] | None = None,
-    deferred_yesterday: bool = False,
-    days_since_last_served: int = 1,
+    deferred_prev: bool = False,
+    defer_count: int = 1,
+    is_urgent: bool = False,
 ) -> Order:
     """
     Creates an authoritative backend-shaped order by strictly copying
@@ -97,8 +98,9 @@ def make_order_from_real_outlet(
         order_units=units,
         order_weight_kg=weight_kg,
         order_volume_m3=volume_m3,
-        deferred_yesterday=deferred_yesterday,
-        days_since_last_served=days_since_last_served,
+        deferred_prev=deferred_prev,
+        defer_count=defer_count,
+        is_urgent=is_urgent,
         line_items=line_items or [],
     )
 

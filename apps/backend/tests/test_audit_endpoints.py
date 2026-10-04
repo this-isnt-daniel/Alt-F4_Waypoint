@@ -79,7 +79,7 @@ def test_db():
     )
     db.add_all([out1, out2, out3])
 
-    # User
+    # Users
     user = User(
         user_id="U-DISP-AUDIT",
         name="Audit Dispatcher",
@@ -88,7 +88,16 @@ def test_db():
         role="dispatcher",
         depot_id="Peliyagoda",
     )
-    db.add(user)
+    sm_user = User(
+        user_id="U-SM-AUDIT",
+        name="Audit Store Manager",
+        username="sm_audit",
+        hashed_pw=get_password_hash("testpass"),
+        role="store_manager",
+        outlet_id="OUT004",
+        depot_id=None,
+    )
+    db.add_all([user, sm_user])
 
     # Product
     p = Product(
@@ -203,8 +212,8 @@ def test_audit_all_five_required_api_routes(client, test_db):
     Verifies the 5 specific API routes requested:
       1. POST /api/v1/dispatcher/plans/draft
       2. POST /api/v1/dispatcher/plans/{plan_id}/edit
-      3. POST /api/v1/dispatcher/plans/{plan_id}/approve
-      4. POST /api/v1/orders/urgent/insert
+      3. Canonical Urgency Workflow (Store Manager request & Dispatcher review)
+      4. POST /api/v1/dispatcher/plans/{plan_id}/approve
       5. POST /api/v1/vehicles/{vehicle_id}/breakdown
     """
     token = create_platform_access_token({"sub": "U-DISP-AUDIT", "role": "dispatcher", "depot_id": "Peliyagoda"})
@@ -255,25 +264,50 @@ def test_audit_all_five_required_api_routes(client, test_db):
     edited_data = res_edit.json()
     assert edited_data["validation"]["valid"] is True
 
-    # 3. POST /api/v1/orders/urgent/insert
-    res_urgent = client.post(
-        "/api/v1/orders/urgent/insert",
-        headers=headers,
+    # 3. Canonical Urgency Workflow (Store Manager request & Dispatcher review)
+    sm_token = create_platform_access_token({"sub": "U-SM-AUDIT", "role": "store_manager", "outlet_id": "OUT004"})
+    sm_headers = {"Authorization": f"Bearer {sm_token}"}
+
+    # Store Manager requests urgency for confirmed order ORD-AUDIT-001
+    res_urg = client.post(
+        "/api/v1/store-manager/orders/ORD-AUDIT-001/urgency-request",
+        headers=sm_headers,
         json={
-            "outlet_id": "OUT007",
-            "brand": "fresh",
-            "temp_req": "ambient",
-            "order_date": target_date,
-            "order_units": 10,
-            "order_wt_kg": 100.0,
-            "order_vol_m3": 0.2,
-            "plan_id": plan_id,
+            "reason_code": "stockout_risk",
+            "reason_text": "Critical stockout risk at store",
+            "client_op_id": "OP-AUDIT-URG-1",
         },
     )
-    assert res_urgent.status_code == 200, res_urgent.text
-    urgent_data = res_urgent.json()
-    assert urgent_data["status"] == "inserted"
-    assert urgent_data["is_urgent"] is True
+    assert res_urg.status_code == 201, res_urg.text
+    urg_data = res_urg.json()
+    assert urg_data["status"] == "pending"
+    assert urg_data["order_id"] == "ORD-AUDIT-001"
+    urg_id = urg_data["urgency_request_id"]
+
+    # Store Manager retrieves urgency request
+    res_get_urg = client.get(
+        "/api/v1/store-manager/orders/ORD-AUDIT-001/urgency-request",
+        headers=sm_headers,
+    )
+    assert res_get_urg.status_code == 200, res_get_urg.text
+    assert res_get_urg.json()["urgency_request_id"] == urg_id
+
+    # Dispatcher lists urgency requests for depot
+    res_disp_list = client.get(
+        "/api/v1/dispatcher/urgency-requests",
+        headers=headers,
+    )
+    assert res_disp_list.status_code == 200, res_disp_list.text
+    assert any(item["urgency_request_id"] == urg_id for item in res_disp_list.json())
+
+    # Dispatcher approves urgency request
+    res_disp_appr = client.post(
+        f"/api/v1/dispatcher/urgency-requests/{urg_id}/approve",
+        headers=headers,
+        json={"decision_note": "Approved by audit dispatcher"},
+    )
+    assert res_disp_appr.status_code == 200, res_disp_appr.text
+    assert res_disp_appr.json()["status"] == "approved"
 
     # 4. POST /api/v1/dispatcher/plans/{plan_id}/approve
     res_approve = client.post(

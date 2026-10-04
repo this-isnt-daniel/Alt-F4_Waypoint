@@ -65,7 +65,8 @@ def plan_security_db():
         username="sm_sec",
         hashed_pw=get_password_hash("pass123"),
         role="store_manager",
-        depot_id="Peliyagoda",
+        outlet_id="OUT004",
+        depot_id=None,
     )
     driver = User(
         user_id="U-DRV-SEC",
@@ -98,8 +99,8 @@ def plan_security_db():
         brand="fresh",
         district="Gampaha",
         depot_id="Peliyagoda",
-        dock_type="normal",
-        park_constraint="none",
+        dock_type="street",
+        park_constraint="normal",
         lat=6.985,
         lng=79.891,
     )
@@ -109,8 +110,8 @@ def plan_security_db():
         brand="fresh",
         district="Colombo",
         depot_id="Peliyagoda",
-        dock_type="normal",
-        park_constraint="none",
+        dock_type="street",
+        park_constraint="normal",
         lat=6.951,
         lng=79.876,
     )
@@ -188,7 +189,7 @@ def test_1_alembic_check_passes():
     """Requirement 1: alembic check passes with 0 exit code."""
     import os
     env = os.environ.copy()
-    env["DATABASE_URL"] = "sqlite:///:memory:"
+    env.pop("DATABASE_URL", None)
 
     import pathlib
     backend_dir = pathlib.Path(__file__).parent.parent.resolve()
@@ -229,7 +230,7 @@ def test_2_and_3_unauthenticated_planning_rejected(client):
 
 def test_4_and_5_non_dispatcher_rejected(client):
     """Requirements 4 & 5: Non-dispatcher roles are rejected with 403 Forbidden."""
-    sm_token = create_platform_access_token({"sub": "U-SM-SEC", "role": "store_manager", "depot_id": "Peliyagoda"})
+    sm_token = create_platform_access_token({"sub": "U-SM-SEC", "role": "store_manager", "outlet_id": "OUT004"})
     drv_token = create_platform_access_token({"sub": "U-DRV-SEC", "role": "driver", "depot_id": "Peliyagoda"})
 
     for token in [sm_token, drv_token]:
@@ -306,7 +307,7 @@ def test_8_duplicate_route_aliases_identical_auth(client):
         ("POST", "/api/v1/dispatcher/plans/PLAN-TEST/approve"),
     ]
 
-    sm_token = create_platform_access_token({"sub": "U-SM-SEC", "role": "store_manager", "depot_id": "Peliyagoda"})
+    sm_token = create_platform_access_token({"sub": "U-SM-SEC", "role": "store_manager", "outlet_id": "OUT004"})
     sm_headers = {"Authorization": f"Bearer {sm_token}"}
 
     for method, path in routes:

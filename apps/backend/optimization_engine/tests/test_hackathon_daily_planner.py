@@ -113,8 +113,9 @@ def make_test_order(
         order_units=units,
         order_weight_kg=weight,
         order_volume_m3=volume,
-        deferred_yesterday=False,
-        days_since_last_served=1,
+        deferred_prev=False,
+        defer_count=1,
+        is_urgent=False,
         line_items=line_items or [],
     )
 
@@ -483,8 +484,9 @@ def test_missing_service_allowance_raises_structured_error(test_reference):
         order_units=10,
         order_weight_kg=50.0,
         order_volume_m3=0.5,
-        deferred_yesterday=False,
-        days_since_last_served=1,
+        deferred_prev=False,
+        defer_count=1,
+        is_urgent=False,
     )
 
     context = OperationalContext(planning_date="2026-10-03")
@@ -623,27 +625,27 @@ def test_operational_cpsat_improves_deferrals_via_reassignment(hybrid_test_refer
         order_ref="ORD_FIX", outlet_id="OUT_FIXED", brand=Brand.FRESH, district="Kalutara", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="06:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=450.0, order_volume_m3=1.0, deferred_yesterday=True, days_since_last_served=5,
+        order_units=10, order_weight_kg=450.0, order_volume_m3=1.0, deferred_prev=True, defer_count=5, is_urgent=False,
     )
     # High penalty order in Avissawella (250 kg) with early window (05:00 - 06:30)
     ord_a1 = Order(
         order_ref="ORD_A1", outlet_id="OUT_AVI_1", brand=Brand.FRESH, district="Avissawella", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="06:30", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=True, days_since_last_served=3,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=True, defer_count=3, is_urgent=False,
     )
     # Two orders in Colombo (250 kg each, window 05:00 - 08:00)
     ord_c1 = Order(
         order_ref="ORD_C1", outlet_id="OUT_COL_1", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=False, days_since_last_served=1,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=False, defer_count=1, is_urgent=False,
     )
     ord_c2 = Order(
         order_ref="ORD_C2", outlet_id="OUT_COL_2", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=False, days_since_last_served=1,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=False, defer_count=1, is_urgent=False,
     )
 
     all_orders = [ord_fix, ord_a1, ord_c1, ord_c2]
@@ -707,7 +709,7 @@ def test_operational_cpsat_no_improvement_retains_incumbent(hybrid_test_referenc
             order_ref="ORD_ONLY", outlet_id="OUT_COL_1", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
             dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
             window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-            order_units=10, order_weight_kg=200.0, order_volume_m3=1.0, deferred_yesterday=False, days_since_last_served=1,
+            order_units=10, order_weight_kg=200.0, order_volume_m3=1.0, deferred_prev=False, defer_count=1, is_urgent=False,
         )
     ]
 
@@ -741,13 +743,13 @@ def test_operational_cpsat_timeout_and_error_fallback(hybrid_test_reference):
         order_ref="ORD_G1", outlet_id="OUT_GAM_1", brand=Brand.FRESH, district="Gampaha", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=300.0, order_volume_m3=1.0, deferred_yesterday=True, days_since_last_served=3,
+        order_units=10, order_weight_kg=300.0, order_volume_m3=1.0, deferred_prev=True, defer_count=3, is_urgent=False,
     )
     ord_c1 = Order(
         order_ref="ORD_C1", outlet_id="OUT_COL_1", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=False, days_since_last_served=1,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=False, defer_count=1, is_urgent=False,
     )
     all_orders = [ord_g1, ord_c1]
 
@@ -788,25 +790,25 @@ def test_operational_cpsat_invalid_candidate_rejected(hybrid_test_reference, mon
         order_ref="ORD_FIX", outlet_id="OUT_FIXED", brand=Brand.FRESH, district="Kalutara", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="06:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=450.0, order_volume_m3=1.0, deferred_yesterday=True, days_since_last_served=5,
+        order_units=10, order_weight_kg=450.0, order_volume_m3=1.0, deferred_prev=True, defer_count=5, is_urgent=False,
     )
     ord_a1 = Order(
         order_ref="ORD_A1", outlet_id="OUT_AVI_1", brand=Brand.FRESH, district="Avissawella", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="06:30", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=True, days_since_last_served=3,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=True, defer_count=3, is_urgent=False,
     )
     ord_c1 = Order(
         order_ref="ORD_C1", outlet_id="OUT_COL_1", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=False, days_since_last_served=1,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=False, defer_count=1, is_urgent=False,
     )
     ord_c2 = Order(
         order_ref="ORD_C2", outlet_id="OUT_COL_2", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=False, days_since_last_served=1,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=False, defer_count=1, is_urgent=False,
     )
 
     all_orders = [ord_fix, ord_a1, ord_c1, ord_c2]
@@ -885,7 +887,7 @@ def test_operational_cpsat_enforces_fuel_and_windows(hybrid_test_reference):
         order_ref="ORD_FUEL_FAIL", outlet_id="OUT_COL_1", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
-        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_yesterday=False, days_since_last_served=1,
+        order_units=10, order_weight_kg=250.0, order_volume_m3=1.0, deferred_prev=False, defer_count=1, is_urgent=False,
     )
 
     plan = generate_daily_draft_plan(

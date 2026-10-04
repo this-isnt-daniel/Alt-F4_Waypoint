@@ -540,16 +540,9 @@ def _retain_base(
 
 
 def _order_priority_key(order: Order, config: Optional[OptimizerConfig] = None) -> float:
-    """Computes priority weighting for order deferral penalties."""
-    weight = 0.0
-    if order.deferred_yesterday:
-        weight += 1000.0
-    weight += order.days_since_last_served * 100.0
-    if config:
-        weight += defer_penalty(order, config)
-    else:
-        weight += float(order.order_units)
-    return weight
+    """Computes canonical priority weighting using team objective policy."""
+    cfg = config or OptimizerConfig()
+    return defer_penalty(order, cfg)
 
 
 def operational_targeted_cpsat_improve(

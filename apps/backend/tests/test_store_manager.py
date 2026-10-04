@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 import uuid
 
 from app.main import app
@@ -273,3 +273,89 @@ def test_get_order_eta_and_deferrals(client, store_manager_db):
     def_res = client.get("/api/v1/store-manager/deferrals", headers=headers)
     assert def_res.status_code == 200
     assert isinstance(def_res.json(), list)
+
+
+def test_receipt_confirmation_idempotency_hardened(client, store_manager_db):
+    headers_sm1 = get_auth_header(client, "sm1")
+    headers_sm2 = get_auth_header(client, "sm2")
+    
+    # 1. Create & confirm Order 1 for OUT100 (SM1)
+    res1 = client.post("/api/v1/store-manager/orders", headers=headers_sm1, json={
+        "outlet_id": "OUT100",
+        "brand": "fresh",
+        "temp_req": "chilled",
+        "order_date": str(date.today() + timedelta(days=20)),
+        "items": [{"product_id": "P100", "quantity": 5}]
+    })
+    order1_id = res1.json()["order_id"]
+    client.post(f"/api/v1/store-manager/orders/{order1_id}/confirm", headers=headers_sm1)
+    
+    # First receipt confirmation with client_op_id
+    op_id = "op-rec-idemp-1"
+    receipt_payload1 = {
+        "client_op_id": op_id,
+        "pod_id": "POD-IDEMP-001",
+        "items_ok": True
+    }
+    rec1_res = client.post(f"/api/v1/store-manager/orders/{order1_id}/receipt", headers=headers_sm1, json=receipt_payload1)
+    assert rec1_res.status_code == 200
+    confirm_id_1 = rec1_res.json()["confirm_id"]
+    
+    # Case 1: Same client_op_id + same order_id + same Store Manager/outlet -> return existing receipt
+    rec1_retry = client.post(f"/api/v1/store-manager/orders/{order1_id}/receipt", headers=headers_sm1, json=receipt_payload1)
+    assert rec1_retry.status_code == 200
+    assert rec1_retry.json()["confirm_id"] == confirm_id_1
+    
+    # Case 2: Same client_op_id + different order_id -> 409 Conflict
+    res2 = client.post("/api/v1/store-manager/orders", headers=headers_sm1, json={
+        "outlet_id": "OUT100",
+        "brand": "fresh",
+        "temp_req": "chilled",
+        "order_date": str(date.today() + timedelta(days=21)),
+        "items": [{"product_id": "P100", "quantity": 5}]
+    })
+    order2_id = res2.json()["order_id"]
+    client.post(f"/api/v1/store-manager/orders/{order2_id}/confirm", headers=headers_sm1)
+    
+    rec2_res = client.post(f"/api/v1/store-manager/orders/{order2_id}/receipt", headers=headers_sm1, json={
+        "client_op_id": op_id,
+        "pod_id": "POD-IDEMP-002",
+        "items_ok": True
+    })
+    assert rec2_res.status_code == 409
+    assert "different order" in rec2_res.json()["detail"].lower()
+    
+    # Case 3: Same client_op_id + receipt belonging to another outlet/user -> 403 Forbidden without leaking
+    res3 = client.post("/api/v1/store-manager/orders", headers=headers_sm2, json={
+        "outlet_id": "OUT200",
+        "brand": "fresh",
+        "temp_req": "chilled",
+        "order_date": str(date.today() + timedelta(days=22)),
+        "items": [{"product_id": "P100", "quantity": 5}]
+    })
+    order3_id = res3.json()["order_id"]
+    client.post(f"/api/v1/store-manager/orders/{order3_id}/confirm", headers=headers_sm2)
+    
+    rec3_res = client.post(f"/api/v1/store-manager/orders/{order3_id}/receipt", headers=headers_sm2, json={
+        "client_op_id": op_id,
+        "pod_id": "POD-IDEMP-003",
+        "items_ok": True
+    })
+    assert rec3_res.status_code == 403
+    assert "not authorized" in rec3_res.json()["detail"].lower()
+    
+    # Case 4: Non-existent order -> 404
+    rec_404 = client.post("/api/v1/store-manager/orders/NON-EXISTENT-ORD/receipt", headers=headers_sm1, json={
+        "client_op_id": op_id,
+        "pod_id": "POD-IDEMP-004",
+        "items_ok": True
+    })
+    assert rec_404.status_code == 404
+    
+    # Case 5: Foreign order -> 403 before idempotency
+    rec_foreign = client.post(f"/api/v1/store-manager/orders/{order3_id}/receipt", headers=headers_sm1, json={
+        "client_op_id": op_id,
+        "pod_id": "POD-IDEMP-005",
+        "items_ok": True
+    })
+    assert rec_foreign.status_code == 403

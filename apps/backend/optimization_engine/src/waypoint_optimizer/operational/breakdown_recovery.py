@@ -741,8 +741,9 @@ def reallocate_broken_vehicle(
                 order_weight_kg=round(tot_w, 3),
                 order_volume_m3=round(tot_v, 4),
                 line_items=built_lis,
-                deferred_yesterday=auth_o.deferred_yesterday,
-                days_since_last_served=auth_o.days_since_last_served,
+                deferred_prev=auth_o.deferred_prev,
+                defer_count=auth_o.defer_count,
+                is_urgent=auth_o.is_urgent,
             )
             reallocation_orders.append(realloc_order)
 

@@ -46,8 +46,9 @@ def make_test_order(
     mall_window: str | None = None,
     window_open_time: str | None = None,
     window_close_time: str | None = None,
-    deferred_yesterday: bool = False,
-    days_since_last_served: int = 1,
+    deferred_prev: bool = False,
+    defer_count: int = 1,
+    is_urgent: bool = False,
     line_items: list[LineItem] | None = None,
 ) -> Order:
     return Order(
@@ -65,8 +66,9 @@ def make_test_order(
         order_units=order_units,
         order_weight_kg=order_weight_kg,
         order_volume_m3=order_volume_m3,
-        deferred_yesterday=deferred_yesterday,
-        days_since_last_served=days_since_last_served,
+        deferred_prev=deferred_prev,
+        defer_count=defer_count,
+        is_urgent=is_urgent,
         line_items=line_items or [],
     )
 

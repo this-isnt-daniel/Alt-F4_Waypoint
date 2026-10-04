@@ -105,9 +105,10 @@ class Order:
     order_weight_kg: float
     order_volume_m3: float
 
-    # Repeat-deferral signals (used by TEAM-DEFINED priority policy)
-    deferred_yesterday: bool
-    days_since_last_served: int
+    # Deferral fairness signals and dispatcher-approved urgency (used by TEAM-DEFINED priority policy)
+    deferred_prev: bool = False
+    defer_count: int = 0
+    is_urgent: bool = False
 
     # Line-item breakdown (Hackathon operational mode)
     line_items: list[LineItem] = field(default_factory=list)

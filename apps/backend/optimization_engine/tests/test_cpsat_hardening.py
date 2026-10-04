@@ -52,8 +52,9 @@ def make_order(
     volume: float = 1.0,
     dock: DockType = DockType.REAR_DOCK,
     units: int = 1,
-    deferred_yesterday: bool = False,
-    days_since: int = 0,
+    deferred_prev: bool = False,
+    defer_count: int = 0,
+    is_urgent: bool = False,
 ) -> Order:
     return Order(
         order_ref=ref,
@@ -70,8 +71,9 @@ def make_order(
         order_units=units,
         order_weight_kg=weight,
         order_volume_m3=volume,
-        deferred_yesterday=deferred_yesterday,
-        days_since_last_served=days_since,
+        deferred_prev=deferred_prev,
+        defer_count=defer_count,
+        is_urgent=is_urgent,
     )
 
 

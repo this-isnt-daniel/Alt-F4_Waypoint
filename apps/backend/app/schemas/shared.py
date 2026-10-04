@@ -33,6 +33,7 @@ class OrderResponse(BaseModel):
     trip_id: Optional[str]
     stop_seq: Optional[int]
     defer_count: int
+    deferred_prev: bool = False
     
     items: List[OrderLineResponse] = []
     model_config = ConfigDict(from_attributes=True)

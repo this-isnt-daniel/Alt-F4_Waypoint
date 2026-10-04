@@ -194,14 +194,14 @@ def test_moving_valid_whole_order(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     o2 = Order(
         order_ref="O2", outlet_id="OUT_COL_2", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
 
     base_plan = generate_daily_draft_plan([o1, o2], [editing_references.vehicles[0]], editing_references, context)
@@ -247,7 +247,7 @@ def test_moving_order_violates_capacity(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=10, order_weight_kg=120.0, order_volume_m3=1.0,  # 120 kg > V_TINY 80 kg cap
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     base_plan = generate_daily_draft_plan([o1], [editing_references.vehicles[0]], editing_references, context)
 
@@ -279,14 +279,14 @@ def test_moving_order_violates_brand_or_district_policy(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     o_tech = Order(
         order_ref="O_TECH", outlet_id="OUT_GAM_TECH", brand=Brand.TECH, district="Gampaha", depot="Peliyagoda",
         dock_type=DockType.REAR_DOCK, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="07:00", window_close_time="12:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
 
     # Start with base plan containing O_TECH on V_VAN_1
@@ -319,7 +319,7 @@ def test_deferring_and_reinstating_order(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=10, order_weight_kg=100.0, order_volume_m3=1.0,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     base_plan = generate_daily_draft_plan([o1], [editing_references.vehicles[0]], editing_references, context)
     assert len(base_plan["trips"]) == 1
@@ -368,7 +368,7 @@ def test_valid_line_item_split(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=15, order_weight_kg=150.0, order_volume_m3=1.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
         line_items=[
             LineItem(line_item_id="LI_1", quantity=10.0, quantity_unit="crates", unit_weight_kg=10.0, unit_volume_m3=0.1, description="Milk"),
             LineItem(line_item_id="LI_2", quantity=5.0, quantity_unit="crates", unit_weight_kg=10.0, unit_volume_m3=0.1, description="Cheese"),
@@ -426,7 +426,7 @@ def test_rejected_line_item_action_on_aggregated_order(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=10, order_weight_kg=100.0, order_volume_m3=1.0,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
         line_items=None,  # Aggregated order!
     )
     base_plan = generate_daily_draft_plan([o_agg], [editing_references.vehicles[0]], editing_references, context)
@@ -463,7 +463,7 @@ def test_quantity_conservation_failure(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=10, order_weight_kg=100.0, order_volume_m3=1.0,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     base_plan = generate_daily_draft_plan([o1], [editing_references.vehicles[0]], editing_references, context)
 
@@ -494,7 +494,7 @@ def test_edited_trip_with_window_violation(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     # OUT_COL_TIGHT closes at 05:35.
     # Departs 05:00 -> OUT_COL_1 arr 05:30, svc until 05:45 -> arr OUT_COL_TIGHT at 05:55 (> 05:35 close!)
@@ -503,7 +503,7 @@ def test_edited_trip_with_window_violation(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="05:15", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     base_plan = generate_daily_draft_plan([o1, o_tight], [editing_references.vehicles[0]], editing_references, context)
 
@@ -534,7 +534,7 @@ def test_edited_plan_with_fuel_quota_exhaustion(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     base_plan = generate_daily_draft_plan([o1], [editing_references.vehicles[0]], editing_references, context)
 
@@ -565,14 +565,14 @@ def test_proof_original_base_plan_is_unchanged(editing_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     o2 = Order(
         order_ref="O2", outlet_id="OUT_COL_2", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
 
     base_plan = generate_daily_draft_plan([o1, o2], [editing_references.vehicles[0]], editing_references, context)
@@ -618,7 +618,7 @@ def test_missing_fuel_state_returns_invalid_and_preserves_none(editing_reference
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     # Generate a valid base plan with fully known fleet state
     base_plan = generate_daily_draft_plan([o1], [editing_references.vehicles[0]], editing_references, context)

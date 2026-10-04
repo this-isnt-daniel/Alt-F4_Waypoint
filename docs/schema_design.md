@@ -34,6 +34,9 @@ DiscrepancyStatus   = open | resolved
 DeliveryEventType   = order_confirmed | order_planned | order_loaded
                     | order_out_for_delivery | order_delivered | order_deferred
 EventSyncStatus     = pending | applied | conflict | failed | already_applied
+UrgencyRequestStatus= pending | approved | rejected | resolved
+UrgencyReason       = stockout_risk | store_operation_impact | chilled_shortage
+                    | time_bound_event | recovery_after_failed_delivery | other
 ```
 
 > **On `TempReq = ambient | chilled`:** An order is either ambient or chilled — never "mixed". The booklet rule is one ambient + one chilled order per outlet per delivery date, not a third "mixed" type. The `UNIQUE(outlet_id, order_date, temp_req)` constraint on `order` enforces this.
@@ -205,8 +208,12 @@ order (
 )
 ```
 
-> **`deferred_prev` / `defer_count`:** replaces the old `UrgentNeed` table. When a `DeferralRecord` is created, the backend increments `order.defer_count` and sets `order.deferred_prev = TRUE` if `DeferralRecord.original_date = today`. The Dispatcher's allocation screen sorts unallocated orders by `deferred_prev DESC, defer_count DESC` so repeat-deferred orders surface first.
-
+> **`deferred_prev` / `defer_count` (Repeat-Deferral Fairness):** `deferred_prev` and `defer_count` remain the canonical repeat-deferral fairness mechanism (replacing the old use of `UrgentNeed` as a fairness shortcut). When a `DeferralRecord` is created, the backend increments `order.defer_count` and sets `order.deferred_prev = TRUE` if `DeferralRecord.original_date = today`. The Dispatcher's allocation screen surfaces repeat-deferred orders first.
+>
+> **Fairness vs. Urgency Distinction:** Repeat-deferral fairness (`deferred_prev`, `defer_count`) tracks past operational inability to serve an order. Business urgency is a separate, human-reviewed escalation workflow represented by `UrgencyRequest` (see Section 9b). `UrgencyRequest` never modifies `deferred_prev` or `defer_count`.
+>
+> **Same-Order Deferred Lifecycle:** When an order is deferred, the Store Manager must **not** recreate the order. The same `order_id` row remains in the database with `status = 'deferred'` and is replanned on the next delivery cycle. Any associated `UrgencyRequest` stays attached to this same `order_id`.
+>
 > **Draft lifecycle rule for `POST /orders`:**
 > - Matching **draft** exists → update / reuse that draft.
 > - Matching **non-draft** exists (confirmed … deferred) → return a **409 Conflict**.
@@ -503,6 +510,69 @@ deferral (
 > 1. Increment `order.defer_count`.
 > 2. Set `order.deferred_prev = TRUE` if `original_date = today`.
 > This surfaces the order at the top of the Dispatcher's unallocated queue the next day.
+>
+> ---
+>
+> ## 9b. Business Urgency Requests
+>
+> > **Status:** Approved business escalation workflow for specific orders.
+> > **Core principle:** Urgency is a soft business escalation request, **never a hard constraint**. Hard constraints (weight capacity, volume capacity, temperature compatibility, van-only access, delivery windows, fuel quotas, max trips) remain absolute and can **never** be bypassed by an urgent order.
+> > If an urgent order cannot be served due to vehicle/capacity constraints, it must still be deferred (`reason = NO_COMPATIBLE_VEHICLE` or `CAPACITY_EXCEEDED`).
+>
+> ### Database Entity: `urgency_request`
+>
+> ```sql
+> urgency_request (
+>   urgency_request_id TEXT PRIMARY KEY,
+>   order_id           TEXT NOT NULL UNIQUE REFERENCES "order"(order_id),
+>   outlet_id          TEXT NOT NULL REFERENCES outlet(outlet_id),
+>   reported_by        TEXT NOT NULL REFERENCES "user"(user_id),  -- store_manager
+>   reason_code        TEXT NOT NULL CHECK (
+>                        reason_code IN (
+>                          'stockout_risk',
+>                          'store_operation_impact',
+>                          'chilled_shortage',
+>                          'time_bound_event',
+>                          'recovery_after_failed_delivery',
+>                          'other'
+>                        )
+>                      ),
+>   reason_text        TEXT NOT NULL,
+>   status             TEXT NOT NULL DEFAULT 'pending' CHECK (
+>                        status IN ('pending', 'approved', 'rejected', 'resolved')
+>                      ),
+>   reviewed_by        TEXT REFERENCES "user"(user_id),           -- dispatcher
+>   reviewed_at        TIMESTAMPTZ,
+>   decision_note      TEXT,                                      -- mandatory on rejection
+>   created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+>   resolved_at        TIMESTAMPTZ,                               -- set when order reaches 'delivered'
+>   client_op_id       TEXT UNIQUE                                -- idempotency for network retries
+> )
+> ```
+>
+> ### Key Business & Lifecycle Rules
+>
+> 1. **Eligibility:** Store Manager may request urgency **only** for orders in `confirmed` or `deferred` status. Orders in `draft`, `planned`, `loaded`, `out_for_delivery`, or `delivered` are rejected with `409 Conflict`.
+> 2. **One Request Per Order:** Enforced by `UNIQUE(order_id)`. Multiple urgency requests for the same order are prohibited.
+> 3. **Dispatcher Authority:** Dispatchers may review (`approve` or `reject`) urgency requests only for outlets within their assigned depot.
+> 4. **Allowed Transitions:**
+>    - `pending -> approved` (Dispatcher approves request)
+>    - `pending -> rejected` (Dispatcher rejects request; `decision_note` required)
+>    - `approved -> resolved` (Automatically set when the underlying order reaches `delivered`)
+> 5. **Optimizer Impact:**
+>    - **Only `approved` urgency requests affect the optimizer.** Pending and rejected requests have **zero** optimizer impact.
+>    - If an approved urgent order is deferred by the dispatcher/optimizer, its `UrgencyRequest` remains `approved` for subsequent planning cycles.
+> 6. **No Critical Level & No Surcharges:** There is no "Critical" urgency level and no billing/surcharge mechanism. Urgency is purely an operational priority signal.
+> 7. **Optimizer Domain Representation (Path B):**
+>    - The optimizer `Order` dataclass carries exactly one boolean signal:
+>      ```python
+>      is_urgent: bool = False
+>      ```
+>    - **Strict Semantic Definition:** `is_urgent = True` means specifically:
+>      *"The Store Manager requested urgency AND the Dispatcher approved that request."*
+>    - It does **not** mean merely that an urgency request was submitted. Pending or rejected requests pass `is_urgent = False`.
+>    - In the optimizer, `is_urgent = True` introduces a bounded soft penalty weight in candidate sorting, neighborhood search, and plan objective comparison—it never acts as a lexicographically absolute override.
+
 
 ---
 
@@ -685,6 +755,7 @@ Outlet ──< Order >── Trip >── Vehicle
    ├──< OrderLine >── Product
    ├──< DeliveryEvent
    ├──< DeferralRecord
+   ├── 0..1 UrgencyRequest
    ├──< ProofOfDelivery ── ReceiptConfirmation ──< Discrepancy
    └──< Discrepancy >── OrderLine
 
@@ -699,6 +770,8 @@ ReceiptConfirmation ── 0..many Discrepancy
 
 User ──(role)── store_manager | dispatcher | loader | driver
 User ──< Order.created_by
+User ──< UrgencyRequest.reported_by
+User ──< UrgencyRequest.reviewed_by
 User ──< Trip.driver_id
 User ──< Trip.dispatcher_id
 User ──< DriverEvents.driver_id
@@ -736,7 +809,7 @@ User ──< Discrepancy.resolved_by
 > **Rule:** Every table where a flaky connection could cause a retry-duplicate has a `client_op_id TEXT UNIQUE` column. The client generates this once and sends it with the request; the server checks for an existing row with that ID before inserting.
 
 **Tables carrying `client_op_id`:**
-`deferral`, `load_check`, `proof_of_delivery`, `receipt_confirmation`, `discrepancy`, `delivery_event`
+`deferral`, `urgency_request`, `load_check`, `proof_of_delivery`, `receipt_confirmation`, `discrepancy`, `delivery_event`
 
 `driver_events` uses the same pattern under the name `client_event_id` (every Driver write — REST or offline sync — carries one).
 

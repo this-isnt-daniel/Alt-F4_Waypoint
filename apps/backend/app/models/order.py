@@ -40,6 +40,7 @@ class Order(Base):
     )
 
     lines = relationship("OrderLine", back_populates="order", cascade="all, delete-orphan")
+    urgency_request = relationship("UrgencyRequest", back_populates="order", uselist=False)
 
     @property
     def items(self):

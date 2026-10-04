@@ -47,15 +47,23 @@ OFFICIAL_DEPOT: str = "Peliyagoda"
 # TEAM-DEFINED: Base deferral penalty for any order.
 DEFER_PENALTY_BASE: int = 100
 
-# TEAM-DEFINED: Extra penalty when the order was also deferred yesterday.
-DEFER_PENALTY_DEFERRED_YESTERDAY: int = 2500
+# TEAM-DEFINED: Extra penalty when the order was deferred in previous planning cycle.
+DEFER_PENALTY_DEFERRED_PREV: int = 2500
 
-# TEAM-DEFINED: Per-day penalty for days since last served (capped at 30 days).
-DEFER_PENALTY_PER_DAY: int = 10
-DEFER_PENALTY_DAYS_CAP: int = 30
+# TEAM-DEFINED: Per-deferral penalty for repeat deferrals (capped at DEFER_COUNT_CAP).
+DEFER_PENALTY_PER_DEFERRAL: int = 100
+DEFER_COUNT_CAP: int = 30
+
+# TEAM-DEFINED: Priority bonus for Dispatcher-approved urgency requests.
+URGENCY_PRIORITY_BONUS: int = 1000
 
 # TEAM-DEFINED: Per unit of order volume (m³ × 10, ceiling).
 DEFER_PENALTY_VOLUME_FACTOR: float = 10.0
+
+# Deprecated aliases for backwards compatibility
+DEFER_PENALTY_DEFERRED_YESTERDAY: int = DEFER_PENALTY_DEFERRED_PREV
+DEFER_PENALTY_PER_DAY: int = DEFER_PENALTY_PER_DEFERRAL
+DEFER_PENALTY_DAYS_CAP: int = DEFER_COUNT_CAP
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -93,10 +101,24 @@ class OptimizerConfig:
     # NOTE: These are team heuristics. Changing them does not violate any
     # official rule; it shifts which orders are prioritized.
     defer_penalty_base: int = DEFER_PENALTY_BASE
-    defer_penalty_deferred_yesterday: int = DEFER_PENALTY_DEFERRED_YESTERDAY
-    defer_penalty_per_day: int = DEFER_PENALTY_PER_DAY
-    defer_penalty_days_cap: int = DEFER_PENALTY_DAYS_CAP
+    defer_penalty_deferred_prev: int = DEFER_PENALTY_DEFERRED_PREV
+    defer_penalty_per_deferral: int = DEFER_PENALTY_PER_DEFERRAL
+    defer_count_cap: int = DEFER_COUNT_CAP
+    urgency_priority_bonus: int = URGENCY_PRIORITY_BONUS
     defer_penalty_volume_factor: float = DEFER_PENALTY_VOLUME_FACTOR
+
+    # Deprecated compatibility accessors
+    @property
+    def defer_penalty_deferred_yesterday(self) -> int:
+        return self.defer_penalty_deferred_prev
+
+    @property
+    def defer_penalty_per_day(self) -> int:
+        return self.defer_penalty_per_deferral
+
+    @property
+    def defer_penalty_days_cap(self) -> int:
+        return self.defer_count_cap
 
     # ── Solver settings ───────────────────────────────────────────────────
     random_seed: int = DEFAULT_RANDOM_SEED

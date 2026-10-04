@@ -136,8 +136,8 @@ The generated `draft_plan.json` strictly adheres to the Hackathon v2.0 contract:
   `neighborhood_size`, incumbent vs final objective, and `runtime_seconds`.
 - **`order_counts` & `quantity_totals`**: Line-item quantity and order-level
   counts reconciling demand conservation.
-- **`priority_boosted_orders`**: Transparent reasons (`deferred_yesterday`,
-  `days_since_last_served`).
+- **`priority_boosted_orders`**: Transparent reasons (`deferred_prev`,
+  `defer_count=N`, `approved_urgency`).
 - **`trips`**:
   - `load_utilization`: Weight and volume utilization against vehicle ratings.
   - `fuel`: Trip distance, fuel burned, prior weekly fuel used, reservations,

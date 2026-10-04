@@ -28,11 +28,12 @@ import math
 from typing import Sequence
 
 from waypoint_optimizer.config import (
+    DEFER_COUNT_CAP,
     DEFER_PENALTY_BASE,
-    DEFER_PENALTY_DAYS_CAP,
-    DEFER_PENALTY_DEFERRED_YESTERDAY,
-    DEFER_PENALTY_PER_DAY,
+    DEFER_PENALTY_DEFERRED_PREV,
+    DEFER_PENALTY_PER_DEFERRAL,
     DEFER_PENALTY_VOLUME_FACTOR,
+    URGENCY_PRIORITY_BONUS,
     OptimizerConfig,
 )
 from waypoint_optimizer.domain import (
@@ -44,15 +45,18 @@ def defer_penalty(order: Order, cfg: OptimizerConfig = OptimizerConfig()) -> flo
     """
     TEAM-DEFINED: compute the deferral penalty for a single order.
 
-    Formula (team heuristic):
+    Formula (canonical team policy):
         penalty =
             base
-          + deferred_yesterday_bonus  (if deferred_yesterday)
-          + per_day × min(days_since_last_served, days_cap)
+          + previous_deferral_bonus    (if deferred_prev)
+          + repeat_deferral_bonus      (per_deferral × min(defer_count, defer_count_cap))
+          + urgency_priority_bonus     (if is_urgent)
           + ceil(order_volume_m3 × volume_factor)
 
     Interpretation:
         Higher penalty → more undesirable to defer this order.
+        Urgency is a soft preference only; previously/repeatedly deferred orders
+        can outrank newly approved urgent orders to preserve fairness.
 
     This formula is configurable via OptimizerConfig. It is NOT:
         - money
@@ -66,15 +70,24 @@ def defer_penalty(order: Order, cfg: OptimizerConfig = OptimizerConfig()) -> flo
     Returns:
         Non-negative float penalty (higher = worse to defer).
     """
-    yesterday_bonus = (
-        cfg.defer_penalty_deferred_yesterday if order.deferred_yesterday else 0
+    prev_bonus = (
+        cfg.defer_penalty_deferred_prev if order.deferred_prev else 0
     )
-    days_bonus = cfg.defer_penalty_per_day * min(
-        order.days_since_last_served, cfg.defer_penalty_days_cap
+    defer_bonus = cfg.defer_penalty_per_deferral * min(
+        order.defer_count, cfg.defer_count_cap
+    )
+    urgency_bonus = (
+        cfg.urgency_priority_bonus if order.is_urgent else 0
     )
     volume_bonus = math.ceil(order.order_volume_m3 * cfg.defer_penalty_volume_factor)
 
-    return cfg.defer_penalty_base + yesterday_bonus + days_bonus + volume_bonus
+    return (
+        cfg.defer_penalty_base
+        + prev_bonus
+        + defer_bonus
+        + urgency_bonus
+        + volume_bonus
+    )
 
 
 def total_penalty(

@@ -85,9 +85,9 @@ def test_order_to_outlet_join_success():
     """Verify orders correctly join to authoritative outlets and inherit attributes."""
     ref = load_reference_data(REAL_DATA_DIR)
 
-    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,15,250.5,3.2,ambient,0,2
-ORD0002,OUT015,20,400.0,4.5,ambient,1,5
+    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,15,250.5,3.2,ambient,0,2,0
+ORD0002,OUT015,20,400.0,4.5,ambient,1,5,0
 """
     orders = load_orders_with_outlets(io.StringIO(csv_data), outlets=ref.outlets)
     assert len(orders) == 2
@@ -105,8 +105,9 @@ ORD0002,OUT015,20,400.0,4.5,ambient,1,5
     assert o1.order_weight_kg == 250.5
     assert o1.order_volume_m3 == 3.2
     assert o1.temp_requirement == TempRequirement.AMBIENT
-    assert o1.deferred_yesterday is False
-    assert o1.days_since_last_served == 2
+    assert o1.deferred_prev is False
+    assert o1.defer_count == 2
+    assert o1.is_urgent is False
 
     # Check ORD0002 joined with OUT015
     o2 = orders[1]
@@ -116,8 +117,9 @@ ORD0002,OUT015,20,400.0,4.5,ambient,1,5
     assert o2.dock_type == DockType.MALL_BAY
     assert o2.parking_constraint == ParkingConstraint.MALL_DOCK
     assert o2.mall_window == "09:00-11:00"
-    assert o2.deferred_yesterday is True
-    assert o2.days_since_last_served == 5
+    assert o2.deferred_prev is True
+    assert o2.defer_count == 5
+    assert o2.is_urgent is False
 
 
 # ── 3. Unknown outlets and conflicting attributes ───────────────────────────────
@@ -126,8 +128,8 @@ def test_orders_unknown_outlet_rejected():
     """Verify unknown outlet IDs raise actionable InputValidationError."""
     ref = load_reference_data(REAL_DATA_DIR)
 
-    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT999,10,100.0,1.0,ambient,0,0
+    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT999,10,100.0,1.0,ambient,0,0,0
 """
     with pytest.raises(InputValidationError, match="references unknown outlet_id 'OUT999'"):
         load_orders_with_outlets(io.StringIO(csv_data), outlets=ref.outlets)
@@ -138,22 +140,22 @@ def test_orders_conflicting_attributes_rejected():
     ref = load_reference_data(REAL_DATA_DIR)
 
     # 1. Conflicting brand
-    csv_brand = """order_ref,outlet_id,brand,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,style,10,100.0,1.0,ambient,0,0
+    csv_brand = """order_ref,outlet_id,brand,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,style,10,100.0,1.0,ambient,0,0,0
 """
     with pytest.raises(InputValidationError, match="conflicts with authoritative outlet 'OUT001' brand 'fresh'"):
         load_orders_with_outlets(io.StringIO(csv_brand), outlets=ref.outlets)
 
     # 2. Conflicting district
-    csv_district = """order_ref,outlet_id,district,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,Kandy,10,100.0,1.0,ambient,0,0
+    csv_district = """order_ref,outlet_id,district,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,Kandy,10,100.0,1.0,ambient,0,0,0
 """
     with pytest.raises(InputValidationError, match="conflicts with authoritative outlet 'OUT001' district 'Colombo'"):
         load_orders_with_outlets(io.StringIO(csv_district), outlets=ref.outlets)
 
     # 3. Conflicting dock_type
-    csv_dock = """order_ref,outlet_id,dock_type,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,rear_dock,10,100.0,1.0,ambient,0,0
+    csv_dock = """order_ref,outlet_id,dock_type,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,rear_dock,10,100.0,1.0,ambient,0,0,0
 """
     with pytest.raises(InputValidationError, match="conflicts with authoritative outlet 'OUT001' dock_type 'street'"):
         load_orders_with_outlets(io.StringIO(csv_dock), outlets=ref.outlets)
@@ -174,9 +176,9 @@ OUT001,fresh,Colombo,Peliyagoda,street,van_only,,,
 def test_duplicate_order_ref_rejected():
     """Verify duplicate order_ref in orders CSV is rejected."""
     ref = load_reference_data(REAL_DATA_DIR)
-    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,10,100.0,1.0,ambient,0,0
-ORD0001,OUT002,15,150.0,1.5,ambient,0,0
+    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,10,100.0,1.0,ambient,0,0,0
+ORD0001,OUT002,15,150.0,1.5,ambient,0,0,0
 """
     with pytest.raises(InputValidationError, match="Duplicate order_ref 'ORD0001'"):
         load_orders_with_outlets(io.StringIO(csv_data), outlets=ref.outlets)
@@ -187,15 +189,15 @@ def test_malformed_numeric_values_rejected():
     ref = load_reference_data(REAL_DATA_DIR)
 
     # Negative weight
-    csv_neg = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,10,-50.0,1.0,ambient,0,0
+    csv_neg = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,10,-50.0,1.0,ambient,0,0,0
 """
     with pytest.raises(InputValidationError, match="invalid order_weight_kg"):
         load_orders_with_outlets(io.StringIO(csv_neg), outlets=ref.outlets)
 
     # Negative units
-    csv_units = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,-5,50.0,1.0,ambient,0,0
+    csv_units = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,-5,50.0,1.0,ambient,0,0,0
 """
     with pytest.raises(InputValidationError, match="invalid order_units"):
         load_orders_with_outlets(io.StringIO(csv_units), outlets=ref.outlets)
@@ -273,10 +275,10 @@ def test_strict_json_export_and_revalidation(tmp_path: Path):
     """Verify JSON export contains no NaN/inf, includes provenance, and revalidates."""
     ref = load_reference_data(REAL_DATA_DIR)
 
-    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,10,120.0,1.5,ambient,0,1
-ORD0002,OUT002,15,180.0,2.0,ambient,1,3
-ORD0003,OUT003,12,140.0,1.8,ambient,0,0
+    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,10,120.0,1.5,ambient,0,1,0
+ORD0002,OUT002,15,180.0,2.0,ambient,1,3,0
+ORD0003,OUT003,12,140.0,1.8,ambient,0,0,0
 """
     orders = load_orders_with_outlets(io.StringIO(csv_data), outlets=ref.outlets)
     cfg = OptimizerConfig(enable_targeted_cpsat=False)
@@ -317,8 +319,8 @@ ORD0003,OUT003,12,140.0,1.8,ambient,0,0
 def test_csv_overwrite_prevention(tmp_path: Path):
     """Verify that export_plan_json prevents overwriting source CSV files."""
     ref = load_reference_data(REAL_DATA_DIR)
-    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_yesterday,days_since_last_served
-ORD0001,OUT001,10,120.0,1.5,ambient,0,1
+    csv_data = """order_ref,outlet_id,order_units,order_weight_kg,order_volume_m3,temp_requirement,deferred_prev,defer_count,is_urgent
+ORD0001,OUT001,10,120.0,1.5,ambient,0,1,0
 """
     orders = load_orders_with_outlets(io.StringIO(csv_data), outlets=ref.outlets)
     result = optimize(orders, ref.vehicles, ref.travel, ref.allowances, config=OptimizerConfig(enable_targeted_cpsat=False))

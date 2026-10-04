@@ -45,8 +45,9 @@ def base_order():
         order_units=5,
         order_weight_kg=100.0,
         order_volume_m3=1.0,
-        deferred_yesterday=False,
-        days_since_last_served=0,
+        deferred_prev=False,
+        defer_count=0,
+        is_urgent=False,
     )
 
 
@@ -203,8 +204,9 @@ def test_input_validation_duplicate_orders(base_order, base_vehicle, travel_and_
         order_units=1,
         order_weight_kg=10.0,
         order_volume_m3=0.1,
-        deferred_yesterday=False,
-        days_since_last_served=0,
+        deferred_prev=False,
+        defer_count=0,
+        is_urgent=False,
     )
     with pytest.raises(InputValidationError) as exc:
         validate_inputs([base_order, o2], [base_vehicle], [dt], [sa])
@@ -228,8 +230,9 @@ def test_input_validation_negative_or_nan(base_order, base_vehicle, travel_and_a
         order_units=1,
         order_weight_kg=-50.0,  # negative weight!
         order_volume_m3=float("nan"),  # NaN volume!
-        deferred_yesterday=False,
-        days_since_last_served=0,
+        deferred_prev=False,
+        defer_count=0,
+        is_urgent=False,
     )
     with pytest.raises(InputValidationError) as exc:
         validate_inputs([bad_order], [base_vehicle], [dt], [sa])
@@ -255,8 +258,9 @@ def test_input_validation_missing_travel_or_allowance(base_order, base_vehicle, 
         order_units=1,
         order_weight_kg=10.0,
         order_volume_m3=0.1,
-        deferred_yesterday=False,
-        days_since_last_served=0,
+        deferred_prev=False,
+        defer_count=0,
+        is_urgent=False,
     )
     with pytest.raises(InputValidationError) as exc:
         validate_inputs([unmapped_order], [base_vehicle], [dt], [sa])
@@ -281,8 +285,9 @@ def test_input_validation_zero_values_allowed_when_valid(base_order, base_vehicl
         order_units=0,  # zero units
         order_weight_kg=0.0,  # zero weight
         order_volume_m3=0.0,  # zero volume
-        deferred_yesterday=False,
-        days_since_last_served=0,  # zero days
+        deferred_prev=False,
+        defer_count=0,  # zero defer count
+        is_urgent=False,
     )
     # Should NOT raise
     validate_inputs([zero_order], [base_vehicle], [dt], [sa])

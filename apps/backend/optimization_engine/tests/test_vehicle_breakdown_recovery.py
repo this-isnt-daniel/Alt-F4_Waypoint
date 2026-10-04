@@ -230,14 +230,14 @@ def test_one_broken_vehicle_all_remaining_stops_reassigned(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     o2 = Order(
         order_ref="O2", outlet_id="OUT_COL_2", brand=Brand.FRESH, district="Colombo", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     fleet = [
         next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN"),
@@ -284,14 +284,14 @@ def test_unaffected_trips_remaining_unchanged(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     o_other = Order(
         order_ref="O_OTHER", outlet_id="OUT_GAM_1", brand=Brand.FRESH, district="Gampaha", depot="Peliyagoda",
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="06:00", window_close_time="11:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=4, order_weight_kg=40.0, order_volume_m3=0.4,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = dataclasses.replace(
         next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN"),
@@ -340,7 +340,7 @@ def test_partial_quantity_already_delivered(recovery_references):
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=10, order_weight_kg=100.0, order_volume_m3=1.0,
         line_items=[li1, li2],
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -387,7 +387,7 @@ def test_line_item_quantity_conservation(recovery_references):
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=10, order_weight_kg=100.0, order_volume_m3=1.0,
         line_items=[li1, li2],
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -443,7 +443,7 @@ def test_broken_vehicle_excluded_from_reassignment(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -479,7 +479,7 @@ def test_vehicle_capacity_rejection(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=50, order_weight_kg=500.0, order_volume_m3=3.0,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_tiny = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_TINY")
@@ -516,7 +516,7 @@ def test_fuel_quota_rejection(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_low_fuel = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_LOW_FUEL")
@@ -552,7 +552,7 @@ def test_vehicle_unavailable_at_current_time(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="08:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_late = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_LATE")
@@ -588,7 +588,7 @@ def test_unsupported_roadside_transfer(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -628,7 +628,7 @@ def test_missing_travel_data(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -667,7 +667,7 @@ def test_recovery_plan_never_marked_dispatch_ready(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -703,7 +703,7 @@ def test_original_active_plan_remaining_unchanged(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -748,7 +748,7 @@ def test_missing_or_empty_authoritative_orders(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -811,7 +811,7 @@ def test_unknown_order_and_line_item_references_rejected(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        line_items=[li1], deferred_yesterday=False, days_since_last_served=1,
+        line_items=[li1], deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -867,7 +867,7 @@ def test_missing_required_attributes_emits_diagnostics_and_aborts_recovery(recov
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -986,8 +986,9 @@ def test_integration_real_reference_breakdown_recovery():
         order_weight_kg=50.0,
         order_volume_m3=0.5,
         line_items=[li1],
-        deferred_yesterday=False,
-        days_since_last_served=1,
+        deferred_prev=False,
+        defer_count=1,
+        is_urgent=False,
     )
 
     o2 = Order(
@@ -1006,8 +1007,9 @@ def test_integration_real_reference_breakdown_recovery():
         order_weight_kg=50.0,
         order_volume_m3=0.5,
         line_items=[li2],
-        deferred_yesterday=False,
-        days_since_last_served=1,
+        deferred_prev=False,
+        defer_count=1,
+        is_urgent=False,
     )
 
     # Configure real vehicles from vehicles.csv with live fleet state
@@ -1078,7 +1080,7 @@ def test_pickup_location_depot_keyword(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -1115,7 +1117,7 @@ def test_pickup_location_peliyagoda(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")
@@ -1218,7 +1220,7 @@ def test_pickup_location_kandy():
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
 
     base_plan = generate_daily_draft_plan([o_kan], [vehicles_kandy[0]], ref_kandy, context)
@@ -1259,7 +1261,7 @@ def test_pickup_location_unsupported_roadside(recovery_references):
         dock_type=DockType.STREET, parking_constraint=ParkingConstraint.NORMAL, mall_window=None,
         window_open_time="05:00", window_close_time="09:00", temp_requirement=TempRequirement.AMBIENT,
         order_units=5, order_weight_kg=50.0, order_volume_m3=0.5,
-        deferred_yesterday=False, days_since_last_served=1,
+        deferred_prev=False, defer_count=1, is_urgent=False,
     )
     v_broken = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_BROKEN")
     v_spare = next(v for v in recovery_references.vehicles if v.vehicle_id == "V_SPARE")

@@ -30,6 +30,7 @@ from app.models.outlet import Outlet as DbOutlet
 from app.models.plan import DraftPlan
 from app.models.product import Product as DbProduct
 from app.models.trip import Trip as DbTrip, TripStop as DbTripStop
+from app.models.urgency import UrgencyRequest
 from app.models.vehicle import Vehicle as DbVehicle
 from app.services.manifest_service import add_stop_items, delete_stop_items
 
@@ -111,10 +112,26 @@ def get_reference_data(force_reload: bool = False) -> ReferenceData:
 # 2. Database -> Optimizer Domain Converters
 # ──────────────────────────────────────────────────────────────────────────────
 
+def get_approved_urgent_order_ids(db: Session, order_ids: Sequence[str]) -> set[str]:
+    """Batch query to find order IDs with Dispatcher-approved UrgencyRequest status."""
+    if not order_ids:
+        return set()
+    rows = (
+        db.query(UrgencyRequest.order_id)
+        .filter(
+            UrgencyRequest.order_id.in_(list(order_ids)),
+            UrgencyRequest.status == "approved",
+        )
+        .all()
+    )
+    return {r[0] for r in rows}
+
+
 def convert_db_order_to_optimizer(
     db_order: DbOrder,
     ref_data: ReferenceData,
     db: Session,
+    is_urgent: bool = False,
 ) -> OptimizerOrder:
     """Converts a confirmed backend DbOrder into an immutable optimizer Order."""
     # Check authoritative outlet in reference data
@@ -242,8 +259,9 @@ def convert_db_order_to_optimizer(
         order_units=int(order_units),
         order_weight_kg=float(order_weight_kg),
         order_volume_m3=float(order_volume_m3),
-        deferred_yesterday=bool(db_order.deferred_prev),
-        days_since_last_served=int(db_order.defer_count or 0),
+        deferred_prev=bool(db_order.deferred_prev),
+        defer_count=int(db_order.defer_count or 0),
+        is_urgent=is_urgent,
         line_items=line_items,
     )
 
@@ -341,6 +359,75 @@ def _to_json_serializable_plan(plan_obj: Any) -> Any:
     return plan_obj
 
 
+def _get_depot_outlet_ids(depot_id: Optional[str], ref_data: ReferenceData, db: Session) -> Optional[set[str]]:
+    if not depot_id:
+        return None
+    outlet_ids: set[str] = set()
+    for oid, out in ref_data.outlets.items():
+        if out.depot == depot_id:
+            outlet_ids.add(oid)
+    db_outlets = db.query(DbOutlet.outlet_id).filter(DbOutlet.depot_id == depot_id).all()
+    for row in db_outlets:
+        outlet_ids.add(row[0] if isinstance(row, (tuple, list)) else getattr(row, "outlet_id", str(row)))
+    return outlet_ids
+
+
+def _get_eligible_orders_for_date(
+    db: Session,
+    effective_date: date,
+    depot_outlet_ids: Optional[set[str]] = None,
+    brand: Optional[str] = None,
+) -> list:
+    """
+    Return all DbOrder rows eligible for the given planning cycle using canonical rules:
+
+      confirmed:  order_date == effective_date
+      deferred with latest Deferral.new_date set:    new_date == effective_date
+      deferred with latest Deferral.new_date NULL:   order_date <= effective_date
+
+    Shared by generate, edit, and recovery operations so carry-over deferred
+    orders are never silently dropped.
+    """
+    candidate_query = db.query(DbOrder).filter(
+        DbOrder.status.in_(["confirmed", "deferred"])
+    )
+    if depot_outlet_ids is not None:
+        candidate_query = candidate_query.filter(DbOrder.outlet_id.in_(depot_outlet_ids))
+    if brand:
+        candidate_query = candidate_query.filter(DbOrder.brand == brand)
+    candidates = candidate_query.all()
+
+    # Pre-fetch latest deferral for all deferred candidates
+    deferred_ids = [o.order_id for o in candidates if o.status == "deferred"]
+    latest_deferrals: dict = {}
+    if deferred_ids:
+        deferrals = (
+            db.query(Deferral)
+            .filter(Deferral.order_id.in_(deferred_ids))
+            .order_by(Deferral.created_at.desc())
+            .all()
+        )
+        for d in deferrals:
+            if d.order_id not in latest_deferrals:
+                latest_deferrals[d.order_id] = d
+
+    eligible = []
+    for o in candidates:
+        if o.status == "confirmed":
+            if o.order_date == effective_date:
+                eligible.append(o)
+        elif o.status == "deferred":
+            latest_d = latest_deferrals.get(o.order_id)
+            if latest_d and latest_d.new_date is not None:
+                if latest_d.new_date == effective_date:
+                    eligible.append(o)
+            else:
+                # NULL new_date → carry-forward: eligible on or after original order_date
+                if o.order_date <= effective_date:
+                    eligible.append(o)
+    return eligible
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 3. Core Optimization Operations
 # ──────────────────────────────────────────────────────────────────────────────
@@ -362,22 +449,22 @@ def generate_daily_draft_plan_operation(
     planning_date_str = effective_date.isoformat()
     ref_data = get_reference_data()
 
-    # Query confirmed orders
-    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(DbOrder.status == "confirmed", DbOutlet.depot_id == depot_id)
-    if target_date:
-        order_query = order_query.filter(DbOrder.order_date == target_date)
-    if brand:
-        order_query = order_query.filter(DbOrder.brand == brand)
+    # Canonical planning eligibility: confirmed for effective_date + deferred carry-overs
+    depot_outlet_ids = _get_depot_outlet_ids(depot_id, ref_data, db)
+    db_orders = _get_eligible_orders_for_date(db, effective_date, depot_outlet_ids, brand)
 
-    db_orders = order_query.all()
     if not db_orders:
         raise HTTPException(
             status_code=400,
-            detail=f"No confirmed orders found for planning date {planning_date_str}"
+            detail=f"No confirmed or deferred orders found for planning date {planning_date_str}"
         )
 
-    # Convert orders to optimizer domain
-    optimizer_orders = [convert_db_order_to_optimizer(o, ref_data, db) for o in db_orders]
+    # Convert orders to optimizer domain (with batch approved urgency query)
+    approved_urgent_ids = get_approved_urgent_order_ids(db, [o.order_id for o in db_orders])
+    optimizer_orders = [
+        convert_db_order_to_optimizer(o, ref_data, db, is_urgent=(o.order_id in approved_urgent_ids))
+        for o in db_orders
+    ]
 
     # Query vehicles from DB; fallback to reference fleet if DB is empty
     vehicle_query = db.query(DbVehicle)
@@ -468,10 +555,14 @@ def edit_draft_plan_operation(
     base_plan = draft_record.plan_data
     ref_data = get_reference_data()
 
-    # Load authoritative orders and fleet for the plan
-    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(DbOrder.order_date == draft_record.target_date, DbOutlet.depot_id == draft_record.depot_id)
-    db_orders = order_query.all()
-    optimizer_orders = [convert_db_order_to_optimizer(o, ref_data, db) for o in db_orders]
+    # Load authoritative orders using canonical eligibility (includes deferred carry-overs)
+    depot_outlet_ids = _get_depot_outlet_ids(draft_record.depot_id, ref_data, db)
+    db_orders = _get_eligible_orders_for_date(db, draft_record.target_date, depot_outlet_ids)
+    approved_urgent_ids = get_approved_urgent_order_ids(db, [o.order_id for o in db_orders])
+    optimizer_orders = [
+        convert_db_order_to_optimizer(o, ref_data, db, is_urgent=(o.order_id in approved_urgent_ids))
+        for o in db_orders
+    ]
 
     vehicle_query = db.query(DbVehicle)
     if draft_record.depot_id:
@@ -660,6 +751,7 @@ def approve_draft_plan_operation(
                 db_order.trip_id = trip_obj.trip_id
                 db_order.stop_seq = stop_num
                 db_order.status = "planned"
+                db_order.deferred_prev = False
 
                 db.add(
                     DeliveryEvent(
@@ -688,7 +780,7 @@ def approve_draft_plan_operation(
             order_id=db_order.order_id,
             outlet_id=db_order.outlet_id,
             original_date=draft_record.target_date,
-            new_date=draft_record.target_date,
+            new_date=None,
             reason=deferred.get("reason", "OPTIMIZER_CAPACITY_CONSTRAINT"),
             created_at=now,
             created_by=user_id,
@@ -791,9 +883,14 @@ def reallocate_broken_vehicle_operation(
 
     optimizer_fleet = [_ensure_live_fleet_state(v) for v in optimizer_fleet]
 
-    # Authoritative orders
-    order_query = db.query(DbOrder).join(DbOutlet, DbOutlet.outlet_id == DbOrder.outlet_id).filter(DbOrder.order_date == draft_record.target_date, DbOutlet.depot_id == draft_record.depot_id)
-    optimizer_orders = [convert_db_order_to_optimizer(o, ref_data, db) for o in order_query.all()]
+    # Authoritative orders using canonical eligibility (includes deferred carry-overs)
+    depot_outlet_ids = _get_depot_outlet_ids(draft_record.depot_id, ref_data, db)
+    db_orders = _get_eligible_orders_for_date(db, draft_record.target_date, depot_outlet_ids)
+    approved_urgent_ids = get_approved_urgent_order_ids(db, [o.order_id for o in db_orders])
+    optimizer_orders = [
+        convert_db_order_to_optimizer(o, ref_data, db, is_urgent=(o.order_id in approved_urgent_ids))
+        for o in db_orders
+    ]
 
     context = OperationalContext(
         planning_date=draft_record.target_date.isoformat(),

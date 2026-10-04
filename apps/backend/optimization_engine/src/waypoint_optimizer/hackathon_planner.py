@@ -40,6 +40,7 @@ from waypoint_optimizer.adapters.csv_adapter import ReferenceData
 from waypoint_optimizer.input_validation import (
     InputErrorDetail, InputValidationError, validate_operational_inputs,
 )
+from waypoint_optimizer.config import OptimizerConfig
 from waypoint_optimizer.domain import (
     Brand, DistrictTravel, DockType, LineItem, Order, OrderAllocationStatus,
     Outlet, ParkingConstraint, ServiceAllowance, TempRequirement, TempSpec,
@@ -63,16 +64,9 @@ from waypoint_optimizer.operational.draft_editor import _build_driver_itinerary
 
 
 def _order_priority_key(order: Order, config: Optional[OptimizerConfig] = None) -> float:
-    """Computes priority weighting for greedy candidate sorting."""
-    weight = 0.0
-    if order.deferred_yesterday:
-        weight += 1000.0
-    weight += order.days_since_last_served * 100.0
-    if config:
-        weight += defer_penalty(order, config)
-    else:
-        weight += float(order.order_units)
-    return weight
+    """Computes canonical priority weighting using team objective policy."""
+    cfg = config or OptimizerConfig()
+    return defer_penalty(order, cfg)
 
 
 def _get_candidate_orderings(orders: list[Order], config: Optional[OptimizerConfig] = None) -> list[list[Order]]:
@@ -271,14 +265,18 @@ def generate_daily_draft_plan(
     allowances = {(a.brand, a.dock_type): a.service_allowance_min for a in reference_data.allowances}
     orders_by_ref = {o.order_ref: o for o in orders}
 
-    # 3. Identify Priority-Boosted Orders
+    cfg = config if config is not None else OptimizerConfig()
+
+    # 3. Identify Priority-Boosted Orders (diagnostic only, does not guarantee service)
     priority_boosted_orders: list[dict[str, str]] = []
     for o in orders:
         reasons = []
-        if o.deferred_yesterday:
-            reasons.append("deferred_yesterday")
-        if o.days_since_last_served >= 3:
-            reasons.append(f"days_since_last_served={o.days_since_last_served}")
+        if o.deferred_prev:
+            reasons.append("deferred_prev")
+        if o.defer_count > 0:
+            reasons.append(f"defer_count={o.defer_count}")
+        if o.is_urgent:
+            reasons.append("approved_urgency")
         if reasons:
             priority_boosted_orders.append({
                 "order_ref": o.order_ref,
@@ -340,7 +338,7 @@ def generate_daily_draft_plan(
         }
 
     # 5. Multi-Start Greedy Portfolio Search
-    candidate_orderings = _get_candidate_orderings(orders, config)
+    candidate_orderings = _get_candidate_orderings(orders, cfg)
     best_plan_state: Optional[dict[str, Any]] = None
     best_plan_objective: Optional[tuple[float, int, float]] = None
 
@@ -592,7 +590,7 @@ def generate_daily_draft_plan(
         if val_result.valid:
             # Consistent documented objective tuple: (penalty, -served_count, fuel)
             deferred_penalty_sum = sum(
-                _order_priority_key(o, config) for o in orders if o.order_ref not in assigned_orders
+                _order_priority_key(o, cfg) for o in orders if o.order_ref not in assigned_orders
             )
             total_fuel = sum(t.fuel_consumed_l for t in all_trip_schedules)
             cand_objective = score_plan_objective(deferred_penalty_sum, len(assigned_orders), total_fuel)
@@ -689,10 +687,10 @@ def generate_daily_draft_plan(
         "improvement_accepted": False,
         "rejection_or_skip_reason": "Targeted CP-SAT improvement disabled by configuration.",
         "incumbent_deferral_penalty": round(sum(
-            _order_priority_key(o, config) for o in orders if o.order_ref not in best_plan_state["assigned_orders"]
+            _order_priority_key(o, cfg) for o in orders if o.order_ref not in best_plan_state["assigned_orders"]
         ), 2),
         "final_deferral_penalty": round(sum(
-            _order_priority_key(o, config) for o in orders if o.order_ref not in best_plan_state["assigned_orders"]
+            _order_priority_key(o, cfg) for o in orders if o.order_ref not in best_plan_state["assigned_orders"]
         ), 2),
         "incumbent_served_count": len(best_plan_state["assigned_orders"]),
         "final_served_count": len(best_plan_state["assigned_orders"]),
@@ -711,7 +709,7 @@ def generate_daily_draft_plan(
                 allowances=allowances,
                 context=context,
                 time_limit_s=targeted_cpsat_time_limit_s,
-                config=config,
+                config=cfg,
             )
             current_plan_state = improved_state
             targeted_cpsat_stage_info = cpsat_stage_info

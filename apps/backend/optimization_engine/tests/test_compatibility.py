@@ -79,7 +79,7 @@ def make_order(
         mall_window=None, window_open_time=None, window_close_time=None,
         temp_requirement=temp, order_units=10,
         order_weight_kg=weight, order_volume_m3=volume,
-        deferred_yesterday=False, days_since_last_served=0,
+        deferred_prev=False, defer_count=0, is_urgent=False,
     )
 
 

@@ -62,8 +62,11 @@ def confirm_plan(db: Session, run_id: str, client_op_id: str, dispatcher_depot: 
             if not order:
                 raise HTTPException(status_code=400, detail=f"Order {stop.order_id} not found")
             
-            if order.status != "confirmed":
-                raise HTTPException(status_code=400, detail=f"Order {stop.order_id} is not in confirmed state")
+            if order.status not in ("confirmed", "deferred"):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Order {stop.order_id} is not in confirmed or deferred state (current: {order.status})"
+                )
                 
             # Assign canonical TripStop
             trip_stop = TripStop(
@@ -83,6 +86,7 @@ def confirm_plan(db: Session, run_id: str, client_op_id: str, dispatcher_depot: 
             order.trip_id = trip_id
             order.stop_seq = stop.sequence
             order.status = "planned"
+            order.deferred_prev = False
             
             # Event
             db.add(DeliveryEvent(
@@ -134,7 +138,7 @@ def defer_order(db: Session, request: DeferOrderRequest, dispatcher_depot: str, 
         order_id=request.order_id,
         outlet_id=request.outlet_id,
         original_date=request.original_date,
-        new_date=request.new_date or request.original_date,
+        new_date=request.new_date,
         reason=request.reason,
         created_at=now,
         created_by=user_id,

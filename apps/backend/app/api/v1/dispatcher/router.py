@@ -11,7 +11,13 @@ from app.schemas.shared import OrderResponse, VehicleResponse, OutletResponse
 from app.models.vehicle import Vehicle
 from app.models.outlet import Outlet
 from app.schemas.dispatcher import OptimizeRequest, ProposedPlanResponse, ConfirmPlanRequest, DeferOrderRequest
-from app.services import planning_service
+from app.schemas.urgency import (
+    DispatcherUrgencyListItemResponse,
+    UrgencyRequestResponse,
+    ApproveUrgencyRequest,
+    RejectUrgencyRequest,
+)
+from app.services import planning_service, urgency_service
 
 dispatcher_role = RoleChecker("dispatcher")
 router = APIRouter(dependencies=[Depends(dispatcher_role)])
@@ -219,3 +225,53 @@ def reallocate_broken_vehicle_route(
         user_id=current_user.user_id,
         depot_id=current_user.depot_id,
     )
+
+
+@router.get("/urgency-requests", response_model=List[DispatcherUrgencyListItemResponse], dependencies=[Depends(dispatcher_role)])
+def list_urgency_requests(
+    status: Optional[str] = Query(None, description="Filter by status (pending, approved, rejected, resolved)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List urgency requests for outlets in dispatcher's depot."""
+    return urgency_service.list_dispatcher_urgency_requests(
+        db=db,
+        depot_id=current_user.depot_id,
+        status_filter=status,
+    )
+
+
+@router.post("/urgency-requests/{urgency_request_id}/approve", response_model=UrgencyRequestResponse, dependencies=[Depends(dispatcher_role)])
+def approve_urgency(
+    urgency_request_id: str,
+    request: Optional[ApproveUrgencyRequest] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Approve a pending urgency request within dispatcher's depot."""
+    note = request.decision_note if request else None
+    return urgency_service.approve_urgency_request(
+        db=db,
+        urgency_request_id=urgency_request_id,
+        dispatcher_depot=current_user.depot_id,
+        user_id=current_user.user_id,
+        decision_note=note,
+    )
+
+
+@router.post("/urgency-requests/{urgency_request_id}/reject", response_model=UrgencyRequestResponse, dependencies=[Depends(dispatcher_role)])
+def reject_urgency(
+    urgency_request_id: str,
+    request: RejectUrgencyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reject a pending urgency request within dispatcher's depot with a mandatory note."""
+    return urgency_service.reject_urgency_request(
+        db=db,
+        urgency_request_id=urgency_request_id,
+        dispatcher_depot=current_user.depot_id,
+        user_id=current_user.user_id,
+        decision_note=request.decision_note,
+    )
+
