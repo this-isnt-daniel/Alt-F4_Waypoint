@@ -190,6 +190,20 @@ def test_1_alembic_check_passes():
     import os
     env = os.environ.copy()
 
+    # Skip if PostgreSQL is not reachable — alembic check requires a live DB.
+    db_url = env.get("DATABASE_URL", "")
+    if db_url:
+        try:
+            from sqlalchemy import create_engine, text as sa_text
+            _e = create_engine(db_url, connect_args={"connect_timeout": 3})
+            with _e.connect() as _c:
+                _c.execute(sa_text("SELECT 1"))
+            _e.dispose()
+        except Exception:
+            pytest.skip("PostgreSQL not reachable — skipping alembic check test")
+    else:
+        pytest.skip("DATABASE_URL not set — skipping alembic check test")
+
     import pathlib
     backend_dir = pathlib.Path(__file__).parent.parent.resolve()
     res = subprocess.run(
@@ -201,6 +215,7 @@ def test_1_alembic_check_passes():
     )
     assert res.returncode == 0, f"alembic check failed:\n{res.stdout}\n{res.stderr}"
     assert "No new upgrade operations detected" in (res.stdout + res.stderr)
+
 
 
 def test_2_and_3_unauthenticated_planning_rejected(client):
