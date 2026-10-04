@@ -4,7 +4,7 @@ import { apiFetch } from '../../lib/api';
 import { safeStorage } from '../../lib/security';
 
 export default function DispatcherLogin({ onLogin }) {
-  const [username, setUsername] = useState('disp_colombo_1');
+  const [username, setUsername] = useState('dispatcher');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,7 +60,7 @@ export default function DispatcherLogin({ onLogin }) {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Username"
-          className="w-[250px] h-11 px-4 mb-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#059669]"
+          className="w-[250px] h-11 px-4 mb-3 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white placeholder:text-slate-400 font-medium focus:outline-none focus:border-[#059669] focus:ring-1 focus:ring-[#059669]"
           disabled={loading}
         />
         <input
@@ -68,7 +68,7 @@ export default function DispatcherLogin({ onLogin }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-[250px] h-11 px-4 mb-6 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#059669]"
+          className="w-[250px] h-11 px-4 mb-6 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white placeholder:text-slate-400 font-medium focus:outline-none focus:border-[#059669] focus:ring-1 focus:ring-[#059669]"
           disabled={loading}
         />
 
@@ -81,6 +81,12 @@ export default function DispatcherLogin({ onLogin }) {
         >
           {loading ? 'Logging in...' : 'Log in'}
         </button>
+
+        <div className="w-[250px] mt-4 text-center">
+          <p className="text-[12px] text-slate-400 font-medium">
+            Demo account: <span className="font-bold text-slate-600">dispatcher</span> / <span className="font-bold text-slate-600">password123</span>
+          </p>
+        </div>
       </form>
     </main>
   );

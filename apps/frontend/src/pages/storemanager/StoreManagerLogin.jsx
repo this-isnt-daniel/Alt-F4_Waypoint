@@ -6,7 +6,7 @@ import { safeStorage } from '../../lib/security';
 
 export default function StoreManagerLogin({ onLogin }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [username, setUsername] = useState('fresh_manager');
+  const [username, setUsername] = useState('storemanager');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
@@ -105,8 +105,8 @@ export default function StoreManagerLogin({ onLogin }) {
                   type="text"
                   value={username}
                   onChange={(e) => { setUsername(e.target.value); setError(null); }}
-                  placeholder="e.g. fresh_manager"
-                  className="w-full h-11 pl-9 pr-3 border border-slate-300 rounded-lg text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all"
+                  placeholder="e.g. storemanager"
+                  className="w-full h-11 pl-9 pr-3 bg-white border border-slate-300 rounded-lg text-[14px] font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all"
                   autoFocus
                 />
               </div>
@@ -126,7 +126,7 @@ export default function StoreManagerLogin({ onLogin }) {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(null); }}
                   placeholder="Enter password"
-                  className="w-full h-11 pl-9 pr-10 border border-slate-300 rounded-lg text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all"
+                  className="w-full h-11 pl-9 pr-10 bg-white border border-slate-300 rounded-lg text-[14px] font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition-all"
                 />
                 <button
                   type="button"
@@ -159,6 +159,12 @@ export default function StoreManagerLogin({ onLogin }) {
               >
                 Sign in to Waypoint Fresh
               </button>
+            </div>
+
+            <div className="w-full text-center mt-1">
+              <p className="text-[12px] text-slate-400 font-medium">
+                Demo account: <span className="font-bold text-slate-600">storemanager</span> / <span className="font-bold text-slate-600">password123</span>
+              </p>
             </div>
           </form>
         )}

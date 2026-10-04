@@ -78,9 +78,13 @@ def seed(custom_engine=None):
         pw_hash = get_password_hash("password123")
         users = [
             {"user_id": "USR-SM", "username": "storemanager", "role": "store_manager", "name": "SM Test", "hashed_pw": pw_hash, "outlet_id": "OUT-1001", "depot_id": None},
+            {"user_id": "USR-SM-ALIAS", "username": "fresh_manager", "role": "store_manager", "name": "Fresh Store Manager", "hashed_pw": pw_hash, "outlet_id": "OUT-1001", "depot_id": None},
             {"user_id": "USR-DISP", "username": "dispatcher", "role": "dispatcher", "name": "Dispatcher Test", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
+            {"user_id": "USR-DISP-ALIAS", "username": "disp_colombo_1", "role": "dispatcher", "name": "Dispatcher Colombo", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
             {"user_id": "USR-LOAD", "username": "loader", "role": "loader", "name": "Loader Test", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
+            {"user_id": "USR-LOAD-ALIAS", "username": "loader1", "role": "loader", "name": "Loader Lead", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
             {"user_id": "USR-DRIV", "username": "driver", "role": "driver", "name": "Driver Test", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
+            {"user_id": "USR-DRIV-ALIAS", "username": "driver_daniru", "role": "driver", "name": "Driver Daniru", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
         ]
         for u in users:
             upsert(session, User, 'user_id', u)

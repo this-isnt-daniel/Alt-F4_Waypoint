@@ -8,7 +8,7 @@ import { safeStorage } from "@/lib/security";
 export function SignInScreen() {
   const { push } = useNavigator();
   const { startTrip1 } = useDriverState();
-  const [username, setUsername] = useState<string>("driver_daniru");
+  const [username, setUsername] = useState<string>("driver");
   const [password, setPassword] = useState<string>("password123");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -55,7 +55,7 @@ export function SignInScreen() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-[15px] font-semibold text-slate-900 outline-none focus:border-[#059669]"
+            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-[15px] font-semibold text-slate-900 outline-none focus:border-[#059669]"
           />
         </div>
 
@@ -84,6 +84,10 @@ export function SignInScreen() {
       >
         {loading ? "Signing in..." : "Sign In"}
       </button>
+
+      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-[12px] text-emerald-900 text-center font-medium">
+        Demo credentials: <span className="font-mono font-bold">driver</span> / <span className="font-mono font-bold">password123</span>
+      </div>
 
     </div>
   );

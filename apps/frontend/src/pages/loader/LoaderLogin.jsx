@@ -4,8 +4,8 @@ import { apiFetch } from '../../lib/api';
 import { safeStorage } from '../../lib/security';
 
 const USERS = {
-  dep1: { id: 1, name: 'Loader One', depot: 'DEP1', bay: 'Bay Lead A', username: 'loader1', password: 'pass' },
-  dep2: { id: 2, name: 'Other Loader', depot: 'DEP2', bay: null, username: 'loader2', password: 'pass' }
+  dep1: { id: 1, name: 'Loader One', depot: 'peliyagoda', bay: 'Bay Lead A', username: 'loader', password: 'password123' },
+  dep2: { id: 2, name: 'Loader Two', depot: 'peliyagoda', bay: null, username: 'loader1', password: 'password123' }
 };
 
 export default function LoaderLogin({ onLogin }) {
@@ -108,7 +108,7 @@ export default function LoaderLogin({ onLogin }) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full h-10 px-3 border border-slate-300 rounded text-[14px] text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+              className="w-full h-10 px-3 bg-white border border-slate-300 rounded text-[14px] font-medium text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
             />
           </div>
           <div>
@@ -118,7 +118,7 @@ export default function LoaderLogin({ onLogin }) {
               type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-10 px-3 border border-slate-300 rounded text-[14px] text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+              className="w-full h-10 px-3 bg-white border border-slate-300 rounded text-[14px] font-medium text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
             />
           </div>
           <div className="pt-2">
@@ -129,6 +129,9 @@ export default function LoaderLogin({ onLogin }) {
             >
               {loading ? 'Signing in...' : 'Log In'}
             </button>
+          </div>
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded text-[12px] text-emerald-900 text-center font-medium">
+            Demo credentials: <span className="font-mono font-bold">loader</span> / <span className="font-mono font-bold">password123</span>
           </div>
         </form>
       </div>
