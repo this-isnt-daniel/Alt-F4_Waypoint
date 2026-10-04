@@ -53,7 +53,11 @@ def _make_minimal_db():
     Base.metadata.create_all(bind=engine)
     db = Session()
 
-    ref = get_reference_data()
+    import pytest
+    try:
+        ref = get_reference_data()
+    except FileNotFoundError:
+        pytest.skip("Authoritative reference CSV directory not found")
 
     db.add(Depot(
         depot_id="Peliyagoda",
@@ -319,7 +323,11 @@ def test_fleet_fallback_uses_reference_vehicle_id():
     When DB vehicle query returns empty, the reference fleet fallback must use
     v.vehicle_id (not v.id which doesn't exist on OptimizerVehicle).
     """
-    ref = get_reference_data()
+    import pytest
+    try:
+        ref = get_reference_data()
+    except FileNotFoundError:
+        pytest.skip("Authoritative reference CSV directory not found")
     # All OptimizerVehicle objects must have vehicle_id attribute
     for v in ref.vehicles:
         assert hasattr(v, "vehicle_id"), (

@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Phone, Map } from 'lucide-react';
-import { ACTIVE_ORDERS, DEFERRED_ORDERS, ORDER_STAGES, getStageIndex } from '../data/orders';
+import { ORDER_STAGES, getStageIndex } from '../data/orders';
+import { useOrders } from '../useOrders';
 import DeliveryMap from './DeliveryMap';
 
 export default function OrdersTab({ selectedOrderId }) {
+  const { orders: ACTIVE_ORDERS, deferrals: DEFERRED_ORDERS, loading } = useOrders();
+  if (loading) return <div className="p-8">Loading...</div>;
   const [expandedMapId, setExpandedMapId] = useState(null);
 
   useEffect(() => {

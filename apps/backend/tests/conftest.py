@@ -10,4 +10,3 @@ if "DATABASE_URL" not in os.environ:
         load_dotenv(env_file)
     os.environ.setdefault("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint_test")
 
-

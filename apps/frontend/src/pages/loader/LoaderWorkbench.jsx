@@ -9,53 +9,6 @@ import {
   submitLoad,
 } from './loaderApi';
 
-const DEMO_WORKBENCH = {
-  trip_id: 'TRIP-DEMO-1',
-  vehicle_id: 'VEH011',
-  vehicle_plate: 'WP-KA-4521',
-  vehicle_type: 'Truck',
-  vehicle_temp: 'reefer',
-  status: 'planned',
-  read_only: false,
-  stop_count: 1,
-  total_items: 2,
-  verified_items: 0,
-  discrepancy_count: 0,
-  stops: [
-    {
-      stop_id: 'STOP-DEMO-1',
-      order_id: 'ORD-DEMO-1',
-      outlet_id: 'OUT-DEMO',
-      outlet_name: 'Demo Outlet',
-      stop_seq: 1,
-      weight_kg: 520,
-      volume_m3: 3.4,
-      temp_req: 'reefer',
-      status: 'upcoming',
-      items: [
-        {
-          line_item_id: 'LINE-DEMO-1',
-          product_id: 'P-DEMO-1',
-          product_name: 'Fresh Whole Milk 1L',
-          unit: 'crates',
-          assigned_qty: 20,
-          loaded_qty: null,
-          status: 'pending',
-        },
-        {
-          line_item_id: 'LINE-DEMO-2',
-          product_id: 'P-DEMO-2',
-          product_name: 'Chilled Chicken Drumsticks',
-          unit: 'cartons',
-          assigned_qty: 15,
-          loaded_qty: null,
-          status: 'pending',
-        },
-      ],
-    },
-  ],
-};
-
 function clientOp(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -91,7 +44,8 @@ export default function LoaderWorkbench({ user, tripId, readOnly }) {
     setError('');
     setMessage('');
     try {
-      const data = user?.token && tripId ? await fetchLoaderWorkbench(user.token, tripId) : DEMO_WORKBENCH;
+      if (!user?.token || !tripId) throw new Error("Missing auth token or tripId");
+      const data = await fetchLoaderWorkbench(user.token, tripId);
       setWorkbench(data);
       const state = {};
       data.stops.forEach((stop) => {
@@ -107,9 +61,9 @@ export default function LoaderWorkbench({ user, tripId, readOnly }) {
       const firstOpen = data.stops.find((stop) => !stop.complete) || data.stops[0];
       setExpandedStop(firstOpen?.stop_id || null);
     } catch (err) {
-      setError(`${err.message}. Showing demo workbench.`);
-      setWorkbench(DEMO_WORKBENCH);
-      setExpandedStop(DEMO_WORKBENCH.stops[0].stop_id);
+      setError(err.message);
+      setWorkbench(null);
+      setExpandedStop(null);
     } finally {
       setLoading(false);
     }

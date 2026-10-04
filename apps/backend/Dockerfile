@@ -18,5 +18,6 @@ COPY migrations ./migrations
 COPY app ./app
 COPY data ./data
 COPY seed.py .
+COPY validate_seed.py .
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

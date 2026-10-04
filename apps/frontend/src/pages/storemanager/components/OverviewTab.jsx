@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, Check, Truck, KeyRound, ArrowRight } from 'lucide-react';
-import { ACTIVE_ORDERS, DEFERRED_ORDERS } from '../data/orders';
+import { useOrders } from '../useOrders';
 
 const STATUS_CONFIG = {
   'out-for-delivery': { label: 'Out for delivery', dot: 'bg-brand-500',  text: 'text-brand-700',  bg: 'bg-brand-50',  border: 'border-brand-200' },
@@ -11,6 +11,8 @@ const STATUS_CONFIG = {
 };
 
 export default function OverviewTab({ onNavigate, isConfirmed, setIsConfirmed, deliveryArrived = true, onOpenOtpModal }) {
+  const { orders: ACTIVE_ORDERS, deferrals: DEFERRED_ORDERS, loading } = useOrders();
+  if (loading) return <div className="p-8">Loading...</div>;
   const todayOrders = ACTIVE_ORDERS.filter(o => o.deliveryDate === 'today');
   const upcomingOrders = ACTIVE_ORDERS.filter(o => o.deliveryDate !== 'today');
   

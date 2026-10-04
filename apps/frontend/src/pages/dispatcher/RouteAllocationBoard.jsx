@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { apiFetch } from '../../lib/api';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import {
   Moon,
@@ -43,58 +44,8 @@ const orderColour = (orderId) => {
   return ORDER_COLOURS[hash % ORDER_COLOURS.length];
 };
 
-// ─── Initial data ─────────────────────────────────────────────────────────────
-const buildInitialRows = () => [
-  {
-    vehicleId: 'VEH014', tripLabel: 'Trip 1 of 2', refrigeration: 'Reefer',
-    capacityKg: 4500, capacityM3: 12.0, fuelPct: 54,
-    cards: [
-      { id: 'c1', orderId: 'ORD-4471', stop: 1, stopName: 'Nugegoda',   product: 'Fresh Strawberries Grade A 250g', qty: '120 punnets', weightKg: 30,  brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-      { id: 'c2', orderId: 'ORD-4471', stop: 1, stopName: 'Nugegoda',   product: 'Fresh Whipping Cream 250ml',      qty: '100 units',   weightKg: 28,  brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-      { id: 'c3', orderId: 'ORD-3390', stop: 2, stopName: 'Maharagama', product: 'Highland Drinking Yogurt 200ml', qty: '96 bottles',  weightKg: 22,  brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-      { id: 'c4', orderId: 'ORD-3390', stop: 2, stopName: 'Maharagama', product: 'Chicken Drumsticks Marinated',   qty: '30 packs',    weightKg: 36,  brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-    ],
-  },
-  {
-    vehicleId: 'VEH009', tripLabel: 'Trip 2 of 2', refrigeration: 'Reefer',
-    capacityKg: 6000, capacityM3: 18.5, fuelPct: 40,
-    cards: [
-      { id: 'c5', orderId: 'ORD-4472', stop: 1, stopName: 'Wattala', product: 'Anchor Full Cream Milk 1L', qty: '180 bottles', weightKg: 185, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-      { id: 'c6', orderId: 'ORD-5102', stop: 2, stopName: 'Ja-Ela',  product: 'Yogurt Cups 500g',         qty: '60 pots',     weightKg: 60,  brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-    ],
-  },
-  {
-    vehicleId: 'VEH001', tripLabel: 'Trip 1 of 2', refrigeration: 'Reefer',
-    capacityKg: 6000, capacityM3: 18.5, fuelPct: 62,
-    cards: [
-      { id: 'c7', orderId: 'ORD-3391', stop: 1, stopName: 'Negombo',    product: 'Pasteurized Whole Milk 1L',     qty: '240 units', weightKg: 240, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-      { id: 'c8', orderId: 'ORD-6601', stop: 2, stopName: 'Katunayake', product: 'Chilled Chicken Portions 500g', qty: '250 packs', weightKg: 250, brand: 'Waypoint Fresh', refrigeration: 'Reefer' },
-    ],
-  },
-  {
-    vehicleId: 'VEH041', tripLabel: 'Trip 1 of 2', refrigeration: 'Ambient',
-    capacityKg: 4500, capacityM3: 12.0, fuelPct: 88,
-    cards: [
-      { id: 'c9',  orderId: 'ORD-5103', stop: 1, stopName: 'Pettah', product: 'Basmati Rice 5kg Master Bags', qty: '25 bags',    weightKg: 125, brand: 'Waypoint Style', refrigeration: 'Ambient' },
-      { id: 'c10', orderId: 'ORD-1191', stop: 2, stopName: 'Fort',   product: 'Ceylon BOPF Tea Cartons',      qty: '15 cartons', weightKg: 90,  brand: 'Waypoint Style', refrigeration: 'Ambient' },
-    ],
-  },
-  {
-    vehicleId: 'VEH004', tripLabel: 'Trip 1 of 1', refrigeration: 'Ambient',
-    capacityKg: 1500, capacityM3: 6.0, fuelPct: 72,
-    cards: [
-      { id: 'c11', orderId: 'ORD-1189', stop: 1, stopName: 'Wellawatte', product: 'Red Split Lentils Dhal 1kg', qty: '150 kg', weightKg: 150, brand: 'Waypoint Style', refrigeration: 'Ambient' },
-    ],
-  },
-];
-
-const INITIAL_TRAY = [
-  { id: 't1', orderId: 'ORD-3392', stop: 3, stopName: 'Ja-Ela Central',  product: 'Cream Cheese Philadelphia 200g', qty: 'x30', weightKg: 15, brand: 'Waypoint Fresh', refrigeration: 'Reefer'   },
-  { id: 't2', orderId: 'ORD-5104', stop: 2, stopName: 'Kandana Express', product: 'Denim Jackets Assorted Men',     qty: 'x12', weightKg: 12, brand: 'Waypoint Style', refrigeration: 'Ambient'  },
-  { id: 't3', orderId: 'ORD-1190', stop: 1, stopName: 'Colombo South',   product: 'Blender Unit Compact 600W',     qty: 'x1',  weightKg: 4,  brand: 'Waypoint Tech',  refrigeration: 'Ambient'  },
-  { id: 't4', orderId: 'ORD-6602', stop: 3, stopName: 'Negombo Express', product: 'Bairaha Chicken Breast 500g',   qty: 'x80', weightKg: 40, brand: 'Waypoint Fresh', refrigeration: 'Reefer'   },
-  { id: 't5', orderId: 'ORD-7720', stop: 1, stopName: 'Kollupitiya',     product: 'Smart LED Bulbs 9W Pack 4',     qty: 'x24', weightKg: 6,  brand: 'Waypoint Tech',  refrigeration: 'Ambient'  },
-];
+const buildInitialRows = () => [];
+const INITIAL_TRAY = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const rowWeightKg  = (row) => row.cards.reduce((s, c) => s + c.weightKg, 0);
@@ -362,8 +313,8 @@ function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocati
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
-  const [rows, setRows]             = useState(buildInitialRows);
-  const [tray, setTray]             = useState(INITIAL_TRAY);
+  const [rows, setRows]             = useState([]);
+  const [tray, setTray]             = useState([]);
   const [sortBy, setSortBy]         = useState('vehicleId');
   const [trayFilter, setTrayFilter] = useState('all');
   const [dragCard, setDragCard]     = useState(null);
@@ -373,6 +324,40 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   const [showToast, setShowToast]         = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [trayHeight, setTrayHeight]       = useState(180);
+
+  // Added: load real data from backend
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const vehicles = await apiFetch('/dispatcher/vehicles');
+        const orders = await apiFetch('/dispatcher/orders?status=confirmed');
+
+        const newRows = vehicles.filter(v => v.status === 'available').map(v => ({
+          vehicleId: v.vehicle_id, tripLabel: 'Trip 1 of 1', refrigeration: v.temp === 'reefer' ? 'Reefer' : 'Ambient',
+          capacityKg: v.weight_cap_kg, capacityM3: v.vol_cap_m3, fuelPct: v.fuel_quota_l || 100,
+          cards: []
+        }));
+        
+        const newTray = [];
+        let cId = 1;
+        for (const o of orders) {
+          for (const item of o.items) {
+            newTray.push({
+              id: `c${cId++}`, orderId: o.order_id, stop: 1, stopName: o.outlet_id,
+              product: item.product_id, qty: `x${item.quantity}`, weightKg: item.quantity * 2, // mock weight since it's not in OrderLineResponse
+              brand: o.brand, refrigeration: o.temp_req === 'chilled' ? 'Reefer' : 'Ambient'
+            });
+          }
+        }
+        
+        setRows(newRows);
+        setTray(newTray);
+      } catch (err) {
+        console.error("Failed to load allocation board data", err);
+      }
+    };
+    fetchData();
+  }, []);
 
   const startResize = useCallback((e) => {
     e.preventDefault();
@@ -478,14 +463,29 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
     setShowConfirmModal(true);
   };
 
-  const handleFinalConfirm = (_note) => {
+  const handleFinalConfirm = async (_note) => {
     setShowConfirmModal(false);
-    if (onConfirmAllocations) {
-      onConfirmAllocations();
-    } else {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const res = await apiFetch('/dispatcher/plans/draft', {
+        method: 'POST',
+        body: JSON.stringify({ target_date: today })
+      });
+      await apiFetch(`/dispatcher/plans/${res.plan_id || res.run_id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
       setConfirmed(true);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
+      setTimeout(() => {
+        setShowToast(false);
+        if (onConfirmAllocations) {
+          onConfirmAllocations();
+        }
+      }, 2000);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to plan: ' + e.message);
     }
   };
 
