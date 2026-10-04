@@ -17,13 +17,13 @@ import {
 
 // ─── Colour tokens ────────────────────────────────────────────────────────────
 const C = {
-  primary:       '#059669',
-  primaryHover:  '#047857',
+  primary: '#059669',
+  primaryHover: '#047857',
   primaryActive: '#065F46',
-  darkest:       '#0B2019',
-  dark:          '#256149',
-  surface:       '#EBF6F0',
-  border:        '#DCF0E5',
+  darkest: '#0B2019',
+  dark: '#256149',
+  surface: '#EBF6F0',
+  border: '#DCF0E5',
 };
 
 // ─── Order tag colour palette ─────────────────────────────────────────────────
@@ -48,13 +48,13 @@ const buildInitialRows = () => [];
 const INITIAL_TRAY = [];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const rowWeightKg  = (row) => row.cards.reduce((s, c) => s + c.weightKg, 0);
+const rowWeightKg = (row) => row.cards.reduce((s, c) => s + c.weightKg, 0);
 const rowWeightPct = (row) => Math.min((rowWeightKg(row) / row.capacityKg) * 100, 100);
-const canAccept    = (row, card) => {
+const canAccept = (row, card) => {
   if (card.refrigeration === 'Reefer') return row.refrigeration === 'Reefer';
   return true; // Ambient goods can go in either Ambient or Reefer vehicles
 };
-const barColour    = (pct) => pct < 75 ? C.primary : pct < 90 ? '#F59E0B' : '#EF4444';
+const barColour = (pct) => pct < 75 ? C.primary : pct < 90 ? '#F59E0B' : '#EF4444';
 
 // ─── OrderTag ─────────────────────────────────────────────────────────────────
 function OrderTag({ orderId }) {
@@ -73,9 +73,8 @@ function OrderTag({ orderId }) {
 function ProductCard({ card, isDragging, isDraggingSameOrder }) {
   return (
     <div
-      className={`relative flex-shrink-0 w-36 rounded-xl px-[12px] py-[10px] select-none transition-all ${
-        isDragging ? 'bg-white shadow-sm border border-[#DCEEE1]' : 'bg-[#FAFBFA] border border-transparent'
-      }`}
+      className={`relative flex-shrink-0 w-36 rounded-xl px-[12px] py-[10px] select-none transition-all ${isDragging ? 'bg-white shadow-sm border border-[#DCEEE1]' : 'bg-[#FAFBFA] border border-transparent'
+        }`}
       style={{
         opacity: isDragging ? 0.4 : 1,
         transform: isDraggingSameOrder ? 'translateY(-2px)' : 'none',
@@ -150,8 +149,8 @@ function CapacityBar({ label, value, max }) {
 
 // ─── AllocationConfirmModal (two-step) ───────────────────────────────────────
 function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocation, onFinalConfirm }) {
-  const [step, setStep]         = useState(1); // 1 = warning, 2 = note+confirm
-  const [note, setNote]         = useState('');
+  const [step, setStep] = useState(1); // 1 = warning, 2 = note+confirm
+  const [note, setNote] = useState('');
   const [confirmText, setConfirmText] = useState('');
 
   const reset = () => { setStep(1); setNote(''); setConfirmText(''); };
@@ -294,8 +293,8 @@ function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocati
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white text-xs font-bold transition"
                 style={{
                   background: confirmText.trim().toLowerCase() === 'confirm' ? C.primary : '#A7D7C5',
-                  cursor:     confirmText.trim().toLowerCase() === 'confirm' ? 'pointer' : 'not-allowed',
-                  boxShadow:  confirmText.trim().toLowerCase() === 'confirm' ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                  cursor: confirmText.trim().toLowerCase() === 'confirm' ? 'pointer' : 'not-allowed',
+                  boxShadow: confirmText.trim().toLowerCase() === 'confirm' ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
                 }}
                 onMouseEnter={e => { if (confirmText.trim().toLowerCase() === 'confirm') e.currentTarget.style.background = C.primaryHover; }}
                 onMouseLeave={e => { if (confirmText.trim().toLowerCase() === 'confirm') e.currentTarget.style.background = C.primary; }}
@@ -313,17 +312,17 @@ function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocati
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
-  const [rows, setRows]             = useState([]);
-  const [tray, setTray]             = useState([]);
-  const [sortBy, setSortBy]         = useState('vehicleId');
+  const [rows, setRows] = useState([]);
+  const [tray, setTray] = useState([]);
+  const [sortBy, setSortBy] = useState('vehicleId');
   const [trayFilter, setTrayFilter] = useState('all');
-  const [dragCard, setDragCard]     = useState(null);
+  const [dragCard, setDragCard] = useState(null);
   const [notifications, setNotifications] = useState(true);
-  const [showUserMenu, setShowUserMenu]   = useState(false);
-  const [confirmed, setConfirmed]         = useState(false);
-  const [showToast, setShowToast]         = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [trayHeight, setTrayHeight]       = useState(180);
+  const [trayHeight, setTrayHeight] = useState(180);
 
   // Added: load real data from backend
   React.useEffect(() => {
@@ -337,7 +336,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
           capacityKg: v.weight_cap_kg, capacityM3: v.vol_cap_m3, fuelPct: v.fuel_quota_l || 100,
           cards: []
         }));
-        
+
         const newTray = [];
         let cId = 1;
         for (const o of orders) {
@@ -349,7 +348,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
             });
           }
         }
-        
+
         setRows(newRows);
         setTray(newTray);
       } catch (err) {
@@ -402,7 +401,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
     setTray(prev => prev.filter(c => c.orderId !== orderId));
     setRows(prev => prev.map(r => ({ ...r, cards: r.cards.filter(c => c.orderId !== orderId) })));
     setRows(prev => prev.map(r => r.vehicleId === targetVehicleId ? { ...r, cards: [...r.cards, ...cardsToMove] } : r));
-    
+
     setDragCard(null);
   }, [dragCard, rows, tray]);
 
@@ -418,15 +417,15 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
 
     setRows(prev => prev.map(r => ({ ...r, cards: r.cards.filter(c => c.orderId !== orderId) })));
     setTray(prev => [...prev.filter(c => c.orderId !== orderId), ...cardsToMove]);
-    
+
     setDragCard(null);
   }, [dragCard, rows, tray]);
 
   const sortedRows = [...rows].sort((a, b) => {
     if (sortBy === 'vehicleId') return a.vehicleId.localeCompare(b.vehicleId);
-    if (sortBy === 'fuel')      return a.fuelPct - b.fuelPct;
-    if (sortBy === 'type')      return a.refrigeration.localeCompare(b.refrigeration);
-    if (sortBy === 'fill')      return rowWeightPct(b) - rowWeightPct(a);
+    if (sortBy === 'fuel') return a.fuelPct - b.fuelPct;
+    if (sortBy === 'type') return a.refrigeration.localeCompare(b.refrigeration);
+    if (sortBy === 'fill') return rowWeightPct(b) - rowWeightPct(a);
     return 0;
   });
 
@@ -436,23 +435,23 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
     setRows(prevRows => {
       let newRows = [...prevRows].map(r => ({ ...r, cards: [...r.cards] }));
       let unplacedTray = [];
-      
+
       tray.forEach(card => {
-        let targetRow = newRows.find(r => 
-          r.refrigeration === card.refrigeration && 
+        let targetRow = newRows.find(r =>
+          r.refrigeration === card.refrigeration &&
           (rowWeightKg(r) + card.weightKg) <= r.capacityKg
         );
         if (!targetRow) {
           targetRow = newRows.find(r => r.refrigeration === card.refrigeration);
         }
-        
+
         if (targetRow) {
           targetRow.cards.push(card);
         } else {
           unplacedTray.push(card);
         }
       });
-      
+
       setTray(unplacedTray);
       return newRows;
     });
@@ -490,17 +489,17 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   };
 
   const SORT_OPTIONS = [
-    { key: 'vehicleId', label: 'Vehicle ID'     },
-    { key: 'fuel',      label: 'Fuel Remaining' },
-    { key: 'type',      label: 'Type'           },
-    { key: 'fill',      label: 'Fill %'         },
+    { key: 'vehicleId', label: 'Vehicle ID' },
+    { key: 'fuel', label: 'Fuel Remaining' },
+    { key: 'type', label: 'Type' },
+    { key: 'fill', label: 'Fill %' },
   ];
 
   const BRAND_FILTERS = [
-    { key: 'all',            label: 'All'            },
+    { key: 'all', label: 'All' },
     { key: 'Waypoint Fresh', label: 'Waypoint Fresh' },
     { key: 'Waypoint Style', label: 'Waypoint Style' },
-    { key: 'Waypoint Tech',  label: 'Waypoint Tech'  },
+    { key: 'Waypoint Tech', label: 'Waypoint Tech' },
   ];
 
   return (
@@ -573,8 +572,8 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
               }}
               onMouseEnter={e => { if (allPlaced && !confirmed) e.currentTarget.style.background = C.primaryHover; }}
               onMouseLeave={e => { if (allPlaced && !confirmed) e.currentTarget.style.background = C.primary; }}
-              onMouseDown={e =>  { if (allPlaced && !confirmed) e.currentTarget.style.background = C.primaryActive; }}
-              onMouseUp={e =>    { if (allPlaced && !confirmed) e.currentTarget.style.background = C.primaryHover; }}
+              onMouseDown={e => { if (allPlaced && !confirmed) e.currentTarget.style.background = C.primaryActive; }}
+              onMouseUp={e => { if (allPlaced && !confirmed) e.currentTarget.style.background = C.primaryHover; }}
             >
               {confirmed ? <><Check size={13} /> Allocation Confirmed</> : 'Confirm Allocation'}
             </button>
@@ -618,9 +617,9 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
       {/* Scrollable vehicle rows */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3" style={{ paddingBottom: `${trayHeight + 20}px` }}>
         {sortedRows.map(row => {
-          const weightKg     = rowWeightKg(row);
-          const volumeEst    = Math.round((weightKg / row.capacityKg) * row.capacityM3 * 10) / 10;
-          const isDimmed     = dragCard?.card && !canAccept(row, dragCard.card);
+          const weightKg = rowWeightKg(row);
+          const volumeEst = Math.round((weightKg / row.capacityKg) * row.capacityM3 * 10) / 10;
+          const isDimmed = dragCard?.card && !canAccept(row, dragCard.card);
           const isCompatible = dragCard?.card ? canAccept(row, dragCard.card) : false;
 
           const stopGroups = row.cards.reduce((acc, c) => {
@@ -701,9 +700,9 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
         style={{ background: '#FFFFFF', borderTop: '1px solid #F3F4F6', height: `${trayHeight}px` }}
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); handleDropOnTray(); }}>
-        
+
         {/* Resizer Handle */}
-        <div 
+        <div
           className="w-full h-3 flex items-center justify-center cursor-row-resize absolute top-0 left-0 -mt-1.5 z-30 group"
           onMouseDown={startResize}
         >

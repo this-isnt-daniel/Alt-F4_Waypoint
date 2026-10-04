@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import waypointLogo from '../../../assets/icons/waypoint_logo.png';
-import { Bell, ChevronDown, LogOut, Truck, KeyRound, Check } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Truck, KeyRound, Check, MessageSquare } from 'lucide-react';
 import DeliveryOtpModal from './DeliveryOtpModal';
+import DriverChatModal from './DriverChatModal';
 
 const NAV_TABS = [
   { id: 'overview',  label: 'Overview'              },
@@ -32,6 +33,7 @@ export default function SMLayout({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePin, setShowChangePin] = useState(false);
+  const [showDriverChat, setShowDriverChat] = useState(false);
   const deliveryArrived = Boolean(arrivedOrder);
 
   return (
@@ -82,11 +84,22 @@ export default function SMLayout({
 
           {/* Right actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Driver Chat / Call Button */}
+            <button
+              type="button"
+              onClick={() => setShowDriverChat(true)}
+              className="h-8 px-3 rounded-full bg-[#EBF6F0] border border-[#DCF0E5] text-[#059669] hover:bg-[#059669] hover:text-white text-[13px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Driver Chat & Call"
+            >
+              <MessageSquare size={14} />
+              <span>Driver Chat</span>
+            </button>
+
             <button
               type="button"
               className="h-8 px-3 rounded-full border border-slate-200 text-[13px] text-slate-600 font-medium flex items-center gap-1.5 hover:border-slate-300 transition-colors"
             >
-              Nugegoda
+              {outlet?.name?.split(' ')[0] ?? 'Nugegoda'}
             </button>
 
             {/* Notification Bell with Dropdown */}
@@ -367,6 +380,13 @@ export default function SMLayout({
         vehicleNo={arrivedOrder?.vehicle || 'Vehicle Pending'}
         outletName={outlet?.name ?? 'Waypoint Fresh — Nugegoda'}
         onConfirmHandover={onConfirmDelivery}
+      />
+
+      {/* ── Driver Communication & Chat Modal ── */}
+      <DriverChatModal
+        isOpen={showDriverChat}
+        onClose={() => setShowDriverChat(false)}
+        outlet={outlet}
       />
     </div>
   );

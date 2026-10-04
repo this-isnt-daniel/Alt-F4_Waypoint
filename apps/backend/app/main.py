@@ -71,9 +71,10 @@ app.include_router(sm_router, prefix="/api/v1/store-manager", tags=["Store Manag
 app.include_router(disp_router, prefix="/api/v1/dispatcher", tags=["Dispatcher"])
 app.include_router(disp_router, prefix="/dispatcher", tags=["Dispatcher Direct"])
 app.include_router(vehicles_router, prefix="/api/v1/vehicles", tags=["Vehicles"])
-app.include_router(loader_router, prefix="/api/v1/loader", tags=["Loader"])
 app.include_router(pd_router, prefix="/api/v1/driver-platform", tags=["Platform Driver"])
 app.include_router(orders_router, prefix="/api/v1/orders", tags=["Shared Orders"])
+from app.api.v1.chat.router import router as chat_router
+app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat & Driver Communication"])
 
 
 
