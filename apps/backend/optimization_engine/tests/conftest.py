@@ -25,47 +25,25 @@ REQUIRED_REAL_CSVS = (
 def resolve_real_data_dir() -> Path:
     """
     Locates the real data directory portably:
-    - During development it may be beside the repository as ../data
-    - Also supports ./data
-    - Resolves the path relative to the test/repository location
+    - Resolves canonical apps/backend/data relative to repository/test location
     - Does not hardcode a Windows-only absolute path
     - Fails clearly if directory or required CSVs are missing
     - Never silently substitutes mock data
     """
     test_dir = Path(__file__).resolve().parent
-    repo_root = test_dir.parent
-    beside_repo = repo_root.parent / "data"
+    canonical_dir = (test_dir.parent.parent / "data").resolve()
 
-    candidates = [
-        beside_repo,                # ../data relative to repo root
-        repo_root / "data",         # ./data relative to repo root
-        test_dir / "data",          # tests/data
-        Path("data").resolve(),     # ./data relative to cwd
-        Path("../data").resolve(),  # ../data relative to cwd
-    ]
+    if canonical_dir.is_dir():
+        missing = [f for f in REQUIRED_REAL_CSVS if not (canonical_dir / f).is_file()]
+        if not missing:
+            return canonical_dir
+        raise FileNotFoundError(
+            f"Data directory found at {canonical_dir}, but missing required CSV files: {missing}. "
+            "Do not silently substitute mock data."
+        )
 
-    for cand in candidates:
-        if cand.is_dir() and (cand / "outlets.csv").is_file():
-            missing = [f for f in REQUIRED_REAL_CSVS if not (cand / f).is_file()]
-            if not missing:
-                return cand.resolve()
-
-    # If directory exists but missing some required CSVs, raise specific error
-    for cand in candidates:
-        if cand.is_dir():
-            missing = [f for f in REQUIRED_REAL_CSVS if not (cand / f).is_file()]
-            if missing:
-                raise FileNotFoundError(
-                    f"Data directory found at {cand}, but missing required CSV files: {missing}. "
-                    "Do not silently substitute mock data."
-                )
-
-    searched_paths = "\n  - ".join(str(c) for c in candidates)
     raise FileNotFoundError(
-        f"Real reference data directory not found.\n"
-        f"Searched candidates:\n  - {searched_paths}\n"
-        f"Required CSV files: {', '.join(REQUIRED_REAL_CSVS)}.\n"
-        f"Do not silently substitute mock data."
+        f"Real reference data directory not found at canonical location: {canonical_dir}"
     )
 
 

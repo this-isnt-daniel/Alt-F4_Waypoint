@@ -48,7 +48,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Raw provided CSV datasets (exclude raw datasets, preserve seed data and task submissions)
+# Raw provided CSV datasets (exclude raw datasets, preserve canonical data, seed data, and task submissions)
+*.csv
+!apps/backend/data/*.csv
 !*seed*.csv
 !seed/
 !seeds/

@@ -16,6 +16,7 @@ RUN pip install -e ./optimization_engine
 COPY alembic.ini .
 COPY migrations ./migrations
 COPY app ./app
+COPY data ./data
 COPY seed.py .
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

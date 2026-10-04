@@ -80,22 +80,18 @@ _CACHED_REF_DATA: Optional[ReferenceData] = None
 def resolve_real_data_dir() -> Path:
     """Locates the directory containing the 7 authoritative reference CSVs."""
     current_dir = Path(__file__).resolve().parent
-    candidates = [
-        current_dir.parent.parent / "data",                         # apps/backend/data
-        current_dir.parent.parent / "optimization_engine" / "data", # apps/backend/optimization_engine/data
-        Path("apps/backend/data").resolve(),
-        Path("data").resolve(),
-    ]
+    canonical_dir = (current_dir.parent.parent / "data").resolve()
 
-    for cand in candidates:
-        if cand.is_dir():
-            missing = [f for f in REQUIRED_REAL_CSVS if not (cand / f).is_file()]
-            if not missing:
-                return cand.resolve()
+    if canonical_dir.is_dir():
+        missing = [f for f in REQUIRED_REAL_CSVS if not (canonical_dir / f).is_file()]
+        if not missing:
+            return canonical_dir
+        raise FileNotFoundError(
+            f"Authoritative reference CSV directory at {canonical_dir} is missing required CSV files: {missing}."
+        )
 
     raise FileNotFoundError(
-        "Authoritative reference CSV directory not found. "
-        f"Checked candidate locations: {[str(c) for c in candidates]}"
+        f"Authoritative reference CSV directory not found at canonical location: {canonical_dir}"
     )
 
 
