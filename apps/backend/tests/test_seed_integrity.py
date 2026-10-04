@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 from app.models.order import Order
 from app.models.trip import Trip, TripStop
@@ -9,6 +9,24 @@ from app.models.incident import VehicleIncident
 import os
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint")
+
+# Skip this entire module if PostgreSQL is not reachable.
+# These are integration/seed tests that require a live, seeded database.
+try:
+    _probe_engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 3})
+    with _probe_engine.connect() as _c:
+        _c.execute(text("SELECT 1"))
+    _probe_engine.dispose()
+    _pg_available = True
+except Exception:
+    _pg_available = False
+
+if not _pg_available:
+    pytest.skip(
+        "PostgreSQL not reachable — skipping seed integrity integration tests",
+        allow_module_level=True,
+    )
+
 engine = create_engine(DATABASE_URL)
 
 @pytest.fixture(scope="module")
