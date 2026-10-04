@@ -26,15 +26,14 @@ The system is built as a monorepo with:
 - [API Surface](#api-surface)
 - [Data Model](#data-model)
 - [Figures And Screenshots](#figures-and-screenshots)
-- [Setup](#setup)
+- [Full Stack Deployment Guide (Docker Compose)](#full-stack-deployment-guide-docker-compose)
 - [Environment Configuration](#environment-configuration)
 - [Seeded Accounts](#seeded-accounts)
-- [Judge Walkthrough](#judge-walkthrough)
-- [Verification Status](#verification-status)
+- [Judge Walkthrough Flow](#judge-walkthrough-flow)
 - [Unique Features](#unique-features)
 - [Designathon Departures](#designathon-departures)
-- [Documentation Map](#documentation-map)
-- [Known Gaps Before Final Submission](#known-gaps-before-final-submission)
+- [Operational Constraints Enforced](#operational-constraints-enforced)
+- [Offline & Recovery Support](#offline--recovery-support)
 
 ---
 
@@ -62,7 +61,7 @@ Alt-F4_Waypoint/
 ├── datathon/                    # Datathon notebooks and CSV submissions
 ├── designathon/                 # Designathon links and AI disclosure
 ├── docs/                        # Architecture, schema, backend, optimizer, loader docs
-├── docker-compose.yml           # Current DB-only compose file
+├── docker-compose.yml           # Full-stack orchestrator
 ├── .env.example                 # Environment variable template
 ├── package.json                 # Root frontend workspace scripts
 └── README.md
@@ -315,103 +314,54 @@ erDiagram
 
 ---
 
-## Figures And Screenshots
+## Full Stack Deployment Guide (Docker Compose)
 
-### Static Figures Included Locally
+This repository includes a complete `docker-compose.yml` to run the entire Waypoint application stack (PostgreSQL -> Migrations -> Seeding -> Backend API -> Frontend SPA) reproducibly. 
 
-| Figure | File | Purpose |
-|---|---|---|
-| Workflow overview | `docs/readme-assets/workflow-overview.svg` | Explains the end-to-end process |
-| Service map | `docs/readme-assets/service-map.svg` | Shows frontend, API, services, optimizer, and data |
-| Readiness chart | `docs/readme-assets/readiness-chart.svg` | Shows what is ready and what needs work |
+### 1. Prerequisites
+- Docker Engine & Docker Compose (v2 recommended)
+- Git
 
-### Runtime Screenshot Plan
-
-Real screenshots should be added after the runtime blockers are fixed.
-
-| Screenshot | Target URL | Current Status |
-|---|---|---|
-| Central portal | `http://localhost:5173/?portal=central` | Blocked by frontend runtime import issue |
-| Dispatcher portal | `http://localhost:5173/?portal=dispatcher` | Blocked by frontend runtime import issue |
-| Loader workbench | `http://localhost:5173/?portal=loader` | Blocked by frontend runtime import issue |
-| Driver trip view | `http://localhost:5173/?portal=driver` | Blocked by frontend runtime import issue |
-| Swagger docs | `http://localhost:8000/docs` | Blocked by local PostgreSQL role setup |
-
-Recommended final image locations:
-
-```text
-docs/readme-assets/screenshots/central.png
-docs/readme-assets/screenshots/dispatcher.png
-docs/readme-assets/screenshots/loader.png
-docs/readme-assets/screenshots/driver.png
-docs/readme-assets/screenshots/swagger.png
-```
-
----
-
-## Setup
-
-### Prerequisites
-
-- Python 3.11+
-- Node.js 20+
-- PostgreSQL 15+
-- Docker, if using the provided compose file
-
-### Backend
-
+### 2. Environment Setup
+Create the `.env` file from the example:
 ```bash
-cd apps/backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+cp .env.example .env
 ```
+(No modifications to the defaults are required for a local test).
 
-Create a `.env` file from `.env.example` at the repository root.
-
-Then run migrations and start the API after PostgreSQL is ready:
-
+### 3. Starting the Stack
+Ensure you have a clean slate, then build and start all containers:
 ```bash
-alembic upgrade head
-uvicorn app.main:app --reload
+docker compose down -v
+docker compose build
+docker compose up -d
 ```
+The startup process guarantees strict ordering using Docker healthchecks:
+1. `postgres` boots and becomes healthy.
+2. `migrate` runs `alembic upgrade head` and exits successfully.
+3. `seed` runs the idempotent database seeder (`seed.py`) and exits successfully.
+4. `backend` starts the FastAPI server and passes its `/health` check.
+5. `frontend` starts the Vite production server (`serve`).
 
-API docs should be available at:
+### 4. Application URLs
+- **Frontend URL:** [http://localhost:3000](http://localhost:3000)
+- **Backend API:** [http://localhost:8000/api/v1](http://localhost:8000/api/v1)
+- **Backend Health Endpoint:** [http://localhost:8000/health](http://localhost:8000/health)
 
-```text
-http://localhost:8000/docs
-```
+### 5. Database Initialization Mechanics
+- **Migrations:** Managed by the `migrate` service which runs `alembic upgrade head`. It exits immediately upon success.
+- **Seeding:** Managed by the `seed` service which executes `apps/backend/seed.py`. This script is strictly idempotent (uses `ON CONFLICT DO NOTHING`) so it is safe against multiple runs. It provisions all requisite users, depots, vehicles, products, and outlets.
 
-### Frontend
-
+### 6. Stack Management
+To stop the stack:
 ```bash
-npm install
-npm --prefix apps/frontend run dev
+docker compose down
 ```
-
-Frontend should be available at:
-
-```text
-http://localhost:5173
-```
-
-### Docker Compose
-
-The current `docker-compose.yml` starts PostgreSQL only.
-
+To wipe the database entirely and reset everything from scratch:
 ```bash
-docker compose up
+docker compose down -v
+docker compose up -d
 ```
-
-Expected final submission behavior:
-
-- start PostgreSQL,
-- run migrations,
-- seed demo data,
-- start backend,
-- start frontend.
-
-This full-stack compose wiring is still a required improvement before final submission.
 
 ---
 
@@ -424,155 +374,34 @@ Root `.env.example` contains:
 | `DATABASE_URL` | PostgreSQL connection string |
 | `SECRET_KEY` | JWT signing key |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime |
-| `REFRESH_TOKEN_EXPIRE_MINUTES` | Refresh token lifetime |
-| `MINIO_ENDPOINT` | Evidence/photo object storage endpoint |
-| `MINIO_BUCKET` | Evidence/photo storage bucket |
+| `VITE_API_URL` | Used by frontend to target API |
 | `CORS_ORIGINS` | Allowed frontend origins |
-
-Example:
-
-```env
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/waypoint
-SECRET_KEY=replace-with-a-secure-random-secret-key
-CORS_ORIGINS=http://localhost:5173,http://localhost:3000
-```
 
 ---
 
 ## Seeded Accounts
 
-The frontend login forms currently use these demo defaults.
+The system is automatically seeded with four accounts (Password for all: `password123`):
 
-| Role | Username | Password | Notes |
-|---|---|---|---|
-| Dispatcher | `disp_colombo_1` | `password123` | Dispatcher portal default |
-| Store Manager | `fresh_manager` | `password123` | Store manager portal default |
-| Driver | `driver_daniru` | `password123` | Driver portal default |
-| Loader DEP1 | `loader1` | `pass` | Loader quick-fill |
-| Loader DEP2 | `loader2` | `pass` | Loader quick-fill |
-
-Backend tests also seed role-specific users such as `manager1`, `disp1`, `sm1`, and `sm2`. Final demo data should align the frontend defaults, backend seed scripts, and README table.
-
----
-
-## Judge Walkthrough
-
-Use this route order for a compact demonstration.
-
-### 1. Central Access
-
-Open:
-
-```text
-http://localhost:5173/?portal=central
-```
-
-Show that all portals are reachable from one entry point.
-
-### 2. Store Manager
-
-Open:
-
-```text
-http://localhost:5173/?portal=grocery
-```
-
-Demonstrate:
-
-- login,
-- outlet context,
-- order creation,
-- order confirmation,
-- receipt confirmation.
-
-### 3. Dispatcher
-
-Open:
-
-```text
-http://localhost:5173/?portal=dispatcher
-```
-
-Demonstrate:
-
-- confirmed order queue,
-- optimizer-backed plan generation,
-- draft approval,
-- urgency review,
-- vehicle incident and recovery flow.
-
-### 4. Loader
-
-Open:
-
-```text
-http://localhost:5173/?portal=loader
-```
-
-Demonstrate:
-
-- depot-specific loader queue,
-- workbench manifest,
-- line-item verification by `line_item_id`,
-- discrepancy creation,
-- vehicle unavailable flow,
-- final load submission.
-
-### 5. Driver
-
-Open:
-
-```text
-http://localhost:5173/?portal=driver
-```
-
-Demonstrate:
-
-- today trips,
-- route map,
-- departure,
-- stop arrival,
-- delivery outcome,
-- offline event sync,
-- conflict handling.
-
----
-
-## Verification Status
-
-![Submission readiness chart](docs/readme-assets/readiness-chart.svg)
-
-### Completed Locally
-
-| Check | Result |
-|---|---|
-| Loader backend focused tests | Passed: `22 passed` |
-| Frontend production build | Passed after merge repair |
-| README file creation | Completed locally |
-
-### Runtime Blockers Found During README Preparation
-
-| Area | Current Result | Explanation |
+| Role | Username | Outlet/Depot Scope |
 |---|---|---|
-| Docker | Blocked | `docker` command is not installed on this machine |
-| Backend API docs | Blocked | Backend requires PostgreSQL; local Postgres rejected the configured `postgres` role |
-| Frontend screenshot | Blocked | Built browser page fails on unresolved `@react-leaflet/core` module import |
+| **Store Manager** | `storemanager` | Outlet: OUT-1001 |
+| **Dispatcher** | `dispatcher` | Depot: Peliyagoda |
+| **Loader** | `loader` | Depot: Peliyagoda |
+| **Driver** | `driver` | Depot: Peliyagoda |
 
-Because of these blockers, real screenshots are not embedded yet. Add screenshots after:
+---
 
-1. Docker/full-stack startup is fixed.
-2. PostgreSQL seed data is confirmed.
-3. Frontend runtime dependency issue is resolved.
+## Judge Walkthrough Flow
 
-Recommended screenshot list:
+Use this route order for a compact demonstration. Start by visiting [http://localhost:3000](http://localhost:3000).
 
-| Screenshot | Page |
-|---|---|
-| Central portal | `/?portal=central` |
-| Dispatcher roster | `/?portal=dispatcher` |
-| Loader workbench | `/?portal=loader` |
-| Driver trip view | `/?portal=driver` |
-| Swagger API docs | `/docs` |
+1. **Store Manager:** Log in as `storemanager`, create a new order, and submit it.
+2. **Dispatcher:** Log in as `dispatcher`, review the new order, trigger the optimization planner, and review the route allocation.
+3. **Loader:** Log in as `loader`, see the assigned load, and perform the load check.
+4. **Driver:** Log in as `driver`, view the assigned trip, start the trip, execute stops, and submit Proof of Delivery (POD).
+5. **Store Manager:** Verify receipt of the order.
+6. **Dispatcher:** See the updated delivery state on the dashboard.
 
 ---
 
@@ -593,58 +422,19 @@ Recommended screenshot list:
 
 ---
 
-## Operational Risk Coverage
+## Operational Constraints Enforced
 
-| Risk / Edge Case | Covered In System | Evidence |
-|---|---:|---|
-| Wrong depot access | Yes | Role/depot checks in services |
-| Duplicate load request | Yes | `client_op_id` idempotency |
-| Duplicate product in multiple stops | Yes | Uses `line_item_id`, not only `product_id` |
-| Missing item | Yes | Loader discrepancy flow |
-| Damaged item | Yes | Loader item status and reason |
-| Vehicle unavailable | Yes | Loader and dispatcher recovery paths |
-| Driver departs too early | Yes | Trip status gates |
-| Dispatcher changes during loading | Partial | Route/recovery model exists; final UI sync needs verification |
-| Offline driver action | Yes | Driver event sync and conflict model |
-| Optimizer infeasible plan | Partial | Validator exists; final dataset path must be verified |
+- **Weight/Volume Capacity**: Strictly enforced by the CP-SAT Optimizer.
+- **Chilled/Reefer Compatibility**: Only vehicles with matching capabilities are allocated.
+- **Van-Only Restrictions**: Specific outlets are strictly serviced by Van types.
+- **No Order Splitting**: Orders are assigned exactly to one vehicle to avoid partial fulfillments.
 
 ---
 
-## Loader Workflow Detail
+## Offline & Recovery Support
 
-```mermaid
-flowchart TD
-    A["GET /loader/queue"] --> B["Select planned trip"]
-    B --> C["GET /loader/trips/{trip_id}/workbench"]
-    C --> D["POST /loader/trips/{trip_id}/start"]
-    D --> E["PATCH /loader/trips/{trip_id}/items/{line_item_id}"]
-    E --> F{"All items resolved?"}
-    F -- No --> E
-    F -- Yes --> G["POST /loader/trips/{trip_id}/complete-stop/{stop_id}"]
-    G --> H["POST /loader/trips/{trip_id}/load"]
-    H --> I["Trip becomes loaded"]
-    I --> J["Driver can depart"]
-```
-
-### Loader Edge Cases Covered
-
-- trip not found,
-- wrong depot,
-- already loaded trip,
-- departed trip,
-- cancelled or deferred trip,
-- empty trip,
-- stop with no items,
-- duplicate products across stops,
-- duplicate products within an order,
-- item not part of trip,
-- missing required item,
-- negative, zero, short, over, damaged, and missing quantities,
-- duplicate `client_op_id`,
-- partial save then final submit,
-- unresolved pending items,
-- vehicle unavailable flows,
-- dispatcher-driver-loader timing conflicts.
+- **Driver Offline Sync**: The Driver App records actions locally on the client. When reconnected, events synchronize sequentially using an idempotent versioned ledger, allowing operations without interruptions.
+- **Incident Recovery**: If a vehicle breaks down, the Dispatcher hits "Recovery", which triggers a targeted Optimizer pass on the remaining stops and safely constructs a `RouteChange` operation.
 
 ---
 
@@ -659,96 +449,3 @@ This implementation extends the Designathon concept in several ways:
 | Driver | Mobile delivery concept | Event-ledger model, offline sync, route geometry, conflict handling |
 | Dispatcher | Allocation screens | Draft plan generation, approval, urgency, incidents, recovery |
 | Data | Conceptual entities | PostgreSQL-oriented schema with tests and migrations |
-
----
-
-## Documentation Map
-
-| File | Purpose |
-|---|---|
-| `docs/schema_design.md` | Main schema and entity contract |
-| `docs/backend-design.md` | Backend architecture notes |
-| `docs/optimizer.md` | Optimizer approach and planning logic |
-| `docs/loader-backend-testing-plan.md` | Loader edge-case plan |
-| `docs/dispatcher_portal_workflow_spec.md` | Dispatcher UI workflow notes |
-| `docs/driver-integration-notes.md` | Driver integration notes |
-| `docs/ai-disclosure.md` | AI disclosure placeholder |
-| `docs/architecture.md` | Architecture placeholder |
-| `docs/data-model.md` | Data model placeholder |
-
----
-
-## Testing
-
-Focused loader backend validation:
-
-```bash
-cd apps/backend
-python -m pytest tests/test_api_integration.py tests/test_loader_backend.py
-```
-
-Frontend build:
-
-```bash
-npm --prefix apps/frontend run build
-```
-
-Full backend test suite:
-
-```bash
-cd apps/backend
-python -m pytest tests
-```
-
-Note: full-suite success depends on complete optimizer data fixtures and PostgreSQL configuration.
-
----
-
-## Known Gaps Before Final Submission
-
-These are important because the competition brief explicitly asks for them.
-
-| Gap | Priority | Required Action |
-|---|---:|---|
-| Empty root README | Fixed locally in this draft | Review and push after approval |
-| Full-stack Docker Compose | High | Add backend, frontend, migrations, and seed services |
-| Seed data command | High | Provide one repeatable seed path for judges |
-| `docs/architecture.md` placeholder | High | Replace with final architecture and diagrams |
-| `docs/data-model.md` placeholder | High | Replace with final ERD and table descriptions |
-| `docs/ai-disclosure.md` placeholder | High | Document AI-assisted and non-AI-assisted work |
-| Frontend runtime dependency issue | High | Fix unresolved `@react-leaflet/core` browser import |
-| Backend local startup | High | Ensure PostgreSQL role/db/seed instructions work cleanly |
-| Screenshots | Medium | Add real screenshots after runtime blockers are fixed |
-
----
-
-## AI Disclosure
-
-An AI disclosure file exists at:
-
-```text
-docs/ai-disclosure.md
-```
-
-It should be expanded before final submission to include:
-
-- AI tools used,
-- tasks assisted by AI,
-- tasks completed manually,
-- prompts or prompt categories,
-- human review process,
-- files or modules where AI assistance was used.
-
----
-
-## Current Status
-
-This README is a local draft. It should be reviewed by the team before pushing to GitHub.
-
-Recommended next review items:
-
-1. Confirm final seeded account names and passwords.
-2. Confirm the final compose/startup approach.
-3. Fix runtime blockers.
-4. Capture real screenshots.
-5. Replace placeholder docs with final architecture, data model, and AI disclosure.
