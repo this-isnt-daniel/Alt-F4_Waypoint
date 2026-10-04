@@ -27,18 +27,8 @@ export default function DeliveryDateSelector({ orderDate, setOrderDate, onDateSe
   };
 
   const handleSelectDate = (day, isOctMonth) => {
-    const monthStr = isOctMonth ? 'Oct' : 'Sep';
-    const dayName = isOctMonth 
-      ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][(day + START_DAY_OF_WEEK + 29) % 7]
-      : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][(day + START_DAY_OF_WEEK - 1) % 7];
-    
-    let dateStr = `${day} ${monthStr} · ${dayName}`;
-    
-    // Check if it's tomorrow (mock logic: assume today is 29 Sep)
-    if (day === 30 && !isOctMonth) {
-      dateStr = `Tomorrow · 30 Sep`;
-    }
-
+    const month = isOctMonth ? 10 : 9;
+    const dateStr = `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     setOrderDate(dateStr);
     onDateSelected();
   };
@@ -90,13 +80,8 @@ export default function DeliveryDateSelector({ orderDate, setOrderDate, onDateSe
 
                 const isDisabled = isSunday || isPast;
 
-                const monthStr = isOctMonth ? 'Oct' : 'Sep';
-                const dayName = isOctMonth 
-                  ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][(day + START_DAY_OF_WEEK + 29) % 7]
-                  : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][(day + START_DAY_OF_WEEK - 1) % 7];
-                
-                let checkStr = `${day} ${monthStr} · ${dayName}`;
-                if (day === 30 && !isOctMonth) checkStr = `Tomorrow · 30 Sep`;
+                const month = isOctMonth ? 10 : 9;
+                const checkStr = `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 const isSelected = orderDate === checkStr;
 

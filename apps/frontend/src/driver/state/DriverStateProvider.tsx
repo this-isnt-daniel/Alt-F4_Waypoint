@@ -240,9 +240,12 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
           let kind = "unknown";
           let payload: any = {};
           
-          if (record.type === "delivery") {
-            kind = "arrive"; // Map to actual API commands
-            payload = { base_row_version: 1, arrived_at: new Date().toISOString() };
+          if (record.type === "arrival") {
+            kind = "stop.arrived";
+            payload = { base_row_version: 1, arrived_at: new Date().toISOString(), lat: 0, lng: 0 };
+          } else if (record.type === "delivery" || record.type === "partial" || record.type === "failed") {
+            kind = "stop.outcome.submitted";
+            payload = { base_row_version: 1, finished_at: new Date().toISOString() };
           }
           
           if (kind !== "unknown") {
@@ -253,6 +256,9 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
               .catch(() => {
                 updateSyncRecord(newRecord.id, { state: "failed" });
               });
+          } else {
+            // For UI-only events not fully mapped yet, auto-sync
+            updateSyncRecord(newRecord.id, { state: "synced" });
           }
         });
       }

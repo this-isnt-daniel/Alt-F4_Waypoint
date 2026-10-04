@@ -16,7 +16,7 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
   const [activeTabParams, setActiveTabParams] = useState(null);
   const [basket, setBasket]           = useState([]);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [orderDate, setOrderDate]     = useState('Tomorrow · 30 Sep');
+  const [orderDate, setOrderDate]     = useState('2026-09-30');
 
   // Delivery arrival & OTP state
   const [deliveryArrived, setDeliveryArrived] = useState(true);
@@ -112,6 +112,7 @@ export default function StoreManagerOverview({ onLogout, user, outlet }) {
             onReplaceBasket={replaceBasket}
             orderDate={orderDate}
             setOrderDate={setOrderDate}
+            outlet={outlet}
           />
         )}
 
