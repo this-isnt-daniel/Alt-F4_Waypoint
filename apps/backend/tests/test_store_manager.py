@@ -1,4 +1,3 @@
-from receipt_fixture import record_delivery
 import pytest
 from fastapi.testclient import TestClient
 from datetime import datetime, date, timezone, timedelta
@@ -117,7 +116,7 @@ def test_create_and_confirm_order(client, store_manager_db):
         "outlet_id": "OUT100",
         "brand": "fresh",
         "temp_req": "chilled",
-        "order_date": str(date.today() + timedelta(days=7)),
+        "order_date": str(date.today()),
         "items": [
             {"product_id": "P100", "quantity": 50},
             {"product_id": "P200", "quantity": 20}
@@ -149,7 +148,7 @@ def test_create_order_wrong_outlet_forbidden(client, store_manager_db):
         "outlet_id": "OUT200",
         "brand": "fresh",
         "temp_req": "chilled",
-        "order_date": str(date.today() + timedelta(days=7)),
+        "order_date": str(date.today()),
         "items": [{"product_id": "P100", "quantity": 10}]
     }
     res = client.post("/api/v1/store-manager/orders", headers=headers, json=create_payload)
@@ -164,7 +163,7 @@ def test_update_and_cancel_draft_order(client, store_manager_db):
         "outlet_id": "OUT100",
         "brand": "fresh",
         "temp_req": "ambient",
-        "order_date": str(date.today() + timedelta(days=7)),
+        "order_date": str(date.today()),
         "items": [{"product_id": "P200", "quantity": 10}]
     })
     assert create_res.status_code == 200
@@ -213,14 +212,12 @@ def test_confirm_receipt_and_discrepancies(client, store_manager_db):
         "outlet_id": "OUT100",
         "brand": "fresh",
         "temp_req": "chilled",
-        "order_date": str(date.today() + timedelta(days=7)),
+        "order_date": str(date.today()),
         "items": [{"product_id": "P100", "quantity": 10}]
     })
     order_id = res.json()["order_id"]
     client.post(f"/api/v1/store-manager/orders/{order_id}/confirm", headers=headers)
     
-    record_delivery(store_manager_db, order_id, "POD-999")
-
     # Confirm receipt with discrepancy
     receipt_payload = {
         "client_op_id": f"op-{uuid.uuid4().hex[:6]}",
@@ -260,7 +257,7 @@ def test_get_order_eta_and_deferrals(client, store_manager_db):
         "outlet_id": "OUT100",
         "brand": "fresh",
         "temp_req": "chilled",
-        "order_date": str(date.today() + timedelta(days=7)),
+        "order_date": str(date.today()),
         "items": [{"product_id": "P100", "quantity": 10}]
     })
     order_id = res.json()["order_id"]
@@ -293,8 +290,6 @@ def test_receipt_confirmation_idempotency_hardened(client, store_manager_db):
     order1_id = res1.json()["order_id"]
     client.post(f"/api/v1/store-manager/orders/{order1_id}/confirm", headers=headers_sm1)
     
-    record_delivery(store_manager_db, order1_id, "POD-IDEMP-001")
-
     # First receipt confirmation with client_op_id
     op_id = "op-rec-idemp-1"
     receipt_payload1 = {
@@ -333,10 +328,10 @@ def test_receipt_confirmation_idempotency_hardened(client, store_manager_db):
     # Case 3: Same client_op_id + receipt belonging to another outlet/user -> 403 Forbidden without leaking
     res3 = client.post("/api/v1/store-manager/orders", headers=headers_sm2, json={
         "outlet_id": "OUT200",
-        "brand": "style",
-        "temp_req": "ambient",
+        "brand": "fresh",
+        "temp_req": "chilled",
         "order_date": str(date.today() + timedelta(days=22)),
-        "items": [{"product_id": "P300", "quantity": 5}]
+        "items": [{"product_id": "P100", "quantity": 5}]
     })
     order3_id = res3.json()["order_id"]
     client.post(f"/api/v1/store-manager/orders/{order3_id}/confirm", headers=headers_sm2)

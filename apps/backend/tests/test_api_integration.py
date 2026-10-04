@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime, date, timezone, timedelta
+from datetime import datetime, date, timezone
 from app.main import app
 
 # We use the test client. To mock authentication, we need to bypass or mock the JWT.
@@ -97,7 +97,7 @@ def test_integration_flow(client, override_db):
         "outlet_id": "OUT1",
         "brand": "fresh",
         "temp_req": "ambient",
-        "order_date": str(date.today() + timedelta(days=7)),
+        "order_date": str(date.today()),
         "items": [{"product_id": "P1", "quantity": 10}]
     })
     assert res.status_code == 200
@@ -120,7 +120,7 @@ def test_integration_flow(client, override_db):
     # Create plan
     plan_res = client.post("/api/v1/dispatcher/planning/optimize", headers=disp_headers, json={
         "depot_id": "DEP1",
-        "target_date": str(date.today() + timedelta(days=7)),
+        "target_date": str(date.today()),
     })
     assert plan_res.status_code == 200
     # The mock returns empty trips. For this test to proceed, we must mock the service return directly
@@ -210,7 +210,7 @@ def test_integration_flow(client, override_db):
     # FLOW 11: Unauthorized role (Loader trying to plan)
     res = client.post("/api/v1/dispatcher/planning/optimize", headers=load_headers, json={
         "depot_id": "DEP1",
-        "target_date": str(date.today() + timedelta(days=7)),
+        "target_date": str(date.today()),
     })
     assert res.status_code == 403
     

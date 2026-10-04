@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Phone, Map } from 'lucide-react';
-const ORDER_STAGES = [
-  { key: 'confirmed', label: 'Confirmed' },
-  { key: 'planned', label: 'Planned' },
-  { key: 'loaded', label: 'Loaded' },
-  { key: 'out_for_delivery', label: 'Out for delivery' },
-  { key: 'delivered', label: 'Delivered' },
-];
-const getStageIndex = (status) => Math.max(0, ORDER_STAGES.findIndex(s => s.key === status));
+import { ORDER_STAGES, getStageIndex } from '../data/orders';
 import { CATEGORIES } from '../data/catalogue';
 import { useOrders } from '../useOrders';
 import DeliveryMap from './DeliveryMap';

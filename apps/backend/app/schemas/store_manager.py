@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 class OrderItemInput(BaseModel):
     product_id: str
-    quantity: int = Field(gt=0, description="Quantity must be > 0")
+    quantity: float = Field(gt=0, description="Quantity must be > 0")
 
 class CreateOrderRequest(BaseModel):
     outlet_id: str

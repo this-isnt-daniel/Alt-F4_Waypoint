@@ -5,7 +5,7 @@ from datetime import date, datetime
 class OrderLineResponse(BaseModel):
     line_item_id: str
     product_id: str
-    quantity: int
+    quantity: float
     model_config = ConfigDict(from_attributes=True)
 
 class OrderResponse(BaseModel):
@@ -21,7 +21,7 @@ class OrderResponse(BaseModel):
     window_close: Optional[str] = None
     
     # Calculated values at confirmation
-    order_units: Optional[int] = None
+    order_units: Optional[float] = None
     order_wt_kg: Optional[float] = None
     order_vol_m3: Optional[float] = None
     

@@ -23,8 +23,6 @@ export function SignInScreen() {
       });
       safeStorage.set("token", response.access_token);
       
-      window.dispatchEvent(new Event("waypoint-auth-changed"));
-
       // Tell state provider to initialize data
       startTrip1();
       push("active-trip");

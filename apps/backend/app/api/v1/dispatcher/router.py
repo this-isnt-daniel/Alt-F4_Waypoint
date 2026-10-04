@@ -7,16 +7,16 @@ from app.db.session import get_db
 from app.api.deps import get_current_user, RoleChecker
 from app.models.user import User
 from app.models.order import Order
-from app.schemas.shared import OrderResponse, VehicleResponse, OutletResponse
-from app.models.vehicle import Vehicle
+from app.schemas.shared import OrderResponse, OutletResponse
 from app.models.outlet import Outlet
+from app.schemas.dispatcher import OptimizeRequest, ProposedPlanResponse, ConfirmPlanRequest, DeferOrderRequest
 from app.schemas.urgency import (
     DispatcherUrgencyListItemResponse,
     UrgencyRequestResponse,
     ApproveUrgencyRequest,
     RejectUrgencyRequest,
 )
-from app.services import urgency_service
+from app.services import planning_service, urgency_service
 
 dispatcher_role = RoleChecker("dispatcher")
 router = APIRouter(dependencies=[Depends(dispatcher_role)])
@@ -68,6 +68,26 @@ def get_outlets(
         query = query.filter(Outlet.district == district)
     return query.all()
 
+@router.post("/planning/optimize", response_model=ProposedPlanResponse, dependencies=[Depends(dispatcher_role)])
+def optimize_plan(request: OptimizeRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if request.depot_id and request.depot_id != current_user.depot_id:
+        raise HTTPException(status_code=403, detail="Cannot optimize plan for another depot")
+    return planning_service.create_optimization_run(db, current_user.depot_id, request.target_date, request.brand)
+
+@router.get("/planning/runs/{run_id}", response_model=ProposedPlanResponse, dependencies=[Depends(dispatcher_role)])
+def get_plan(run_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return planning_service.get_optimization_run(db, run_id, current_user.depot_id)
+
+@router.post("/planning/runs/{run_id}/confirm", dependencies=[Depends(dispatcher_role)])
+def confirm_plan(run_id: str, request: ConfirmPlanRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return planning_service.confirm_plan(db, run_id, request.client_op_id, current_user.depot_id, current_user.user_id)
+
+@router.post("/orders/{order_id}/defer", dependencies=[Depends(dispatcher_role)])
+def defer_order(order_id: str, request: DeferOrderRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if order_id != request.order_id:
+        raise HTTPException(status_code=400, detail="Path ID and body ID mismatch")
+    deferral = planning_service.defer_order(db, request, current_user.depot_id, current_user.user_id)
+    return {"status": "success", "deferral_id": deferral.deferral_id}
 
 
 # ── Waypoint Optimizer Endpoints (Step 5) ───────────────────────────────────
@@ -240,4 +260,3 @@ def reject_urgency(
         user_id=current_user.user_id,
         decision_note=request.decision_note,
     )
-

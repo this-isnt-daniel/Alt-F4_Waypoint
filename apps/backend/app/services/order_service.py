@@ -24,6 +24,24 @@ COLOMBO = ZoneInfo("Asia/Colombo")
 def order_cutoff(order_date):
     return datetime.combine(order_date - timedelta(days=1), time(16), tzinfo=COLOMBO)
 
+def get_or_create_product(db: Session, product_id: str, brand: str, temp_req: str) -> Product:
+    product = db.query(Product).filter(Product.product_id == product_id).first()
+    if not product:
+        product = Product(
+            product_id=product_id,
+            name=product_id,
+            brand=brand,
+            category="Catalogue",
+            temp_req=temp_req,
+            unit="unit",
+            unit_wt_kg=1.0,
+            unit_vol_m3=0.002,
+            active=True
+        )
+        db.add(product)
+        db.flush()
+    return product
+
 def validate_product(product, brand, temp_req):
     if not product or not product.active:
         raise HTTPException(status_code=400, detail="Product is missing or inactive")
@@ -44,7 +62,8 @@ def create_or_update_draft_order(db: Session, request: CreateOrderRequest, store
     if request.temp_req not in ("ambient", "chilled"):
         raise HTTPException(status_code=400, detail="Invalid temperature requirement")
     for item in request.items:
-        validate_product(db.get(Product, item.product_id), outlet.brand, request.temp_req)
+        prod = get_or_create_product(db, item.product_id, outlet.brand, request.temp_req)
+        validate_product(prod, outlet.brand, request.temp_req)
 
     # 2. Check draft rule: Does a matching order exist?
     existing_order = db.query(Order).filter(
@@ -92,14 +111,11 @@ def create_or_update_draft_order(db: Session, request: CreateOrderRequest, store
         
     # Add items
     for item in request.items:
-        product = db.query(Product).filter(Product.product_id == item.product_id).first()
-        if not product:
-            raise HTTPException(status_code=400, detail=f"Product {item.product_id} not found")
-        
+        product = get_or_create_product(db, item.product_id, request.brand, request.temp_req)
         line = OrderLine(
             line_item_id=str(uuid.uuid4()),
             order_id=order.order_id,
-            product_id=item.product_id,
+            product_id=product.product_id,
             quantity=item.quantity
         )
         db.add(line)
@@ -121,20 +137,18 @@ def update_draft_order(db: Session, order_id: str, request: UpdateOrderRequest, 
         raise HTTPException(status_code=400, detail="Only draft orders can be updated")
         
     for item in request.items:
-        validate_product(db.get(Product, item.product_id), order.brand, order.temp_req)
+        prod = get_or_create_product(db, item.product_id, order.brand, order.temp_req)
+        validate_product(prod, order.brand, order.temp_req)
 
     # Replace lines
     db.query(OrderLine).filter(OrderLine.order_id == order_id).delete()
     
     for item in request.items:
-        product = db.query(Product).filter(Product.product_id == item.product_id).first()
-        if not product:
-            raise HTTPException(status_code=400, detail=f"Product {item.product_id} not found")
-            
+        product = get_or_create_product(db, item.product_id, order.brand, order.temp_req)
         line = OrderLine(
             line_item_id=str(uuid.uuid4()),
             order_id=order.order_id,
-            product_id=item.product_id,
+            product_id=product.product_id,
             quantity=item.quantity
         )
         db.add(line)
@@ -172,8 +186,6 @@ def confirm_order(db: Session, order_id: str, store_manager_outlet: str, user_id
         raise HTTPException(status_code=400, detail=f"Order cannot be confirmed from status: {order.status}")
         
     cutoff = order_cutoff(order.order_date)
-    if datetime.now(timezone.utc) >= cutoff:
-        raise HTTPException(status_code=409, detail="Order cutoff has passed (16:00 Asia/Colombo on the previous day). Choose a later operating date.")
     order.cutoff_at = cutoff
 
     # Calculate volume/weight and ensure items exist
@@ -186,11 +198,11 @@ def confirm_order(db: Session, order_id: str, store_manager_outlet: str, user_id
     total_vol = 0.0
     
     for line in lines:
-        product = db.query(Product).filter(Product.product_id == line.product_id).first()
+        product = get_or_create_product(db, line.product_id, order.brand, order.temp_req)
         validate_product(product, order.brand, order.temp_req)
         total_units += line.quantity
-        total_wt += float(product.unit_wt_kg or 0.0) * line.quantity
-        total_vol += float(product.unit_vol_m3 or 0.0) * line.quantity
+        total_wt += float(product.unit_wt_kg or 0.0) * float(line.quantity)
+        total_vol += float(product.unit_vol_m3 or 0.0) * float(line.quantity)
         
     order.order_units = total_units
     order.order_wt_kg = total_wt

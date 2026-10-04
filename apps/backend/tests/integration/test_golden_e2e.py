@@ -1,7 +1,7 @@
 import os
 import pytest
 import psycopg2
-from datetime import date, timedelta, datetime, timedelta
+from datetime import date, datetime, timedelta
 from fastapi.testclient import TestClient
 from app.main import app
 from app.adapters.optimizer_adapter import get_reference_data
@@ -54,7 +54,7 @@ def _cleanup_e2e_data(cursor):
 
 def test_golden_e2e(client, pg_conn):
     cursor = pg_conn.cursor()
-    order_date = str(date.today() + timedelta(days=7))
+    order_date = str(date.today())
 
     # 0. Narrowly clean up prior E2E runs without deleting broad canonical data
     _cleanup_e2e_data(cursor)
@@ -82,7 +82,7 @@ def test_golden_e2e(client, pg_conn):
     driv_token = get_token(client, "driv999")
     
     # 3. Store Manager Creates Order with temp_req="chilled"
-    order_date = str(date.today() + timedelta(days=7))
+    order_date = str(date.today())
     res = client.post("/api/v1/store-manager/orders", headers={"Authorization": f"Bearer {sm_token}"}, json={
         "outlet_id": "OUT001",
         "brand": "fresh",

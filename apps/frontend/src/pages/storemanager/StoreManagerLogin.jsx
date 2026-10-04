@@ -4,9 +4,9 @@ import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import { apiFetch } from '../../lib/api';
 import { safeStorage } from '../../lib/security';
 
-export default function StoreManagerLogin({ onLogin, expectedBrand = "fresh", defaultUsername = "storemanager@waypoint.local" }) {
+export default function StoreManagerLogin({ onLogin }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [username, setUsername] = useState(defaultUsername);
+  const [username, setUsername] = useState('storemanager@waypoint.local');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
@@ -31,9 +31,6 @@ export default function StoreManagerLogin({ onLogin, expectedBrand = "fresh", de
       
       const me = await apiFetch('/auth/me');
       
-      if (me.role !== 'store_manager' || !me.outlet_id) throw new Error('Use a store manager account.');
-      const shop = await apiFetch('/store-manager/outlet');
-      if (shop.brand !== expectedBrand) throw new Error(`Use a ${expectedBrand} outlet account in this portal.`);
       const manager = {
         id: me.user_id,
         name: me.name || username,
@@ -42,9 +39,8 @@ export default function StoreManagerLogin({ onLogin, expectedBrand = "fresh", de
         pin: '123456'
       };
       const outlet = {
-        id: shop.outlet_id,
-        name: shop.name,
-        brand: shop.brand
+        id: me.outlet_id || 'OUT001',
+        name: me.outlet_id || 'Store Outlet'
       };
 
       onLogin(manager, outlet);

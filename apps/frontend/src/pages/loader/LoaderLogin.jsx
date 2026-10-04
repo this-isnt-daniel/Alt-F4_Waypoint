@@ -4,13 +4,12 @@ import { apiFetch } from '../../lib/api';
 import { safeStorage } from '../../lib/security';
 
 const USERS = {
-  dep1: { id: 1, name: 'Loader One', depot: 'DEP1', bay: 'Bay Lead A', username: 'loader1', password: 'pass' },
-  dep2: { id: 2, name: 'Other Loader', depot: 'DEP2', bay: null, username: 'loader2', password: 'pass' }
+  peliyagoda: { id: 'USR-LOAD', name: 'Loader Demo', depot: 'peliyagoda', bay: 'Bay Lead A', username: 'loader@waypoint.local', password: 'password123' },
 };
 
 export default function LoaderLogin({ onLogin }) {
-  const [username, setUsername] = useState(USERS.dep1.username);
-  const [password, setPassword] = useState(USERS.dep1.password);
+  const [username, setUsername] = useState(USERS.peliyagoda.username);
+  const [password, setPassword] = useState(USERS.peliyagoda.password);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -30,8 +29,8 @@ export default function LoaderLogin({ onLogin }) {
       onLogin({
         id: profile.user_id,
         name: profile.name || username,
-        depot: profile.depot_id,
-        bay: profile.depot_id === 'DEP1' ? 'Bay Lead A' : null,
+        depot: profile.depot_id || 'peliyagoda',
+        bay: 'Bay Lead A',
         token: token.access_token,
         username: profile.username,
         role: profile.role
@@ -44,54 +43,26 @@ export default function LoaderLogin({ onLogin }) {
   };
 
   return (
-    <main className="min-h-screen w-full bg-[#f8fbf9] flex flex-col items-center justify-center px-4 font-sans select-none">
-      <div className="bg-white border border-slate-200 rounded-md shadow-sm p-6 sm:p-8 max-w-sm w-full">
+    <main className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center px-4 font-sans select-none">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 max-w-sm w-full">
         {/* Logo and Brand Heading */}
-        <div className="flex flex-col items-center justify-center mb-8">
-          <div className="flex items-center gap-3.5 mb-4">
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="flex items-center gap-3 mb-3">
             <img
               src={waypointLogo}
               alt="Waypoint Logo"
-              className="w-10 h-10 object-contain rounded-md"
+              className="w-10 h-10 object-contain rounded-xl shadow-sm"
             />
-            <h1 className="text-[32px] font-extrabold text-[#0B2019] tracking-tight leading-none">
+            <h1
+              className="text-3xl font-extrabold text-slate-900 tracking-tight"
+              style={{ fontFamily: "'Inter', sans-serif" }}
+            >
               Waypoint
             </h1>
           </div>
-          <span className="inline-flex items-center px-3 py-1 rounded text-[11px] font-bold tracking-widest uppercase text-brand-700 bg-brand-50 border border-brand-100">
+          <span className="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase text-emerald-800 bg-emerald-50 border border-emerald-200">
             Loader Portal
           </span>
-        </div>
-
-        {/* Quick Fill Buttons for Judges */}
-        <div className="mb-6 border-b border-slate-100 pb-6">
-          <p className="text-[12px] font-bold text-slate-500 uppercase text-center tracking-wider mb-3">
-            Quick Fill For Judges
-          </p>
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => { setUsername(USERS.dep1.username); setPassword(USERS.dep1.password); }}
-              className={`flex-1 py-2 px-2 text-[12px] font-bold border rounded transition-colors ${
-                username === USERS.dep1.username
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              DEP1
-            </button>
-            <button
-              type="button"
-              onClick={() => { setUsername(USERS.dep2.username); setPassword(USERS.dep2.password); }}
-              className={`flex-1 py-2 px-2 text-[12px] font-bold border rounded transition-colors ${
-                username === USERS.dep2.username
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              DEP2
-            </button>
-          </div>
         </div>
 
         {error && (

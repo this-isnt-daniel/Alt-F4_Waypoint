@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { apiFetch } from '../../lib/api';
-import { confirmBoard } from './planApi';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import {
   Moon,
@@ -51,11 +50,9 @@ const INITIAL_TRAY = [];
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const rowWeightKg  = (row) => row.cards.reduce((s, c) => s + c.weightKg, 0);
 const rowWeightPct = (row) => Math.min((rowWeightKg(row) / row.capacityKg) * 100, 100);
-const canAccept = (row, card) => {
-  if (card.refrigeration === 'Reefer' && row.refrigeration !== 'Reefer') return false;
-  const others = row.cards.filter(c => c.orderId !== card.orderId);
-  return others.reduce((n, c) => n + c.weightKg, 0) + card.weightKg <= row.capacityKg
-    && others.reduce((n, c) => n + (c.volumeM3 || 0), 0) + (card.volumeM3 || 0) <= row.capacityM3;
+const canAccept    = (row, card) => {
+  if (card.refrigeration === 'Reefer') return row.refrigeration === 'Reefer';
+  return true; // Ambient goods can go in either Ambient or Reefer vehicles
 };
 const barColour    = (pct) => pct < 75 ? C.primary : pct < 90 ? '#F59E0B' : '#EF4444';
 
@@ -316,7 +313,6 @@ function AllocationConfirmModal({ isOpen, onClose, onGoToFleet, onBackToAllocati
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
-  const targetDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' });
   const [rows, setRows]             = useState([]);
   const [tray, setTray]             = useState([]);
   const [sortBy, setSortBy]         = useState('vehicleId');
@@ -334,7 +330,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
     const fetchData = async () => {
       try {
         const vehicles = await apiFetch('/dispatcher/vehicles');
-        const orders = await apiFetch(`/dispatcher/orders?status=confirmed&date=${targetDate}`);
+        const orders = await apiFetch('/dispatcher/orders?status=confirmed');
 
         const newRows = vehicles.filter(v => v.status === 'available').map(v => ({
           vehicleId: v.vehicle_id, tripLabel: 'Trip 1 of 1', refrigeration: v.temp === 'reefer' ? 'Reefer' : 'Ambient',
@@ -342,14 +338,18 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
           cards: []
         }));
         
-        const newTray = orders.map((o, i) => ({
-          id: `c${i}`, orderId: o.order_id, stop: 1, stopName: o.outlet_id,
-          product: `${o.items.length} product lines`, qty: `x${o.order_units || 0}`,
-          weightKg: Number(o.order_wt_kg || 0), volumeM3: Number(o.order_vol_m3 || 0),
-          brand: `Waypoint ${o.brand.charAt(0).toUpperCase()}${o.brand.slice(1)}`,
-          refrigeration: o.temp_req === 'chilled' ? 'Reefer' : 'Ambient'
-        }));
-
+        const newTray = [];
+        let cId = 1;
+        for (const o of orders) {
+          for (const item of o.items) {
+            newTray.push({
+              id: `c${cId++}`, orderId: o.order_id, stop: 1, stopName: o.outlet_id,
+              product: item.product_id, qty: `x${item.quantity}`, weightKg: item.quantity * 2, // mock weight since it's not in OrderLineResponse
+              brand: o.brand, refrigeration: o.temp_req === 'chilled' ? 'Reefer' : 'Ambient'
+            });
+          }
+        }
+        
         setRows(newRows);
         setTray(newTray);
       } catch (err) {
@@ -381,7 +381,7 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
     document.body.style.cursor = 'row-resize';
   }, [trayHeight]);
 
-  const allPlaced = rows.some(row => row.cards.length > 0); // Deferred orders may remain in the tray.
+  const allPlaced = tray.length === 0;
 
   const handleDragStart = useCallback((card, sourceType, sourceVehicleId = null) => {
     setDragCard({ card, sourceType, sourceVehicleId });
@@ -433,15 +433,30 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   const filteredTray = tray.filter(c => trayFilter === 'all' || c.brand === trayFilter);
 
   const handleAutoAllocate = useCallback(() => {
-    // Convenience placement only; the backend validates the final requested plan.
-    const nextRows = rows.map(row => ({...row, cards: [...row.cards]}));
-    const unplaced = [];
-    for (const card of tray) {
-      const target = nextRows.find(row => canAccept(row, card));
-      if (target) target.cards.push(card); else unplaced.push(card);
-    }
-    setRows(nextRows); setTray(unplaced);
-  }, [rows, tray]);
+    setRows(prevRows => {
+      let newRows = [...prevRows].map(r => ({ ...r, cards: [...r.cards] }));
+      let unplacedTray = [];
+      
+      tray.forEach(card => {
+        let targetRow = newRows.find(r => 
+          r.refrigeration === card.refrigeration && 
+          (rowWeightKg(r) + card.weightKg) <= r.capacityKg
+        );
+        if (!targetRow) {
+          targetRow = newRows.find(r => r.refrigeration === card.refrigeration);
+        }
+        
+        if (targetRow) {
+          targetRow.cards.push(card);
+        } else {
+          unplacedTray.push(card);
+        }
+      });
+      
+      setTray(unplacedTray);
+      return newRows;
+    });
+  }, [tray]);
 
   const handleConfirm = () => {
     if (!allPlaced) return;
@@ -451,7 +466,15 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   const handleFinalConfirm = async (_note) => {
     setShowConfirmModal(false);
     try {
-      await confirmBoard(rows, tray, targetDate, _note);
+      const today = new Date().toISOString().split('T')[0];
+      const res = await apiFetch('/dispatcher/plans/draft', {
+        method: 'POST',
+        body: JSON.stringify({ target_date: today })
+      });
+      await apiFetch(`/dispatcher/plans/${res.plan_id || res.run_id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
       setConfirmed(true);
       setShowToast(true);
       setTimeout(() => {

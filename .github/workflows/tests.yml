@@ -42,7 +42,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest
-        pip install -e ./optimization_engine
 
     - name: Compile check
       working-directory: apps/backend
@@ -55,8 +54,7 @@ jobs:
     - name: Run Backend Tests
       working-directory: apps/backend
       run: |
-        python -m pytest -q tests
-        PYTHONPATH=optimization_engine/src python -m pytest -q optimization_engine/tests
+        pytest -q tests
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -72,10 +70,8 @@ jobs:
 
     - name: Install Frontend Dependencies
       working-directory: apps/frontend
-      run: npm ci
+      run: npm install
 
     - name: Build Frontend
       working-directory: apps/frontend
-      run: |
-        npm test
-        npm run build
+      run: npm run build

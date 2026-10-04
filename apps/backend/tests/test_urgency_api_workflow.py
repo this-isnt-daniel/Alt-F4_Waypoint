@@ -1,4 +1,3 @@
-from receipt_fixture import record_delivery
 import pytest
 import uuid
 from fastapi.testclient import TestClient
@@ -822,7 +821,6 @@ def test_receipt_delivery_resolves_approved_urgency(client, urgency_test_db):
         "pod_id": "POD-RESOLVE-100",
         "items_ok": True,
     }
-    record_delivery(urgency_test_db, ord_id, rec_payload["pod_id"])
     rec_res = client.post(
         f"/api/v1/store-manager/orders/{ord_id}/receipt",
         headers=sm1_hdr,
@@ -875,7 +873,6 @@ def test_receipt_delivery_leaves_rejected_urgency_rejected(client, urgency_test_
         "pod_id": "POD-REJ-200",
         "items_ok": True,
     }
-    record_delivery(urgency_test_db, ord_id, rec_payload["pod_id"])
     rec_res = client.post(
         f"/api/v1/store-manager/orders/{ord_id}/receipt",
         headers=sm1_hdr,
@@ -916,7 +913,6 @@ def test_receipt_delivery_leaves_pending_urgency_pending(client, urgency_test_db
         "pod_id": "POD-PEND-300",
         "items_ok": True,
     }
-    record_delivery(urgency_test_db, ord_id, rec_payload["pod_id"])
     rec_res = client.post(
         f"/api/v1/store-manager/orders/{ord_id}/receipt",
         headers=sm1_hdr,
@@ -946,7 +942,6 @@ def test_receipt_delivery_without_urgency_unaffected(client, urgency_test_db):
         "pod_id": "POD-NORMAL-400",
         "items_ok": True,
     }
-    record_delivery(urgency_test_db, ord_id, rec_payload["pod_id"])
     rec_res = client.post(
         f"/api/v1/store-manager/orders/{ord_id}/receipt",
         headers=sm1_hdr,

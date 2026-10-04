@@ -2,7 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, RefreshCcw } from 'lucide-react';
 import { fetchLoaderDeferrals } from './loaderApi';
 
-
+const FALLBACK_DEFERRALS = [
+  {
+    deferral_id: 'DEF-DEMO-1',
+    order_id: 'ORD-DEMO-1',
+    outlet_id: 'OUT-DEMO',
+    outlet_name: 'Demo Outlet',
+    original_date: '2026-10-03',
+    new_date: '2026-10-04',
+    reason: 'Vehicle capacity',
+    trip_id: 'TRIP-DEMO-1',
+    items: [
+      { line_item_id: 'LINE-DEMO-1', product_name: 'Fresh Whole Milk 1L', assigned_qty: 20, unit: 'crates' },
+    ],
+  },
+];
 
 export default function LoaderDeferrals({ user }) {
   const [deferrals, setDeferrals] = useState([]);
@@ -14,11 +28,11 @@ export default function LoaderDeferrals({ user }) {
     setLoading(true);
     setError('');
     try {
-      const rows = user?.token ? await fetchLoaderDeferrals(user.token) : [];
+      const rows = user?.token ? await fetchLoaderDeferrals(user.token) : FALLBACK_DEFERRALS;
       setDeferrals(rows);
     } catch (err) {
-      setError(err.message);
-      setDeferrals([]);
+      setError(`${err.message}. Showing demo deferrals.`);
+      setDeferrals(FALLBACK_DEFERRALS);
     } finally {
       setLoading(false);
     }

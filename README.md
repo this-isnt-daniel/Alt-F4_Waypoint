@@ -385,7 +385,7 @@ The system is automatically seeded with four accounts (Password for all: `passwo
 
 | Role | Username | Outlet/Depot Scope |
 |---|---|---|
-| **Store Manager** | `storemanager@waypoint.local` | Outlet: OUT001 |
+| **Store Manager** | `storemanager@waypoint.local` | Outlet: OUT-1001 |
 | **Dispatcher** | `dispatcher@waypoint.local` | Depot: Peliyagoda |
 | **Loader** | `loader@waypoint.local` | Depot: Peliyagoda |
 | **Driver** | `driver@waypoint.local` | Depot: Peliyagoda |
@@ -448,26 +448,3 @@ This implementation extends the Designathon concept in several ways:
 | Driver | Mobile delivery concept | Event-ledger model, offline sync, route geometry, conflict handling |
 | Dispatcher | Allocation screens | Draft plan generation, approval, urgency, incidents, recovery |
 | Data | Conceptual entities | PostgreSQL-oriented schema with tests and migrations |
-
-## Audit patch notes (4 October 2026)
-
-The live store-manager catalogue and receipt pages replace prototype-only screens
-with a simpler responsive API-backed form. Style and Tech now share the live portal.
-This is a significant departure from the Day 5 screens; retain the submitted
-prototype for comparison. The old template/variant catalogue is not used by this form.
-
-Additional seeded store accounts: `style@waypoint.local` (OUT015) and
-`tech@waypoint.local` (OUT021), password `password123`. Canonical fleet drivers use
-`driver.veh001@waypoint.local` through `driver.veh060@waypoint.local`, with the same
-password; the vehicle's assigned driver is copied into newly approved trips.
-Existing vehicle assignments are preserved on reseeding.
-
-Set `VITE_API_URL` before building the frontend. Compose now passes it as a build
-argument; changing only the runtime environment does not change compiled Vite code.
-
-The patch is not an end-to-end readiness certificate. Driver offline persistence,
-complete event payload wiring, real POD capture, weekly fuel accounting, and the
-remaining dispatcher overview/recovery prototype actions still need completion.
-The allocation board validates its requested placements on the backend; its simple
-local placement suggestion is not a substitute for validation. Use future operating
-dates when creating orders; today's order cutoff has already passed.
