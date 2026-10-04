@@ -11,6 +11,7 @@ class User(Base):
     outlet_id = Column(String, ForeignKey("outlet.outlet_id"), nullable=True)
     depot_id = Column(String, ForeignKey("depot.depot_id"), nullable=True)
     name = Column(String, nullable=False)
+    phone = Column(String, nullable=True)
     hashed_pw = Column(String, nullable=False)
 
     __table_args__ = (

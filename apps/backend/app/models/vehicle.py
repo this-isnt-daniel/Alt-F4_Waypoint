@@ -6,6 +6,7 @@ class Vehicle(Base):
 
     vehicle_id = Column(String, primary_key=True)
     depot_id = Column(String, ForeignKey("depot.depot_id"), nullable=False)
+    driver_id = Column(String, ForeignKey("user.user_id"), nullable=True)
     type = Column(String, nullable=False) # truck | van
     temp = Column(String, nullable=False) # reefer | ambient
     weight_cap_kg = Column(Numeric, nullable=False)

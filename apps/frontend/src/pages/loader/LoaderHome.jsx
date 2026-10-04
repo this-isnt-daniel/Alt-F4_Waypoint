@@ -2704,9 +2704,9 @@ export default function LoaderHome({ user }) {
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-white flex flex-col min-h-full">
+    <div className="p-4 sm:p-6 bg-white flex flex-col min-h-full overflow-hidden">
       
-      {/* Shift Card */}
+      {/* Shift Card (Top span across) */}
       <div className="shrink-0 mb-5 border border-slate-200 rounded p-4 shadow-sm">
         <div className="flex items-start justify-between mb-4">
           <h2 className="text-[15px] md:text-[16px] font-bold text-slate-900 uppercase tracking-wide">Morning Dispatch & Turnaround</h2>
@@ -2723,94 +2723,99 @@ export default function LoaderHome({ user }) {
         </div>
       </div>
 
-      {/* Map: Taller fixed height for better geographic context */}
-      <div ref={mapRef} className="shrink-0 h-[350px] sm:h-[450px] lg:h-[550px] mb-6">
-        <LoaderMap 
-          vehicles={filteredVehicles} 
-          selectedVehicleId={selectedVehicleId} 
-          onSelectVehicle={(id) => handleSelectVehicle(id, true)} 
-        />
-      </div>
-
-      {/* Active Vehicles Header & Filters */}
-      <div className="shrink-0 mb-4 space-y-4">
-        {/* Active Vehicles Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h3 className="text-[15px] md:text-[16px] font-bold text-slate-900 uppercase tracking-wide">Active Vehicles</h3>
-            <span className="text-[13px] font-bold text-slate-500">· {filteredVehicles.length}</span>
+      {/* Split Pane Container */}
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+        
+        {/* Left Pane: Controls and List */}
+        <div className="w-full lg:w-[450px] flex flex-col min-h-0 shrink-0">
+          {/* Active Vehicles Header & Filters */}
+          <div className="shrink-0 mb-4 space-y-4">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-[15px] md:text-[16px] font-bold text-slate-900 uppercase tracking-wide">Active Vehicles</h3>
+                <span className="text-[13px] font-bold text-slate-500">· {filteredVehicles.length}</span>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 border border-slate-200 rounded shrink-0">
+                {filterTabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setFilter(tab.id)}
+                    className={`px-3 py-1.5 text-[11px] font-bold tracking-wider rounded transition-colors ${
+                      filter === tab.id 
+                        ? 'bg-white text-brand-600 shadow-sm border border-slate-200' 
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-transparent'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 border border-slate-200 rounded shrink-0">
-            {filterTabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1.5 text-[11px] font-bold tracking-wider rounded transition-colors ${
-                  filter === tab.id 
-                    ? 'bg-white text-brand-600 shadow-sm border border-slate-200' 
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-transparent'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+
+          {/* Vehicle List */}
+          <div 
+            ref={listRef}
+            className="flex-1 overflow-y-auto space-y-3 pr-1 pb-4 custom-scrollbar"
+          >
+            {filteredVehicles.length === 0 ? (
+              <div className="p-8 text-center text-[13px] text-slate-500 font-medium bg-slate-50 rounded border border-slate-100">
+                {getEmptyStateMessage()}
+              </div>
+            ) : (
+              filteredVehicles.map(veh => {
+                const badgeColors = {
+                  blue: 'bg-blue-50 text-blue-600',
+                  orange: 'bg-orange-50 text-orange-600',
+                  red: 'bg-red-50 text-red-600',
+                  brand: 'bg-brand-50 text-brand-600'
+                };
+                
+                const isSelected = selectedVehicleId === veh.id;
+
+                return (
+                  <div 
+                    key={veh.id} 
+                    ref={el => rowRefs.current[veh.id] = el}
+                    onClick={() => handleSelectVehicle(veh.id, false)}
+                    className={`border rounded p-4 flex items-start justify-between shadow-sm cursor-pointer transition-colors ${
+                      isSelected ? 'border-brand-500 bg-[#F4FAF6]' : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0 pr-4">
+                      <div className="text-[14px] font-bold text-slate-900 mb-0.5">{veh.id}</div>
+                      <div className="text-[12px] text-slate-500 font-medium mb-1.5">{veh.type}</div>
+                      <div className="text-[13px] font-semibold text-slate-800 truncate mb-1" title={veh.route}>
+                        {veh.route} {veh.stops ? `(${veh.stops} stops)` : ''}
+                      </div>
+                      {veh.eta && <div className="text-[12px] font-semibold text-orange-500 mt-0.5">{veh.eta}</div>}
+                      {veh.action && <div className="text-[12px] font-semibold text-brand-600 mt-0.5">{veh.action}</div>}
+                      {veh.desc && <div className={`text-[12px] mt-0.5 ${veh.isRedDesc ? 'font-semibold text-red-500' : 'text-slate-500'}`}>{veh.desc}</div>}
+                    </div>
+
+                    <div className="shrink-0">
+                      <span className={`px-2.5 py-1 text-[11px] font-bold rounded border ${badgeColors[veh.color] || 'bg-slate-50 text-slate-600'}`}>
+                        {veh.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
+
+        {/* Right Pane: Map */}
+        <div ref={mapRef} className="flex-1 h-[400px] lg:h-auto min-h-0 bg-slate-50 border border-slate-200 rounded overflow-hidden">
+          <LoaderMap 
+            vehicles={filteredVehicles} 
+            selectedVehicleId={selectedVehicleId} 
+            onSelectVehicle={(id) => handleSelectVehicle(id, true)} 
+          />
+        </div>
+
       </div>
-
-      {/* Vehicle List (Scrolls with page) */}
-      <div 
-        ref={listRef}
-        className="space-y-3 pr-1 pb-4"
-      >
-        {filteredVehicles.length === 0 ? (
-          <div className="p-8 text-center text-[13px] text-slate-500 font-medium bg-slate-50 rounded border border-slate-100">
-            {getEmptyStateMessage()}
-          </div>
-        ) : (
-          filteredVehicles.map(veh => {
-            const badgeColors = {
-              blue: 'bg-blue-50 text-blue-600',
-              orange: 'bg-orange-50 text-orange-600',
-              red: 'bg-red-50 text-red-600',
-              brand: 'bg-brand-50 text-brand-600'
-            };
-            
-            const isSelected = selectedVehicleId === veh.id;
-
-            return (
-              <div 
-                key={veh.id} 
-                ref={el => rowRefs.current[veh.id] = el}
-                onClick={() => handleSelectVehicle(veh.id, false)}
-                className={`border rounded p-4 flex items-start justify-between shadow-sm cursor-pointer transition-colors ${
-                  isSelected ? 'border-brand-500 bg-[#F4FAF6]' : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex flex-col min-w-0 pr-4">
-                  <div className="text-[14px] font-bold text-slate-900 mb-0.5">{veh.id}</div>
-                  <div className="text-[12px] text-slate-500 font-medium mb-1.5">{veh.type}</div>
-                  <div className="text-[13px] font-semibold text-slate-800 truncate mb-1" title={veh.route}>
-                    {veh.route} {veh.stops ? `(${veh.stops} stops)` : ''}
-                  </div>
-                  {veh.eta && <div className="text-[12px] font-semibold text-orange-500 mt-0.5">{veh.eta}</div>}
-                  {veh.action && <div className="text-[12px] font-semibold text-brand-600 mt-0.5">{veh.action}</div>}
-                  {veh.desc && <div className={`text-[12px] mt-0.5 ${veh.isRedDesc ? 'font-semibold text-red-500' : 'text-slate-500'}`}>{veh.desc}</div>}
-                </div>
-
-                <div className="shrink-0">
-                  <span className={`px-2.5 py-1 text-[11px] font-bold rounded border ${badgeColors[veh.color] || 'bg-slate-50 text-slate-600'}`}>
-                    {veh.status}
-                  </span>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
     </div>
   );
 }

@@ -24,8 +24,7 @@ export default function SMLayout({
   basketCount = 0, 
   user, 
   outlet,
-  deliveryArrived = true,
-  deliveryOtp = '482 910',
+  arrivedOrder,
   showOtpModal = false,
   setShowOtpModal,
   onConfirmDelivery
@@ -33,6 +32,7 @@ export default function SMLayout({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePin, setShowChangePin] = useState(false);
+  const deliveryArrived = Boolean(arrivedOrder);
 
   return (
     <div className="h-[100dvh] bg-[#F8FAF9] font-sans antialiased text-slate-900 flex flex-col relative">
@@ -98,7 +98,7 @@ export default function SMLayout({
                 title="Notifications"
               >
                 <Bell size={15} strokeWidth={2} />
-                {deliveryArrived && (
+                {arrivedOrder && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white animate-pulse" />
                 )}
               </button>
@@ -108,7 +108,7 @@ export default function SMLayout({
                   <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-[13px] font-bold text-slate-900">Notifications</span>
-                      {deliveryArrived && (
+                      {arrivedOrder && (
                         <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
                           1 New
                         </span>
@@ -124,7 +124,7 @@ export default function SMLayout({
                   </div>
 
                   <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                    {deliveryArrived ? (
+                    {arrivedOrder ? (
                       <div className="p-3">
                         <div className="bg-[#FFFFFF] border border-[#DCEEE1] rounded-2xl p-3.5" style={{ fontFamily: 'Inter, sans-serif' }}>
                           <div className="flex items-start gap-3">
@@ -137,11 +137,11 @@ export default function SMLayout({
                                   Arrived
                                 </span>
                                 <span className="text-[13px] font-semibold text-[#152B1E] truncate">
-                                  Order ORD-10492
+                                  Order {arrivedOrder.id}
                                 </span>
                               </div>
                               <p className="text-[12px] font-medium text-[#5E7365] leading-snug mb-3">
-                                Vehicle VEH402 is at the loading bay. Driver Kamal Perera is waiting for confirmation OTP.
+                                Vehicle {arrivedOrder.vehicle} is at the loading bay. Driver {arrivedOrder.driver?.name} is waiting for confirmation OTP.
                               </p>
                               <div className="flex justify-end">
                                 <button
@@ -265,11 +265,11 @@ export default function SMLayout({
                                 Arrived
                               </span>
                               <span className="text-[12px] font-semibold text-[#152B1E] truncate">
-                                Order ORD-10492
+                                Order {arrivedOrder?.id ?? 'ORD-10492'}
                               </span>
                             </div>
                             <p className="text-[11px] font-medium text-[#5E7365] leading-snug mb-2.5">
-                              Vehicle VEH402 is at the loading bay. Driver waiting for OTP.
+                              Vehicle {arrivedOrder?.vehicle ?? 'VEH402'} is at the loading bay. Driver {arrivedOrder?.driver?.name ? `${arrivedOrder.driver.name} ` : ''}is waiting for OTP.
                             </p>
                             <div className="flex justify-end">
                               <button
@@ -361,8 +361,11 @@ export default function SMLayout({
       <DeliveryOtpModal
         isOpen={showOtpModal}
         onClose={() => setShowOtpModal?.(false)}
-        otp={deliveryOtp}
-        outletName={outlet?.name ?? 'Nugegoda Outlet'}
+        otp={arrivedOrder?.deliveryOtp || '1234'}
+        orderId={arrivedOrder?.id}
+        driverName={arrivedOrder?.driver?.name || 'Driver Pending'}
+        vehicleNo={arrivedOrder?.vehicle || 'Vehicle Pending'}
+        outletName={outlet?.name ?? 'Waypoint Fresh — Nugegoda'}
         onConfirmHandover={onConfirmDelivery}
       />
     </div>

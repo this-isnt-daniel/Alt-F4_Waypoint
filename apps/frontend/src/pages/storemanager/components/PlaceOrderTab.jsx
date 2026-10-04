@@ -21,7 +21,7 @@ import { Calendar as CalendarIcon, ChevronDown, X } from 'lucide-react';
  */
 export default function PlaceOrderTab({ 
   basket, onSetQty, onRemoveItem, onChangeQty, onClearBasket, onReplaceBasket,
-  orderDate, setOrderDate
+  orderDate, setOrderDate, outlet
 }) {
   const [view, setView]               = useState('categories'); // 'categories' | 'products' | 'review' | 'success'
   const [activeTab, setActiveTab]     = useState('catalogue'); // 'catalogue' | 'templates'
@@ -72,6 +72,10 @@ export default function PlaceOrderTab({
   };
 
   const handleConfirmOrder = async () => {
+    if (!outlet?.id) {
+      alert('Outlet information is missing. Please log out and log back in.');
+      return;
+    }
     try {
       const payload = {
         outlet_id: outlet.id,

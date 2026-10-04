@@ -16,7 +16,7 @@ export default function DeliveryOtpModal({
 
   if (!isOpen) return null;
 
-  const rawOtp = otp.replace(/\s+/g, '');
+  const rawOtp = String(otp ?? '482910').replace(/\s+/g, '');
   const digits = rawOtp.split('');
 
   const handleCopy = () => {

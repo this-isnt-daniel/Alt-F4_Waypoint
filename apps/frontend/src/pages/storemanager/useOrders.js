@@ -13,15 +13,27 @@ export function useOrders() {
       
       const todayStr = new Date().toISOString().split('T')[0];
       
-      const mappedOrders = data.map(o => ({
-        id: o.order_id,
-        status: o.status,
-        deliveryDate: o.order_date === todayStr ? 'today' : o.order_date,
-        type: o.temp_req,
-        expectedArrival: o.window_open ? `${o.window_open} - ${o.window_close}` : 'TBD',
-        eta: o.exp_arrival || null,
-        totalProducts: o.order_units || 0,
-        ...o
+      const ordersList = Array.isArray(data) ? data : [];
+      const mappedOrders = await Promise.all(ordersList.map(async o => {
+        let etaData = null;
+        if (['loaded', 'out_for_delivery'].includes(o.status)) {
+          etaData = await apiFetch(`/store-manager/orders/${o.order_id}/eta`).catch(() => null);
+        }
+
+        return {
+          id: o.order_id,
+          status: o.status,
+          deliveryDate: o.order_date === todayStr ? 'today' : o.order_date,
+          type: o.temp_req,
+          expectedArrival: o.window_open ? `${o.window_open} - ${o.window_close}` : 'TBD',
+          eta: o.exp_arrival || null,
+          totalProducts: o.order_units || 0,
+          vehicle: etaData?.vehicle_id || null,
+          driver: etaData?.driver_name ? { name: etaData.driver_name, phone: etaData.driver_phone } : null,
+          deliveryOtp: etaData?.delivery_otp || null,
+          stopStatus: etaData?.stop_status || null,
+          ...o
+        };
       }));
 
       setOrders(mappedOrders);
