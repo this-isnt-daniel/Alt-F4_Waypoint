@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 async function request(path, { token, method = 'GET', body } = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -23,33 +23,33 @@ async function request(path, { token, method = 'GET', body } = {}) {
 }
 
 export async function loginLoader(username, password) {
-  return request('/api/v1/auth/login', {
+  return request('/auth/login', {
     method: 'POST',
     body: { username, password },
   });
 }
 
 export async function fetchLoaderProfile(token) {
-  return request('/api/v1/auth/me', { token });
+  return request('/auth/me', { token });
 }
 
 export async function fetchLoaderQueue(token) {
-  return request('/api/v1/loader/queue', { token });
+  return request('/loader/queue', { token });
 }
 
 export async function fetchLoaderWorkbench(token, tripId) {
-  return request(`/api/v1/loader/trips/${encodeURIComponent(tripId)}/workbench`, { token });
+  return request(`/loader/trips/${encodeURIComponent(tripId)}/workbench`, { token });
 }
 
 export async function startLoading(token, tripId) {
-  return request(`/api/v1/loader/trips/${encodeURIComponent(tripId)}/start`, {
+  return request(`/loader/trips/${encodeURIComponent(tripId)}/start`, {
     token,
     method: 'POST',
   });
 }
 
 export async function saveLoadItem(token, tripId, lineItemId, body) {
-  return request(`/api/v1/loader/trips/${encodeURIComponent(tripId)}/items/${encodeURIComponent(lineItemId)}`, {
+  return request(`/loader/trips/${encodeURIComponent(tripId)}/items/${encodeURIComponent(lineItemId)}`, {
     token,
     method: 'PATCH',
     body,
@@ -57,14 +57,14 @@ export async function saveLoadItem(token, tripId, lineItemId, body) {
 }
 
 export async function completeStop(token, tripId, stopId) {
-  return request(`/api/v1/loader/trips/${encodeURIComponent(tripId)}/complete-stop/${encodeURIComponent(stopId)}`, {
+  return request(`/loader/trips/${encodeURIComponent(tripId)}/complete-stop/${encodeURIComponent(stopId)}`, {
     token,
     method: 'POST',
   });
 }
 
 export async function submitLoad(token, tripId, body) {
-  return request(`/api/v1/loader/trips/${encodeURIComponent(tripId)}/load`, {
+  return request(`/loader/trips/${encodeURIComponent(tripId)}/load`, {
     token,
     method: 'POST',
     body,
@@ -72,7 +72,7 @@ export async function submitLoad(token, tripId, body) {
 }
 
 export async function markVehicleUnavailable(token, tripId, body) {
-  return request(`/api/v1/loader/trips/${encodeURIComponent(tripId)}/vehicle-unavailable`, {
+  return request(`/loader/trips/${encodeURIComponent(tripId)}/vehicle-unavailable`, {
     token,
     method: 'POST',
     body,
@@ -80,5 +80,5 @@ export async function markVehicleUnavailable(token, tripId, body) {
 }
 
 export async function fetchLoaderDeferrals(token) {
-  return request('/api/v1/loader/deferrals', { token });
+  return request('/loader/deferrals', { token });
 }

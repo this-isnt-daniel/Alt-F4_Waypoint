@@ -106,7 +106,11 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
   const [connection, setConnectionState] = useState<ConnectionState>(
     initial.connection,
   );
-  const [syncRecords, setSyncRecords] = useState<SyncRecord[]>([]);
+  const [syncRecords, setSyncRecords] = useState<SyncRecord[]>(() => {
+    try { return JSON.parse(safeStorage.get("sync-queue") || "[]") as SyncRecord[]; }
+    catch { return []; }
+  });
+  useEffect(() => { safeStorage.set("sync-queue", JSON.stringify(syncRecords)); }, [syncRecords]);
   const [activeTripId, setActiveTripId] = useState<1 | 2>(initial.activeTripId ?? 1);
   const [trip1Started, setTrip1Started] = useState<boolean>(initial.tripStarted);
   const [trip1Completed, setTrip1Completed] = useState<boolean>(initial.trip1Completed ?? false);
@@ -146,6 +150,7 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    const loadTrips = () => {
     // Initial fetch from backend if logged in
     const token = safeStorage.get("token");
     if (token) {
@@ -168,6 +173,10 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
         }
       });
     }
+    };
+    loadTrips();
+    window.addEventListener("waypoint-auth-changed", loadTrips);
+    return () => window.removeEventListener("waypoint-auth-changed", loadTrips);
   }, []);
 
   const applyScenario = useCallback(
@@ -225,6 +234,10 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
     (record: Omit<SyncRecord, "id" | "createdAt">) => {
       const newRecord: SyncRecord = {
         ...record,
+        state: "pending",
+        syncKind: record.type === "arrival" ? "stop.arrived" : record.type === "delivery" || record.type === "partial" || record.type === "failed" ? "stop.outcome.submitted" : undefined,
+        targetId: record.outletId,
+        syncPayload: record.type === "arrival" ? { base_row_version: 1, arrived_at: new Date().toISOString() } : record.type === "delivery" || record.type === "partial" || record.type === "failed" ? { base_row_version: 1, finished_at: new Date().toISOString(), outcome: record.type === "partial" ? "partial" : record.type === "failed" ? "failed" : "delivered" } : undefined,
         id: `rec-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         createdAt: new Date().toLocaleTimeString("en-US", {
           hour: "2-digit",
@@ -237,19 +250,10 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
       // Fire off API request in background
       if (connection === "online") {
         import("@/driver/api").then(({ postDriverEvent }) => {
-          let kind = "unknown";
-          let payload: any = {};
-          
-          if (record.type === "arrival") {
-            kind = "stop.arrived";
-            payload = { base_row_version: 1, arrived_at: new Date().toISOString(), lat: 0, lng: 0 };
-          } else if (record.type === "delivery" || record.type === "partial" || record.type === "failed") {
-            kind = "stop.outcome.submitted";
-            payload = { base_row_version: 1, finished_at: new Date().toISOString() };
-          }
-          
+          const kind = newRecord.syncKind || "unknown";
+          const payload = newRecord.syncPayload || {};
           if (kind !== "unknown") {
-            postDriverEvent(kind, record.outletId || "", payload, newRecord.id)
+            postDriverEvent(kind, newRecord.targetId || "", payload, newRecord.id)
               .then(() => {
                 updateSyncRecord(newRecord.id, { state: "synced" });
               })
@@ -257,8 +261,8 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
                 updateSyncRecord(newRecord.id, { state: "failed" });
               });
           } else {
-            // For UI-only events not fully mapped yet, auto-sync
-            updateSyncRecord(newRecord.id, { state: "synced" });
+            // An unmapped UI action has no server acknowledgement.
+            updateSyncRecord(newRecord.id, { state: "failed" });
           }
         });
       }

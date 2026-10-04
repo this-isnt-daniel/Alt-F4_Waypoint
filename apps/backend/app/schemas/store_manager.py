@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 class OrderItemInput(BaseModel):
     product_id: str
-    quantity: int = Field(gt=0, description="Quantity must be > 0")
+    quantity: float = Field(gt=0, description="Quantity must be > 0")
 
 class CreateOrderRequest(BaseModel):
     outlet_id: str
@@ -18,9 +18,9 @@ class UpdateOrderRequest(BaseModel):
 
 class DiscrepancyInput(BaseModel):
     product_id: str
-    expected_qty: Optional[int] = None
-    actual_qty: Optional[int] = None
-    reported_qty: Optional[int] = None
+    expected_qty: Optional[int] = Field(default=None, ge=0)
+    actual_qty: Optional[int] = Field(default=None, ge=0)
+    reported_qty: Optional[int] = Field(default=None, ge=0)
     reason_code: Optional[str] = None # e.g. 'missing', 'damaged', 'wrong_item'
     note: Optional[str] = None
 
@@ -80,7 +80,7 @@ class OrderETAResponse(BaseModel):
     driver_name: Optional[str] = None
     driver_phone: Optional[str] = None
     delivery_otp: Optional[str] = None
-    stop_seq: Optional[int] = None
+    stop_seq: Optional[int] = Field(default=None, ge=0)
     stop_status: Optional[str] = None
     defer_count: int = 0
     deferred_prev: bool = False

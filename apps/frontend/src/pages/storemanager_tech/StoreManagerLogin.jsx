@@ -4,7 +4,7 @@ import waypointLogo from '../../assets/icons/waypoint_logo.png';
 
 export default function StoreManagerLogin({ onLogin }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [username, setUsername] = useState('tech_manager');
+  const [username, setUsername] = useState('tech@waypoint.local');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);

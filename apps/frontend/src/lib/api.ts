@@ -1,6 +1,6 @@
 import { safeStorage } from "./security";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "/api/v1";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -30,7 +30,15 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     let message = "An error occurred";
     try {
       const data = await response.json();
-      message = data.detail || message;
+      if (typeof data.detail === "string") {
+        message = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        message = data.detail.map((d: any) => d.msg || (typeof d === 'string' ? d : JSON.stringify(d))).join(", ");
+      } else if (data.detail && typeof data.detail === "object") {
+        message = data.detail.message || JSON.stringify(data.detail);
+      } else if (data.message) {
+        message = typeof data.message === "string" ? data.message : JSON.stringify(data.message);
+      }
     } catch {
       // Ignored
     }

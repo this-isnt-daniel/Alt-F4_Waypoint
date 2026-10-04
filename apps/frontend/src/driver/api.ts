@@ -33,7 +33,7 @@ export async function postDriverEvent(
   const targetKey = KIND_TARGET_MAP[kind] || "target_id";
   const syncPayload = { ...payload, [targetKey]: targetId };
 
-  return apiFetch<any>(`/driver-platform/events/sync`, {
+  const response = await apiFetch<any>(`/driver-platform/events/sync`, {
     method: "POST",
     body: JSON.stringify({
       events: [
@@ -45,4 +45,9 @@ export async function postDriverEvent(
       ]
     })
   });
+  const result = response.results?.find((item: any) => item.client_event_id === clientEventId);
+  if (!result || !["applied", "already_applied"].includes(result.status)) {
+    throw new Error(result?.error || `Driver event was not accepted: ${result?.status || "missing result"}`);
+  }
+  return result;
 }

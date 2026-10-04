@@ -24,7 +24,6 @@ from pydantic import BaseModel, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.config import MINIO_BUCKET, MINIO_ENDPOINT
 from app.models.delivery import ProofOfDelivery
 from app.models.events import Conflict, DeliveryEvent, DriverEvent
 from app.models.load_check import LoadCheck, LoadCheckItem
@@ -977,10 +976,9 @@ def photo_intent(db: Session, driver: User, stop_id: str, request: s.PhotoIntent
         raise HTTPException(status_code=err.status_code, detail=err.detail)
     ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[request.content_type]
     object_key = f"pod/{stop.stop_id}/{uuid.uuid4().hex}.{ext}"
-    # TODO(storage): replace with a presigned PUT once MinIO credentials are wired in.
     return s.PhotoIntentResponse(
         object_key=object_key,
-        upload_url=f"{MINIO_ENDPOINT.rstrip('/')}/{MINIO_BUCKET}/{object_key}",
+        upload_url=f"/api/v1/driver-platform/stops/{stop.stop_id}/pod/photo-upload",
         expires_at=_now() + timedelta(minutes=15),
     )
 

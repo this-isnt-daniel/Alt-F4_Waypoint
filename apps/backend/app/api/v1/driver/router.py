@@ -8,7 +8,7 @@ Writes return 200 for applied / already_applied and 409 (same body) for a row_ve
 from datetime import date, datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -201,3 +201,41 @@ def resolve_conflict(
 
 from app.api.v1.driver.road_geometry import router as rg_router
 router.include_router(rg_router, prefix="/road-geometry", tags=["Road Geometry"])
+
+
+@router.post("/stops/{stop_id}/pod/photo-upload")
+async def upload_pod_photo(stop_id: str, photo: UploadFile = File(...), db: Session = Depends(get_db), driver: User = Depends(driver_role)):
+    """Persist POD evidence on the mounted evidence volume and attach it to the server POD."""
+    from pathlib import Path
+    from app.models.delivery import ProofOfDelivery
+    stop, _trip = driver_service._owned_stop(db, driver, stop_id)
+    pod = driver_service._pod_for_stop(db, stop)
+    if not pod:
+        raise HTTPException(status_code=409, detail="Submit POD before uploading evidence")
+    allowed = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+    suffix = allowed.get(photo.content_type or "")
+    if not suffix:
+        raise HTTPException(status_code=415, detail="Only JPEG, PNG and WebP images are accepted")
+    root = Path("/app/data/evidence") / stop_id
+    root.mkdir(parents=True, exist_ok=True)
+    filename = f"{pod.pod_id}-{uuid.uuid4().hex}{suffix}"
+    path = root / filename
+    data = await photo.read()
+    if len(data) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Photo exceeds 10 MB limit")
+    path.write_bytes(data)
+    pod.photo_url = f"/api/v1/driver-platform/stops/{stop_id}/pod/photo/{filename}"
+    db.commit()
+    return {"photo_url": pod.photo_url, "bytes": len(data)}
+
+@router.get("/stops/{stop_id}/pod/photo/{filename}")
+def get_pod_photo(stop_id: str, filename: str, db: Session = Depends(get_db), driver: User = Depends(driver_role)):
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    stop, _trip = driver_service._owned_stop(db, driver, stop_id)
+    pod = driver_service._pod_for_stop(db, stop)
+    if not pod or not pod.photo_url or Path(filename).name != filename or not pod.photo_url.endswith(filename):
+        raise HTTPException(status_code=404, detail="Evidence not found")
+    path = Path("/app/data/evidence") / stop_id / filename
+    if not path.is_file(): raise HTTPException(status_code=404, detail="Evidence not found")
+    return FileResponse(path)

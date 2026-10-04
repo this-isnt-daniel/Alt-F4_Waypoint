@@ -588,7 +588,11 @@ def generate_daily_draft_plan_operation(
         enable_targeted_cpsat=enable_targeted_cpsat,
     )
 
-    plan_id = plan_dict.get("plan_id", f"PLAN-{planning_date_str}-{uuid.uuid4().hex[:6].upper()}")
+    # Optimizer IDs are labels, not globally unique persistence keys.
+    plan_id = f"PLAN-{planning_date_str}-{uuid.uuid4().hex}"
+    plan_dict["plan_id"] = plan_id
+    for trip in plan_dict.get("trips", []):
+        trip["trip_id"] = f"{plan_id}-TRIP-{trip['vehicle_id']}-{trip.get('trip_number', 1)}"
     now = datetime.now(timezone.utc)
 
     # Persist draft plan in DB
@@ -641,6 +645,9 @@ def edit_draft_plan_operation(
         raise HTTPException(status_code=404, detail=f"Plan {plan_id} not found")
     if depot_id and draft_record.depot_id != depot_id:
         raise HTTPException(status_code=403, detail="Plan not in your depot scope")
+
+    if draft_record.status != "draft":
+        raise HTTPException(status_code=409, detail="Only draft plans can be edited")
 
     base_plan = draft_record.plan_data
     ref_data = get_reference_data()
@@ -798,6 +805,20 @@ def approve_draft_plan_operation(
     trips_created: List[str] = []
     depot_id = draft_record.depot_id or "DEP1"
 
+    for proposed_trip in plan_data.get("trips", []):
+        vehicle = db.get(DbVehicle, proposed_trip["vehicle_id"])
+        if not vehicle or vehicle.depot_id != depot_id or vehicle.status != "available":
+            raise HTTPException(status_code=409, detail="Fleet changed; regenerate the plan")
+        occupied = db.query(DbTrip).filter_by(vehicle_id=vehicle.vehicle_id,
+            trip_date=draft_record.target_date, trip_no=proposed_trip.get("trip_number", 1)).first()
+        if occupied:
+            raise HTTPException(status_code=409, detail="Vehicle trip slot is already allocated; generate a new plan")
+        for stop in proposed_trip.get("driver_itinerary", proposed_trip.get("stops", [])):
+            for order_ref in stop.get("order_refs", []):
+                order = db.get(DbOrder, order_ref)
+                if not order or order.status not in ("confirmed", "deferred"):
+                    raise HTTPException(status_code=409, detail="Orders changed; regenerate the plan")
+
     # Persist Trips and TripStops
     for proposed_trip in plan_data.get("trips", []):
         db_trip_id = proposed_trip.get("trip_id") or f"TRIP-{uuid.uuid4().hex[:8].upper()}"
@@ -812,15 +833,20 @@ def approve_draft_plan_operation(
         ).first()
 
         if existing_trip:
-            trip_obj = existing_trip
-            trip_obj.status = "planned"
-            trip_obj.dispatcher_id = user_id
+            raise HTTPException(status_code=409, detail="Vehicle trip slot is already allocated; generate a new plan")
         else:
             trip_obj = DbTrip(
                 trip_id=db_trip_id,
                 depot_id=depot_id,
                 vehicle_id=vehicle_id,
                 dispatcher_id=user_id,
+                driver_id=db.get(DbVehicle, vehicle_id).driver_id,
+                brand=proposed_trip.get("brand"),
+                district=proposed_trip.get("district"),
+                plan_depart=proposed_trip.get("departure_time_iso"),
+                plan_return=proposed_trip.get("depot_return_arrival_iso"),
+                dist_km=proposed_trip.get("fuel", {}).get("distance_km"),
+                est_fuel_l=proposed_trip.get("fuel", {}).get("fuel_consumed_l"),
                 trip_date=draft_record.target_date,
                 trip_no=trip_no,
                 status="planned",

@@ -58,6 +58,8 @@ class TripStop(Base):
         CheckConstraint("status IN ('upcoming', 'arrived', 'delivered', 'skipped')", name="check_trip_stop_status"),
     )
 
+    items = relationship("TripStopItem", order_by="TripStopItem.item_id")
+
     # Written by Driver
     arrived_at = Column(DateTime(timezone=True), nullable=True)
     arrival_lat = Column(Numeric, nullable=True)

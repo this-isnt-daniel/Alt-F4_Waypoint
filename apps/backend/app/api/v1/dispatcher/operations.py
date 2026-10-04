@@ -9,11 +9,11 @@ from app.models.user import User
 from app.models.vehicle import Vehicle
 from app.models.trip import Trip, TripStop
 from app.models.events import DriverEvent, DeliveryEvent
-from app.schemas.shared import TripResponse, TripStopResponse
+from app.schemas.shared import TripResponse, TripStopResponse, VehicleResponse
 from pydantic import BaseModel, ConfigDict
 
 # Local schemas for this phase to avoid modifying shared files unnecessarily
-class VehicleOperationalResponse(BaseModel):
+class VehicleOperationalResponse(VehicleResponse):
     vehicle_id: str
     depot_id: str
     type: str

@@ -63,7 +63,9 @@ def seed_network(session):
                 if 'depot_id' in mapped:
                     mapped['depot_id'] = mapped['depot_id'].lower()
                 
-                session.execute(insert(Outlet).values(**mapped).on_conflict_do_nothing(index_elements=['outlet_id']))
+                session.execute(insert(Outlet).values(**mapped).on_conflict_do_update(
+                    index_elements=['outlet_id'], set_={k: v for k, v in mapped.items() if k != 'outlet_id'}
+                ))
 
 def seed_vehicles(session):
     vehicles = [
@@ -74,16 +76,20 @@ def seed_vehicles(session):
         {"vehicle_id": "VEH-KANDY", "depot_id": "kandy", "type": "van", "temp": "ambient", "weight_cap_kg": 2000, "vol_cap_m3": 10, "status": "available", "fuel_quota_l": 300, "km_per_l": 8.0, "driver_id": None},
     ]
     for v in vehicles:
-        session.execute(insert(Vehicle).values(**v).on_conflict_do_update(
-            index_elements=['vehicle_id'], 
-            set_={'status': v['status'], 'fuel_quota_l': v['fuel_quota_l']}
-        ))
+        session.execute(insert(Vehicle).values(**v).on_conflict_do_nothing(index_elements=['vehicle_id']))
 
     vehicles_csv = "/app/data/vehicles.csv" if os.path.exists("/app/data/vehicles.csv") else "data/vehicles.csv"
     if os.path.exists(vehicles_csv):
         with open(vehicles_csv, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                driver_id = f"USR-DRIVER-{row['vehicle_id']}"
+                session.execute(insert(User).values(
+                    user_id=driver_id, username=f"driver.{row['vehicle_id'].lower()}@waypoint.local",
+                    name=f"Driver {row['vehicle_id']}", role="driver",
+                    hashed_pw=session.get(User, "USR-DRIV").hashed_pw,
+                    depot_id=row.get("depot", "peliyagoda").lower(),
+                ).on_conflict_do_nothing(index_elements=['user_id']))
                 mapped = {
                     "vehicle_id": row["vehicle_id"],
                     "type": row["type"],
@@ -94,12 +100,9 @@ def seed_vehicles(session):
                     "km_per_l": float(row["km_per_l"]),
                     "depot_id": row.get("depot", row.get("depot_id", "peliyagoda")).lower(),
                     "status": "available",
-                    "driver_id": None
+                    "driver_id": driver_id
                 }
-                session.execute(insert(Vehicle).values(**mapped).on_conflict_do_update(
-                    index_elements=['vehicle_id'],
-                    set_={'status': mapped['status'], 'fuel_quota_l': mapped['fuel_quota_l']}
-                ))
+                session.execute(insert(Vehicle).values(**mapped).on_conflict_do_nothing(index_elements=['vehicle_id']))
 
 def seed_products(session):
     products = [
@@ -122,6 +125,10 @@ def seed_users(session):
         {"user_id": "USR-DRIV", "username": "driver@waypoint.local", "role": "driver", "name": "Driver Demo", "phone": "+94770000004", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
         {"user_id": "USR-DRIV-2", "username": "driver2@waypoint.local", "role": "driver", "name": "Kamal Perera", "phone": "+94771112233", "hashed_pw": pw_hash, "outlet_id": None, "depot_id": "peliyagoda"},
     ]
+    for brand, outlet_id in [("style", "OUT015"), ("tech", "OUT021")]:
+        users.append({"user_id": f"USR-SM-{brand.upper()}", "username": f"{brand}@waypoint.local",
+            "role": "store_manager", "name": f"{brand.title()} Manager", "hashed_pw": pw_hash,
+            "outlet_id": outlet_id, "depot_id": None})
     for u in users:
         session.execute(insert(User).values(**u).on_conflict_do_nothing(index_elements=['user_id']))
 
@@ -135,10 +142,7 @@ def create_order(session, order_id, outlet_id, date, status, lines, created_by, 
         "order_wt_kg": wt, "order_vol_m3": vol, "trip_id": trip_id,
         "submitted_at": submitted_at, "cutoff_at": cutoff_at
     }
-    session.execute(insert(Order).values(**o).on_conflict_do_update(
-        index_elements=['order_id'],
-        set_={"status": status, "trip_id": trip_id, "submitted_at": submitted_at, "cutoff_at": cutoff_at, "created_by": created_by}
-    ))
+    session.execute(insert(Order).values(**o).on_conflict_do_nothing(index_elements=['order_id']))
     for idx, (prod, qty, _, _) in enumerate(lines):
         line = {"line_item_id": f"{order_id}-L{idx}", "order_id": order_id, "product_id": prod, "quantity": qty}
         session.execute(insert(OrderLine).values(**line).on_conflict_do_nothing(index_elements=['line_item_id']))
@@ -257,6 +261,11 @@ def seed():
         seed_vehicles(session)
         seed_products(session)
         
+        if session.get(Order, "GOLDEN-ORD-1") is not None:
+            session.commit()
+            print("Reference data checked; existing demo workflow preserved.")
+            return
+
         seed_scenario_a_golden(session, demo_date)
         seed_scenario_b_driver_ready(session, demo_date)
         seed_scenario_c_loader_exception(session, demo_date)

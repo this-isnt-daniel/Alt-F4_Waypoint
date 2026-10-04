@@ -1,11 +1,11 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 from typing import List, Optional, Any
 from datetime import date, datetime
 
 class OrderLineResponse(BaseModel):
     line_item_id: str
     product_id: str
-    quantity: int
+    quantity: float
     model_config = ConfigDict(from_attributes=True)
 
 class OrderResponse(BaseModel):
@@ -21,7 +21,7 @@ class OrderResponse(BaseModel):
     window_close: Optional[str] = None
     
     # Calculated values at confirmation
-    order_units: Optional[int] = None
+    order_units: Optional[float] = None
     order_wt_kg: Optional[float] = None
     order_vol_m3: Optional[float] = None
     
@@ -49,11 +49,11 @@ class TimelineEventResponse(BaseModel):
 
 class TripStopItemResponse(BaseModel):
     item_id: str
-    product_id: str
-    quantity: int
-    loaded_qty: Optional[int] = None
-    delivered_qty: Optional[int] = None
-    returned_qty: Optional[int] = None
+    product_id: str = Field(validation_alias=AliasChoices("product_id", "sku"))
+    quantity: float = Field(validation_alias=AliasChoices("quantity", "qty_assigned"))
+    loaded_qty: Optional[float] = Field(default=None, validation_alias=AliasChoices("loaded_qty", "qty_loaded"))
+    delivered_qty: Optional[float] = Field(default=None, validation_alias=AliasChoices("delivered_qty", "qty_delivered"))
+    returned_qty: Optional[float] = Field(default=None, validation_alias=AliasChoices("returned_qty", "qty_returned"))
     model_config = ConfigDict(from_attributes=True)
 
 class TripStopResponse(BaseModel):

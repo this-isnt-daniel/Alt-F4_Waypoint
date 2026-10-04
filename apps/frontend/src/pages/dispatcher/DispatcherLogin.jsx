@@ -4,7 +4,7 @@ import { apiFetch } from '../../lib/api';
 import { safeStorage } from '../../lib/security';
 
 export default function DispatcherLogin({ onLogin }) {
-  const [username, setUsername] = useState('disp_colombo_1');
+  const [username, setUsername] = useState('dispatcher@waypoint.local');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,17 +29,17 @@ export default function DispatcherLogin({ onLogin }) {
   };
 
   return (
-    <main className="min-h-screen w-full bg-white flex flex-col items-center justify-center px-4 select-none">
-      <form onSubmit={handleLogin} className="flex flex-col items-center max-w-sm w-full">
+    <main className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center px-4 select-none">
+      <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
         {/* Logo and Brand Heading */}
-        <div className="flex items-center justify-center gap-3.5 mb-5">
+        <div className="flex items-center justify-center gap-3 mb-3">
           <img
             src={waypointLogo}
             alt="Waypoint Logo"
-            className="w-12 h-12 object-contain rounded-xl shadow-sm"
+            className="w-10 h-10 object-contain rounded-xl shadow-sm"
           />
           <h1
-            className="text-[48px] font-extrabold text-[#0B2019] tracking-tight leading-none"
+            className="text-3xl font-extrabold text-slate-900 tracking-tight"
             style={{ fontFamily: "'Inter', sans-serif" }}
           >
             Waypoint
@@ -47,41 +47,59 @@ export default function DispatcherLogin({ onLogin }) {
         </div>
 
         {/* Portal Pill Badge */}
-        <div className="mb-8">
-          <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.16em] uppercase text-[#256149] bg-[#EBF6F0] border border-[#DCF0E5]">
+        <div className="flex justify-center mb-6">
+          <span className="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase text-emerald-800 bg-emerald-50 border border-emerald-200">
             Dispatcher Portal
           </span>
         </div>
 
-        {error && <div className="w-[250px] mb-4 text-center text-red-500 text-sm font-semibold">{error}</div>}
+        {error && (
+          <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 text-center text-red-600 text-xs font-semibold rounded-lg">
+            {error}
+          </div>
+        )}
 
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          className="w-[250px] h-11 px-4 mb-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#059669]"
-          disabled={loading}
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-[250px] h-11 px-4 mb-6 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#059669]"
-          disabled={loading}
-        />
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Username / Email
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="dispatcher@waypoint.local"
+              className="w-full h-11 px-3.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white placeholder-slate-400 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all"
+              disabled={loading}
+              autoComplete="username"
+            />
+          </div>
 
-        {/* Geist-style Action Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          aria-label="Log in to Dispatcher Portal"
-          className="w-[250px] h-11 bg-[#059669] hover:bg-[#047857] active:bg-[#065f46] text-white text-sm font-medium rounded-lg transition-all duration-150 ease-in-out shadow-sm hover:shadow flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#059669] focus-visible:ring-offset-2 disabled:opacity-50"
-        >
-          {loading ? 'Logging in...' : 'Log in'}
-        </button>
-      </form>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full h-11 px-3.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white placeholder-slate-400 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all"
+              disabled={loading}
+              autoComplete="current-password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            aria-label="Log in to Dispatcher Portal"
+            className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 mt-1"
+          >
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

@@ -18,4 +18,7 @@ export interface SyncRecord {
   hasPhoto: boolean;
   pinVerified: boolean;
   sizeLabel?: string;
+  syncKind?: string;
+  targetId?: string;
+  syncPayload?: Record<string, unknown>;
 }

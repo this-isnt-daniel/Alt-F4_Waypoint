@@ -8,7 +8,7 @@ import { safeStorage } from "@/lib/security";
 export function SignInScreen() {
   const { push } = useNavigator();
   const { startTrip1 } = useDriverState();
-  const [username, setUsername] = useState<string>("driver_daniru");
+  const [username, setUsername] = useState<string>("driver@waypoint.local");
   const [password, setPassword] = useState<string>("password123");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);

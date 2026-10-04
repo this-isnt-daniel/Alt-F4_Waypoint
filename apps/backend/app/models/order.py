@@ -15,7 +15,7 @@ class Order(Base):
     cutoff_at = Column(DateTime(timezone=True), nullable=True)
     status = Column(String, nullable=False, default="draft")
     
-    order_units = Column(Integer, nullable=True)
+    order_units = Column(Numeric, nullable=True)
     order_wt_kg = Column(Numeric, nullable=True)
     order_vol_m3 = Column(Numeric, nullable=True)
     
@@ -54,6 +54,6 @@ class OrderLine(Base):
     line_item_id = Column(String, primary_key=True)
     order_id = Column(String, ForeignKey("order.order_id"), nullable=False)
     product_id = Column(String, ForeignKey("product.product_id"), nullable=False)
-    quantity = Column(Integer, nullable=False)
+    quantity = Column(Numeric, nullable=False)
 
     order = relationship("Order", back_populates="lines")

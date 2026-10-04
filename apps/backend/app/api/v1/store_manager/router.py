@@ -175,3 +175,11 @@ def get_order_urgency(
     )
 
 
+
+@router.get("/orders/{order_id}/receipt-details", dependencies=[Depends(store_manager_role)])
+def receipt_details(order_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    from app.models.delivery import ProofOfDelivery, ReceiptConfirmation
+    order_service.get_store_manager_order(db, order_id, current_user.outlet_id)
+    pod = db.query(ProofOfDelivery).filter_by(order_id=order_id).first()
+    receipt = db.query(ReceiptConfirmation).filter_by(order_id=order_id).first()
+    return {"pod_id": pod.pod_id if pod else None, "confirm_id": receipt.confirm_id if receipt else None}
