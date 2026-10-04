@@ -26,6 +26,28 @@ from pathlib import Path
 from typing import Optional
 
 
+def resolve_default_ref_dir(user_specified: Optional[str] = None) -> Optional[Path]:
+    """Portably locate authoritative reference data directory."""
+    if user_specified and Path(user_specified).exists():
+        return Path(user_specified).resolve()
+
+    package_dir = Path(__file__).resolve().parent
+    candidates = [
+        package_dir.parents[3] / "data",  # apps/backend/data
+        package_dir.parents[2] / "data",
+        Path("apps/backend/data").resolve(),
+        Path("../data").resolve(),
+        Path("./data").resolve(),
+        Path("data").resolve(),
+    ]
+    for cand in candidates:
+        if cand.is_dir() and (cand / "outlets.csv").is_file():
+            return cand.resolve()
+    if user_specified:
+        return Path(user_specified).resolve()
+    return None
+
+
 def cmd_demo(args: argparse.Namespace) -> None:
     """Run a demo allocation on synthetic data and print a summary."""
     from waypoint_optimizer.mock_data import generate_scenario
@@ -129,9 +151,9 @@ def cmd_plan_daily(args: argparse.Namespace) -> None:
         WindowPolicy,
     )
 
-    ref_dir = Path(args.ref_dir or "./data").resolve()
-    if not ref_dir.exists():
-        print(f"Error: Reference directory not found at {ref_dir}", file=sys.stderr)
+    ref_dir = resolve_default_ref_dir(getattr(args, "ref_dir", None))
+    if not ref_dir or not ref_dir.exists():
+        print(f"Error: Reference directory not found at {ref_dir or getattr(args, 'ref_dir', None)}", file=sys.stderr)
         sys.exit(1)
 
     print(f"\n{'='*70}")
@@ -257,6 +279,11 @@ def cmd_validate(args: argparse.Namespace) -> None:
     orders_file = getattr(args, "orders_file", None)
     input_dir = getattr(args, "input_dir", None)
 
+    if not ref_dir and orders_file:
+        resolved = resolve_default_ref_dir()
+        if resolved and resolved.exists():
+            ref_dir = str(resolved)
+
     orders = None
     vehicles = None
     travel = None
@@ -379,10 +406,8 @@ def cmd_optimize(args: argparse.Namespace) -> None:
         ref_dir = Path(args.ref_dir)
     elif getattr(args, "input_dir", None):
         ref_dir = Path(args.input_dir)
-    elif Path("../data").exists():
-        ref_dir = Path("../data")
-    elif Path("./data").exists():
-        ref_dir = Path("./data")
+    else:
+        ref_dir = resolve_default_ref_dir()
 
     if not ref_dir or not ref_dir.exists():
         print(
@@ -508,8 +533,8 @@ def main(argv: Optional[list[str]] = None) -> None:
                         help="Path to confirmed orders CSV file")
     p_plan.add_argument("--fleet-file", "-fleet", dest="fleet_file", required=True,
                         help="Path to daily fleet state CSV file (required)")
-    p_plan.add_argument("--ref-dir", dest="ref_dir", default="./data",
-                        help="Directory containing reference CSVs (default: ./data)")
+    p_plan.add_argument("--ref-dir", dest="ref_dir", default=None,
+                        help="Directory containing reference CSVs (default: auto-detected apps/backend/data)")
     p_plan.add_argument("--date", dest="date", default="2026-10-03",
                         help="Target planning date in YYYY-MM-DD format (default: 2026-10-03)")
     p_plan.add_argument("--timezone", dest="timezone", default="Asia/Colombo",

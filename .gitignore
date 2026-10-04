@@ -49,7 +49,6 @@ Thumbs.db
 .idea/
 
 # Raw provided CSV datasets (exclude raw datasets, preserve seed data and task submissions)
-*.csv
 !*seed*.csv
 !seed/
 !seeds/
