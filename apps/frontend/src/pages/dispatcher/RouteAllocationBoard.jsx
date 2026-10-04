@@ -181,12 +181,12 @@ function RowDropArea({ vehicleId, onDrop, isCompatible, isDraggingAny, children 
 
 // ─── CapacityBar ─────────────────────────────────────────────────────────────
 function CapacityBar({ label, value, max }) {
-  const pct = Math.min((value / max) * 100, 100);
+  const pct = max ? Math.min(((Number(value) || 0) / max) * 100, 100) : 0;
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1">
         <span className="text-[10px] text-gray-400 font-medium">{label}</span>
-        <span className="text-[10px] text-gray-400 font-normal">{value.toLocaleString()} / {max.toLocaleString()}</span>
+        <span className="text-[10px] text-gray-400 font-normal">{(Number(value) || 0).toLocaleString()} / {(Number(max) || 0).toLocaleString()}</span>
       </div>
       <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, background: barColour(pct) }} />

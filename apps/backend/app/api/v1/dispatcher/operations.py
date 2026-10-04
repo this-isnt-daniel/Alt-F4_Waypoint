@@ -18,6 +18,12 @@ class VehicleOperationalResponse(BaseModel):
     depot_id: str
     type: str
     temp: str
+    weight_cap_kg: Optional[float] = 0.0
+    vol_cap_m3: Optional[float] = 0.0
+    fuel_quota_l: Optional[int] = 100
+    fuel_type: Optional[str] = None
+    km_per_l: Optional[float] = None
+    plate: Optional[str] = None
     status: str
     last_lat: Optional[float] = None
     last_lng: Optional[float] = None

@@ -244,14 +244,15 @@ export default function DispatcherRoster({ onLogout }) {
   useEffect(() => {
     apiFetch('/dispatcher/vehicles')
       .then(data => {
+        if (!Array.isArray(data)) return;
         const formatted = data.map(v => ({
-          id: v.vehicle_id,
-          depot: v.depot_id === 'peliyagoda' ? 'Peliyagoda' : (v.depot_id === 'kandy' ? 'Kandy' : v.depot_id),
-          type: v.type.charAt(0).toUpperCase() + v.type.slice(1),
+          id: v.vehicle_id || 'UNKNOWN',
+          depot: v.depot_id === 'peliyagoda' ? 'Peliyagoda' : (v.depot_id === 'kandy' ? 'Kandy' : (v.depot_id || 'Peliyagoda')),
+          type: v.type ? (v.type.charAt(0).toUpperCase() + v.type.slice(1)) : 'Van',
           refrigeration: v.temp === 'reefer' ? 'Reefer' : 'Ambient',
-          payloadKg: v.weight_cap_kg,
-          volumeM3: v.vol_cap_m3,
-          fuelQuota: v.fuel_quota_l,
+          payloadKg: Number(v.weight_cap_kg) || 2500,
+          volumeM3: Number(v.vol_cap_m3) || 12.5,
+          fuelQuota: Number(v.fuel_quota_l) || 85,
           checked: v.status === 'available',
           isLockedUnavailable: v.status !== 'available',
           unavailableSource: v.status !== 'available' ? 'Dispatcher Portal' : '',
@@ -663,8 +664,8 @@ export default function DispatcherRoster({ onLogout }) {
   // Live dynamic metrics for Fleet Availability
   const dispatcherExcluded = fleetList.filter((v) => !v.isLockedUnavailable && !v.checked);
   const dispatcherExcludedReefers = dispatcherExcluded.filter((v) => v.refrigeration === 'Reefer').length;
-  const dispatcherExcludedVolume = dispatcherExcluded.reduce((acc, v) => acc + v.volumeM3, 0);
-  const dispatcherExcludedWeight = dispatcherExcluded.reduce((acc, v) => acc + v.payloadKg, 0);
+  const dispatcherExcludedVolume = dispatcherExcluded.reduce((acc, v) => acc + (Number(v.volumeM3) || 0), 0);
+  const dispatcherExcludedWeight = dispatcherExcluded.reduce((acc, v) => acc + (Number(v.payloadKg) || 0), 0);
 
   const isKandy = selectedHub === 'Kandy';
   const totalHubVehicles = isKandy ? 18 : 42;
@@ -674,12 +675,12 @@ export default function DispatcherRoster({ onLogout }) {
   const baseVolume = isKandy ? 210.5 : 420.5;
   const baseWeight = isKandy ? 45500 : 98400;
 
-  const activeVehiclesCount = baseActiveVehiclesCount - dispatcherExcluded.length;
-  const activeReefersCount = baseActiveReefersCount - dispatcherExcludedReefers;
+  const activeVehiclesCount = Math.max(0, baseActiveVehiclesCount - dispatcherExcluded.length);
+  const activeReefersCount = Math.max(0, baseActiveReefersCount - dispatcherExcludedReefers);
   const availableAssetsDisplay = `${activeVehiclesCount}/${totalHubVehicles}`;
   const reeferReadinessDisplay = `${activeReefersCount}/${totalHubReefers}`;
-  const totalVolumeM3 = (baseVolume - dispatcherExcludedVolume).toFixed(1);
-  const totalPayloadKg = (baseWeight - dispatcherExcludedWeight).toLocaleString();
+  const totalVolumeM3 = Math.max(0, baseVolume - dispatcherExcludedVolume).toFixed(1);
+  const totalPayloadKg = Math.max(0, baseWeight - dispatcherExcludedWeight).toLocaleString();
 
   // Recovery Vehicle Assignments (Added upon confirming Recovery Plan)
   const recoveryVehicleAssignments = [
@@ -2869,7 +2870,7 @@ export default function DispatcherRoster({ onLogout }) {
                                         className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded font-medium bg-amber-50 text-amber-700 border border-amber-200"
                                         title={`Marked via ${vehicle.unavailableSource}`}
                                       >
-                                        {vehicle.unavailableSource.includes('Driver') ? 'Driver' : 'Loader'}
+                                        {(vehicle.unavailableSource || '').includes('Driver') ? 'Driver' : 'Loader'}
                                       </span>
                                     )}
                                   </div>
@@ -2920,12 +2921,12 @@ export default function DispatcherRoster({ onLogout }) {
 
                                 {/* MAX PAYLOAD (KG) */}
                                 <td className={`py-3 px-4 font-mono ${isLocked || !isChecked ? 'text-slate-400' : 'text-slate-800'}`}>
-                                  {vehicle.payloadKg.toLocaleString()}
+                                  {(Number(vehicle.payloadKg) || 0).toLocaleString()}
                                 </td>
 
                                 {/* MAX VOLUME (M³) */}
                                 <td className={`py-3 px-4 font-mono ${isLocked || !isChecked ? 'text-slate-400' : 'text-slate-800'}`}>
-                                  {vehicle.volumeM3.toFixed(1)}
+                                  {(Number(vehicle.volumeM3) || 0).toFixed(1)}
                                 </td>
 
                                 {/* WEEKLY FUEL QUOTA */}
@@ -3034,12 +3035,12 @@ export default function DispatcherRoster({ onLogout }) {
               {/* Source Portal Pill */}
               <span
                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                  hoveredUnavailableVehicle.unavailableSource === 'Driver Portal'
+                  (hoveredUnavailableVehicle?.unavailableSource || '') === 'Driver Portal'
                     ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
                     : 'bg-sky-50 text-sky-700 border border-sky-200/60'
                 }`}
               >
-                {hoveredUnavailableVehicle.unavailableSource}
+                {hoveredUnavailableVehicle?.unavailableSource || 'Dispatcher Portal'}
               </span>
 
               {/* Excluded Status Pill */}
@@ -3053,7 +3054,7 @@ export default function DispatcherRoster({ onLogout }) {
 
           {/* Row 2: Direct Issue Statement */}
           <div className="px-3.5 py-2.5 text-slate-700 text-xs font-normal leading-relaxed">
-            {hoveredUnavailableVehicle.unavailableReason}
+            {hoveredUnavailableVehicle?.unavailableReason || 'Marked Unavailable'}
           </div>
 
           <div className="h-px bg-slate-100 w-full" />
