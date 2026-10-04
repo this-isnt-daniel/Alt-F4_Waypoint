@@ -9,6 +9,9 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+psycopg2://postgres:password@localhost:5432/waypoint_test
+      SECRET_KEY: test_secret_key
     services:
       postgres:
         image: postgres:15-alpine
@@ -44,11 +47,12 @@ jobs:
       working-directory: apps/backend
       run: python -m compileall -q app
 
+    - name: Apply database migrations
+      working-directory: apps/backend
+      run: python -m alembic upgrade head
+
     - name: Run Backend Tests
       working-directory: apps/backend
-      env:
-        DATABASE_URL: postgresql+psycopg2://postgres:password@localhost:5432/waypoint_test
-        SECRET_KEY: test_secret_key
       run: |
         pytest -q tests
 
