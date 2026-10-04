@@ -121,7 +121,56 @@ def depot_confirm(return_id: str, request: s.DepotConfirmRequest, db: Session = 
     return _run(db, driver, "depot_return.confirmed", return_id, request, request.client_event_id, request.confirmed_at)
 
 
-# ── Offline sync ─────────────────────────────────────────────────────────
+# ── Offline sync & Single Event Gateway ──────────────────────────────────
+
+class SingleEventRequest(s.BaseModel):
+    kind: str
+    target_id: str
+    client_event_id: str
+    payload: Optional[dict] = None
+    occurred_at: Optional[datetime] = None
+    device_id: Optional[str] = None
+
+
+KIND_ALIASES = {
+    "arrive": "stop.arrived",
+    "depart": "trip.departed",
+    "complete": "trip.completed",
+    "checklist": "checklist.submitted",
+    "pod": "pod.submitted",
+    "pod.photo": "pod.photo.completed",
+    "outcome": "stop.outcome.submitted",
+    "return": "return.created",
+    "depot_confirm": "depot_return.confirmed",
+    "ack_change": "route_change.acknowledged",
+}
+
+
+@router.post("/events", response_model=s.DriverActionResponse,
+             responses={409: {"model": s.DriverActionResponse}})
+def post_single_event(
+    request: SingleEventRequest,
+    db: Session = Depends(get_db),
+    driver: User = Depends(driver_role),
+):
+    canonical_kind = KIND_ALIASES.get(request.kind, request.kind)
+    target_id = request.target_id
+    if target_id and (target_id.startswith("OUT") or target_id.startswith("out_")):
+        from app.models.trip import Trip, TripStop
+        matched_stop = (
+            db.query(TripStop)
+            .join(Trip, Trip.trip_id == TripStop.trip_id)
+            .filter(Trip.driver_id == driver.user_id, TripStop.outlet_id == target_id)
+            .first()
+        )
+        if matched_stop:
+            target_id = matched_stop.stop_id
+
+    payload = request.payload or {}
+    return _run(
+        db, driver, canonical_kind, target_id, payload, request.client_event_id, request.occurred_at
+    )
+
 
 @router.post("/events/sync", response_model=s.SyncResponse)
 def sync_events(request: s.SyncRequest, db: Session = Depends(get_db), driver: User = Depends(driver_role)):

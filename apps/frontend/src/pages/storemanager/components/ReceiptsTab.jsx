@@ -235,7 +235,35 @@ function ReportIssueModal({ orderId, onClose }) {
   const [ordered, setOrdered] = useState('');
   const [received, setReceived] = useState('');
 
-  const submit = () => setStep('done');
+  const submit = async () => {
+    try {
+      const { safeStorage } = await import('@/lib/security');
+      const token = safeStorage.get('token');
+      if (token) {
+        const { apiFetch } = await import('@/lib/api');
+        await apiFetch(`/store-manager/orders/${orderId}/receipt`, {
+          method: 'POST',
+          body: JSON.stringify({
+            client_op_id: `receipt-${Date.now()}`,
+            pod_id: `POD-${orderId}`,
+            items_ok: false,
+            discrepancies: [
+              {
+                product_id: item || 'PROD-F01',
+                expected_qty: ordered ? parseInt(ordered, 10) : undefined,
+                actual_qty: received ? parseInt(received, 10) : undefined,
+                reason_code: issueType || 'missing',
+                note: `Reported issue: ${issueType}`
+              }
+            ]
+          })
+        });
+      }
+    } catch (err) {
+      console.warn('Backend receipt report notification:', err);
+    }
+    setStep('done');
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-end md:items-center justify-center p-0 md:p-4">

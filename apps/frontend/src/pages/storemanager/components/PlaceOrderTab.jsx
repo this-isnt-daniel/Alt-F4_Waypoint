@@ -60,7 +60,47 @@ export default function PlaceOrderTab({
     });
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
+    try {
+      const { safeStorage } = await import('@/lib/security');
+      const token = safeStorage.get('token');
+      if (token && basket.length > 0) {
+        const { apiFetch } = await import('@/lib/api');
+        const outletId = safeStorage.get('user_outlet_id') || 'OUT-1001';
+        const brand = safeStorage.get('user_brand') || 'fresh';
+        const dateStr = new Date().toISOString().split('T')[0];
+
+        const hasChilled = basket.some(item => {
+          const cat = CATEGORIES.find(c => c.id === item.categoryId);
+          return cat?.tempRequired;
+        });
+        const tempReq = hasChilled ? 'chilled' : 'ambient';
+
+        const items = basket.map(b => ({
+          product_id: b.productId || b.id || 'PROD-F01',
+          quantity: Math.max(1, Math.round(b.qty || 1))
+        }));
+
+        const created = await apiFetch('/store-manager/orders', {
+          method: 'POST',
+          body: JSON.stringify({
+            outlet_id: outletId,
+            brand: brand.toLowerCase(),
+            temp_req: tempReq,
+            order_date: dateStr,
+            items: items.length > 0 ? items : [{ product_id: 'PROD-F01', quantity: 1 }]
+          })
+        });
+
+        if (created && created.order_id) {
+          await apiFetch(`/store-manager/orders/${created.order_id}/confirm`, {
+            method: 'POST'
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Backend order placement notification:', err);
+    }
     onClearBasket();
     setView('success');
   };

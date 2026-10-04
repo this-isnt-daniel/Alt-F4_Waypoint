@@ -240,9 +240,21 @@ export function DriverStateProvider({ children }: { children: ReactNode }) {
           let kind = "unknown";
           let payload: any = {};
           
-          if (record.type === "delivery") {
-            kind = "arrive"; // Map to actual API commands
+          if (record.type === "arrival") {
+            kind = "arrive";
             payload = { base_row_version: 1, arrived_at: new Date().toISOString() };
+          } else if (record.type === "delivery") {
+            kind = "outcome";
+            payload = { base_row_version: 1, outcome: "delivered", finished_at: new Date().toISOString() };
+          } else if (record.type === "partial") {
+            kind = "outcome";
+            payload = { base_row_version: 1, outcome: "partial", reason: "partial delivery", finished_at: new Date().toISOString() };
+          } else if (record.type === "failed") {
+            kind = "outcome";
+            payload = { base_row_version: 1, outcome: "failed", reason: "delivery failed", finished_at: new Date().toISOString() };
+          } else if (record.type === "load-confirmation") {
+            kind = "depart";
+            payload = { departed_at: new Date().toISOString() };
           }
           
           if (kind !== "unknown") {

@@ -307,8 +307,10 @@ erDiagram
 | Entity | Main Statuses |
 |---|---|
 | Order | `draft`, `confirmed`, `planned`, `loaded`, `out_for_delivery`, `delivered`, `deferred` |
-| Trip | `planned`, `loading`, `loaded`, `out_for_delivery`, `completed`, `cancelled`, `vehicle_unavailable` |
-| Load item | `pending`, `verified`, `short`, `over`, `damaged`, `missing`, `substituted` |
+| Trip | `planned`, `loaded`, `out_for_delivery`, `completed` |
+| Trip stop | `upcoming`, `arrived`, `delivered`, `skipped` |
+| Load check | `ok`, `shortfall` |
+| Load check item | `ok`, `shortfall`, `damaged` |
 | Driver event | `pending`, `applied`, `conflict`, `failed`, `already_applied` |
 | Urgency request | `pending`, `approved`, `rejected`, `resolved` |
 

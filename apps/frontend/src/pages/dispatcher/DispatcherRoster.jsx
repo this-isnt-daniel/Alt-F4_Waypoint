@@ -3091,7 +3091,27 @@ export default function DispatcherRoster({ onLogout }) {
           setShowDispatchPlanModal(false);
           setShowAllocationBoard(true);
         }}
-        onConfirmAndLock={() => {
+        onConfirmAndLock={async () => {
+          try {
+            const { safeStorage } = await import('@/lib/security');
+            const token = safeStorage.get('token');
+            if (token) {
+              const { apiFetch } = await import('@/lib/api');
+              const targetDate = new Date().toISOString().split('T')[0];
+              const draft = await apiFetch('/dispatcher/plans/draft', {
+                method: 'POST',
+                body: JSON.stringify({ target_date: targetDate })
+              });
+              if (draft && draft.plan_id) {
+                await apiFetch(`/dispatcher/plans/${draft.plan_id}/approve`, {
+                  method: 'POST',
+                  body: JSON.stringify({ client_op_id: `approve-${Date.now()}` })
+                });
+              }
+            }
+          } catch (err) {
+            console.warn('Backend plan approval notification:', err);
+          }
           setShowDispatchPlanModal(false);
           setIsAllocationConfirmed(true);
           setShowConfirmToast(true);

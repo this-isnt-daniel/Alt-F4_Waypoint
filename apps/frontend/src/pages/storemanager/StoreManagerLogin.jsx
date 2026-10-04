@@ -30,6 +30,8 @@ export default function StoreManagerLogin({ onLogin }) {
       safeStorage.set('token', response.access_token);
       
       const me = await apiFetch('/auth/me');
+      if (me.outlet_id) safeStorage.set('user_outlet_id', me.outlet_id);
+      if (me.brand) safeStorage.set('user_brand', me.brand);
       
       const manager = {
         id: me.user_id,
