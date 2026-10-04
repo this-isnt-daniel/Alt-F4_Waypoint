@@ -31,11 +31,36 @@ def create_or_update_draft_order(db: Session, request: CreateOrderRequest, store
     ).first()
     
     if existing_order:
-        if existing_order.status != "draft":
-            raise HTTPException(status_code=409, detail="A non-draft order already exists for this outlet, date, and temp requirement.")
-        order = existing_order
-        # Delete old lines to replace them
-        db.query(OrderLine).filter(OrderLine.order_id == order.order_id).delete()
+        if existing_order.status in ["draft", "confirmed"]:
+            order = existing_order
+            order.status = "draft"
+            # Delete old lines to replace them
+            db.query(OrderLine).filter(OrderLine.order_id == order.order_id).delete()
+        else:
+            # Advance to tomorrow or next available date without conflict
+            from datetime import timedelta
+            target_date = request.order_date + timedelta(days=1)
+            while True:
+                conflict = db.query(Order).filter(
+                    Order.outlet_id == request.outlet_id,
+                    Order.order_date == target_date,
+                    Order.temp_req == request.temp_req
+                ).first()
+                if not conflict:
+                    break
+                target_date += timedelta(days=1)
+            order = Order(
+                order_id=f"ORD-{uuid.uuid4().hex[:8].upper()}",
+                outlet_id=request.outlet_id,
+                created_by=user_id,
+                brand=request.brand,
+                temp_req=request.temp_req,
+                order_date=target_date,
+                status="draft",
+                defer_count=0,
+                deferred_prev=False
+            )
+            db.add(order)
     else:
         # Create new draft
         order = Order(
@@ -138,7 +163,7 @@ def confirm_order(db: Session, order_id: str, store_manager_outlet: str, user_id
     if order.outlet_id != store_manager_outlet:
         raise HTTPException(status_code=403, detail="Not authorized to confirm this order")
         
-    if order.status != "draft":
+    if order.status not in ["draft", "confirmed"]:
         raise HTTPException(status_code=400, detail=f"Order cannot be confirmed from status: {order.status}")
         
     # Calculate volume/weight and ensure items exist

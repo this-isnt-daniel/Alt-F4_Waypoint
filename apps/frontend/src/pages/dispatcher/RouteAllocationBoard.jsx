@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
+import { apiFetch } from '../../lib/api';
 import {
   Moon,
   ChevronDown,
@@ -373,6 +374,36 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
   const [showToast, setShowToast]         = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [trayHeight, setTrayHeight]       = useState(180);
+
+  useEffect(() => {
+    apiFetch('/dispatcher/orders')
+      .then(orders => {
+        if (!Array.isArray(orders)) return;
+        const unassigned = orders.filter(o => !o.trip_id || o.status === 'confirmed');
+        if (unassigned.length > 0) {
+          const cards = unassigned.map((o, idx) => {
+            const firstItem = (o.items && o.items[0]) || { product_id: 'Fresh Produce', quantity: o.order_units || 10 };
+            return {
+              id: `live-${o.order_id}`,
+              orderId: o.order_id,
+              stop: idx + 1,
+              stopName: o.outlet_id,
+              product: firstItem.product_id,
+              qty: `x${firstItem.quantity || o.order_units || 10}`,
+              weightKg: Math.round(Number(o.order_wt_kg) || 25),
+              brand: `Waypoint ${o.brand ? (o.brand.charAt(0).toUpperCase() + o.brand.slice(1)) : 'Fresh'}`,
+              refrigeration: o.temp_req === 'chilled' ? 'Reefer' : 'Ambient'
+            };
+          });
+          setTray(prev => {
+            const prevIds = new Set(prev.map(p => p.orderId));
+            const added = cards.filter(c => !prevIds.has(c.orderId));
+            return [...added, ...prev];
+          });
+        }
+      })
+      .catch(err => console.warn('Failed to load orders for route allocation board:', err));
+  }, []);
 
   const startResize = useCallback((e) => {
     e.preventDefault();

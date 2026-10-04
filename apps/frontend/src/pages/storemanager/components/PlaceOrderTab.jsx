@@ -68,7 +68,23 @@ export default function PlaceOrderTab({
         const { apiFetch } = await import('@/lib/api');
         const outletId = safeStorage.get('user_outlet_id') || 'OUT-1001';
         const brand = safeStorage.get('user_brand') || 'fresh';
-        const dateStr = new Date().toISOString().split('T')[0];
+        
+        let dateStr = new Date().toISOString().split('T')[0];
+        if (orderDate) {
+          if (orderDate.toLowerCase().includes('tomorrow')) {
+            const tom = new Date(Date.now() + 86400000);
+            dateStr = tom.toISOString().split('T')[0];
+          } else {
+            const match = orderDate.match(/(\d+)\s+([A-Za-z]+)/);
+            if (match) {
+              const day = parseInt(match[1], 10);
+              const monthStr = match[2].toLowerCase();
+              const month = monthStr.startsWith('oct') ? 10 : (monthStr.startsWith('sep') ? 9 : (new Date().getMonth() + 1));
+              const yr = 2026;
+              dateStr = `${yr}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+          }
+        }
 
         const hasChilled = basket.some(item => {
           const cat = CATEGORIES.find(c => c.id === item.categoryId);
