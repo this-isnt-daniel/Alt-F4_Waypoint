@@ -1,0 +1,27 @@
+{
+  "name": "alt-f4-waypoint",
+  "private": true,
+  "workspaces": [
+    "apps/frontend"
+  ],
+  "scripts": {
+    "dev": "npm --prefix apps/frontend run dev",
+    "build": "npm --prefix apps/frontend run build",
+    "preview": "npm --prefix apps/frontend run preview",
+    "lint": "npm --prefix apps/frontend run lint",
+    "format": "npm --prefix apps/frontend run format",
+    "test": "npm --prefix apps/frontend run test",
+    "typecheck": "npm --prefix apps/frontend run typecheck"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "jsdom": "^29.1.1"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "overrides": {
+    "typescript": "~5.7.3"
+  }
+}
