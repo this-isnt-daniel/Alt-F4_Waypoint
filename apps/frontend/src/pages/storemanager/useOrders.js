@@ -8,8 +8,8 @@ export function useOrders() {
 
   const fetchOrders = async () => {
     try {
-      const data = await apiFetch('/store_manager/orders');
-      const defs = await apiFetch('/store_manager/deferrals').catch(()=>[]);
+      const data = await apiFetch('/store-manager/orders');
+      const defs = await apiFetch('/store-manager/deferrals').catch(()=>[]);
       
       const todayStr = new Date().toISOString().split('T')[0];
       

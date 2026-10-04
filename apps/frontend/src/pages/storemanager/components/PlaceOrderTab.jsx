@@ -61,28 +61,35 @@ export default function PlaceOrderTab({
     });
   };
 
+  const formatDateDisplay = (dateString) => {
+    if (!dateString) return 'Select Date';
+    // dateString is YYYY-MM-DD
+    const dateObj = new Date(dateString);
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
+    const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][dateObj.getMonth()];
+    const day = dateObj.getDate();
+    return `${day} ${monthName} · ${dayName}`;
+  };
+
   const handleConfirmOrder = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const selectedDateStr = orderDate && orderDate.includes('Oct') ? `2026-10-${orderDate.split('Oct ')[1]}` : (orderDate && orderDate.includes('Sep') ? `2026-09-${orderDate.split('Sep ')[1]}` : today); // crude mock to date
-      
       const payload = {
-        outlet_id: 'OUT-0043',
+        outlet_id: outlet.id,
         brand: 'fresh',
-        temp_req: basket.some(b => ['chilled', 'frozen'].includes(b.tempRequired || '')) ? 'chilled' : 'dry',
-        order_date: selectedDateStr,
+        temp_req: basket.some(b => ['chilled', 'frozen'].includes(b.tempRequired || '')) ? 'chilled' : 'ambient',
+        order_date: orderDate || new Date().toISOString().split('T')[0],
         items: basket.map(b => ({
           product_id: b.productId,
           quantity: b.qty
         }))
       };
       
-      const res = await apiFetch('/store_manager/orders', {
+      const res = await apiFetch('/store-manager/orders', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
       
-      await apiFetch(`/store_manager/orders/${res.order_id}/confirm`, {
+      await apiFetch(`/store-manager/orders/${res.order_id}/confirm`, {
         method: 'POST'
       });
       
@@ -154,7 +161,7 @@ export default function PlaceOrderTab({
         </div>
         <h1 className="text-[20px] font-bold text-slate-900 mb-2">Order Confirmed!</h1>
         <p className="text-[14px] text-slate-500 max-w-[280px] mb-8">
-          Your order has been placed successfully and will be delivered on {orderDate ? orderDate.split(' · ')[0].toLowerCase() : 'tomorrow'}.
+          Your order has been placed successfully and will be delivered on {formatDateDisplay(orderDate)}.
         </p>
         <button
           onClick={() => setView('categories')}
@@ -246,7 +253,7 @@ export default function PlaceOrderTab({
                 </span>
                 <div className="flex items-center gap-1.5">
                   <CalendarIcon size={14} className="text-brand-600" />
-                  <span className="text-[13px] font-bold text-slate-900">{orderDate || 'Select Date'}</span>
+                  <span className="text-[13px] font-bold text-slate-900">{formatDateDisplay(orderDate)}</span>
                 </div>
               </div>
               <button
@@ -257,14 +264,6 @@ export default function PlaceOrderTab({
                 {orderDate ? 'Change' : 'Select'}
               </button>
             </div>
-
-            {orderDate?.includes('Tomorrow') && (
-              <div className="px-4 md:px-6 py-1.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">
-                  Order closes 4:00 PM today
-                </span>
-              </div>
-            )}
 
             <div className="px-4 md:px-6 py-3 border-b border-slate-200 shrink-0">
               <div className="flex p-1 bg-slate-100 rounded-lg">

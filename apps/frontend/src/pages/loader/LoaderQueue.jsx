@@ -2,23 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, RefreshCcw } from 'lucide-react';
 import { fetchLoaderQueue } from './loaderApi';
 
-const FALLBACK_QUEUE = [
-  {
-    trip_id: 'TRIP-DEMO-1',
-    vehicle_id: 'VEH011',
-    vehicle_type: 'Truck',
-    vehicle_temp: 'Reefer',
-    route_label: 'Demo Fresh Run',
-    trip_no: 1,
-    stop_count: 3,
-    status: 'planned',
-    total_items: 8,
-    verified_items: 0,
-    discrepancy_count: 0,
-    read_only: false,
-  },
-];
-
 function normalizeTrip(trip) {
   const status = trip.status || 'planned';
   const state = status === 'planned' ? 'ready' : status;
@@ -40,11 +23,12 @@ export default function LoaderQueue({ user, onOpenTrip }) {
     setLoading(true);
     setError('');
     try {
-      const rows = user?.token ? await fetchLoaderQueue(user.token) : FALLBACK_QUEUE;
+      if (!user?.token) throw new Error("Missing auth token");
+      const rows = await fetchLoaderQueue(user.token);
       setQueue(rows.map(normalizeTrip));
     } catch (err) {
-      setError(`${err.message}. Showing demo queue.`);
-      setQueue(FALLBACK_QUEUE.map(normalizeTrip));
+      setError(err.message);
+      setQueue([]);
     } finally {
       setLoading(false);
     }
