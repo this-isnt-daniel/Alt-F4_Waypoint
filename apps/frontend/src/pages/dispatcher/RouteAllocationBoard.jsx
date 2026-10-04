@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { apiFetch } from '../../lib/api';
 import waypointLogo from '../../assets/icons/waypoint_logo.png';
 import {
   Moon,
@@ -478,14 +479,29 @@ export default function RouteAllocationBoard({ onBack, onConfirmAllocations }) {
     setShowConfirmModal(true);
   };
 
-  const handleFinalConfirm = (_note) => {
+  const handleFinalConfirm = async (_note) => {
     setShowConfirmModal(false);
-    if (onConfirmAllocations) {
-      onConfirmAllocations();
-    } else {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const res = await apiFetch('/dispatcher/plans/draft', {
+        method: 'POST',
+        body: JSON.stringify({ target_date: today })
+      });
+      await apiFetch(`/dispatcher/plans/${res.plan_id || res.run_id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
       setConfirmed(true);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
+      setTimeout(() => {
+        setShowToast(false);
+        if (onConfirmAllocations) {
+          onConfirmAllocations();
+        }
+      }, 2000);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to plan: ' + e.message);
     }
   };
 

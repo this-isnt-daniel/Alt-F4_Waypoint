@@ -10,6 +10,19 @@ export async function fetchTripDetail(tripId: string) {
   return apiFetch<any>(`/driver-platform/trips/${tripId}`);
 }
 
+const KIND_TARGET_MAP: Record<string, string> = {
+  "trip.departed": "trip_id",
+  "trip.completed": "trip_id",
+  "stop.arrived": "stop_id",
+  "checklist.submitted": "stop_id",
+  "pod.photo.completed": "stop_id",
+  "pod.submitted": "stop_id",
+  "stop.outcome.submitted": "stop_id",
+  "return.created": "stop_id",
+  "depot_return.confirmed": "return_id",
+  "route_change.acknowledged": "change_id",
+};
+
 // Post a driver event for syncing
 export async function postDriverEvent(
   kind: string, 
@@ -17,13 +30,19 @@ export async function postDriverEvent(
   payload: any, 
   clientEventId: string
 ) {
-  return apiFetch<any>(`/driver-platform/events`, {
+  const targetKey = KIND_TARGET_MAP[kind] || "target_id";
+  const syncPayload = { ...payload, [targetKey]: targetId };
+
+  return apiFetch<any>(`/driver-platform/events/sync`, {
     method: "POST",
     body: JSON.stringify({
-      kind,
-      target_id: targetId,
-      client_event_id: clientEventId,
-      payload
+      events: [
+        {
+          kind,
+          client_event_id: clientEventId,
+          payload: syncPayload
+        }
+      ]
     })
   });
 }

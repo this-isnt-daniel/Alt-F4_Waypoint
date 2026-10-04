@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../../../lib/api';
 import { CATEGORIES } from '../data/catalogue';
 import { updateSavedTemplate } from '../data/templates';
 import CategoryBrowser from './CategoryBrowser';
@@ -60,9 +61,37 @@ export default function PlaceOrderTab({
     });
   };
 
-  const handleConfirmOrder = () => {
-    onClearBasket();
-    setView('success');
+  const handleConfirmOrder = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const selectedDateStr = orderDate && orderDate.includes('Oct') ? `2026-10-${orderDate.split('Oct ')[1]}` : (orderDate && orderDate.includes('Sep') ? `2026-09-${orderDate.split('Sep ')[1]}` : today); // crude mock to date
+      
+      const payload = {
+        outlet_id: 'OUT-0043',
+        brand: 'fresh',
+        temp_req: basket.some(b => ['chilled', 'frozen'].includes(b.tempRequired || '')) ? 'chilled' : 'dry',
+        order_date: selectedDateStr,
+        items: basket.map(b => ({
+          product_id: b.productId,
+          quantity: b.qty
+        }))
+      };
+      
+      const res = await apiFetch('/store_manager/orders', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      await apiFetch(`/store_manager/orders/${res.order_id}/confirm`, {
+        method: 'POST'
+      });
+      
+      onClearBasket();
+      setView('success');
+    } catch (e) {
+      console.error(e);
+      alert("Failed to confirm order: " + e.message);
+    }
   };
 
   const handleSaveChanges = () => {

@@ -385,10 +385,10 @@ The system is automatically seeded with four accounts (Password for all: `passwo
 
 | Role | Username | Outlet/Depot Scope |
 |---|---|---|
-| **Store Manager** | `storemanager` | Outlet: OUT-1001 |
-| **Dispatcher** | `dispatcher` | Depot: Peliyagoda |
-| **Loader** | `loader` | Depot: Peliyagoda |
-| **Driver** | `driver` | Depot: Peliyagoda |
+| **Store Manager** | `storemanager@waypoint.local` | Outlet: OUT-1001 |
+| **Dispatcher** | `dispatcher@waypoint.local` | Depot: Peliyagoda |
+| **Loader** | `loader@waypoint.local` | Depot: Peliyagoda |
+| **Driver** | `driver@waypoint.local` | Depot: Peliyagoda |
 
 ---
 
@@ -396,12 +396,11 @@ The system is automatically seeded with four accounts (Password for all: `passwo
 
 Use this route order for a compact demonstration. Start by visiting [http://localhost:3000](http://localhost:3000).
 
-1. **Store Manager:** Log in as `storemanager`, create a new order, and submit it.
-2. **Dispatcher:** Log in as `dispatcher`, review the new order, trigger the optimization planner, and review the route allocation.
-3. **Loader:** Log in as `loader`, see the assigned load, and perform the load check.
-4. **Driver:** Log in as `driver`, view the assigned trip, start the trip, execute stops, and submit Proof of Delivery (POD).
-5. **Store Manager:** Verify receipt of the order.
-6. **Dispatcher:** See the updated delivery state on the dashboard.
+1. **Store Manager:** Log in as `storemanager@waypoint.local`, go to Orders -> view the existing seeded order or create a new order.
+2. **Dispatcher:** Log in as `dispatcher@waypoint.local`, go to Planning -> review pending orders -> click Optimize -> click Confirm Allocations (Approve).
+3. **Loader:** Log in as `loader@waypoint.local`, select the newly assigned trip -> verify the load -> click Finalize Load.
+4. **Driver:** Log in as `driver@waypoint.local`, view the assigned trip -> Start Trip -> navigate to Stop -> Deliver -> submit POD -> record an issue (if any) -> Continue -> Return to Depot -> Complete Trip.
+5. **Store Manager:** Log in again as `storemanager@waypoint.local`, go to Delivery Tracking -> verify the final delivery status and any reported discrepancies.
 
 ---
 
