@@ -425,8 +425,11 @@ def test_real_optimizer_deferral_lifecycle_and_replanning_flow(db_session):
     )
     from fastapi import HTTPException
 
-    # Seed reference data entities for Peliyagoda depot
-    ref = get_reference_data()
+    import pytest
+    try:
+        ref = get_reference_data()
+    except FileNotFoundError:
+        pytest.skip("Authoritative reference CSV directory not found")
     depot = Depot(depot_id="Peliyagoda", name="Peliyagoda Depot", lat=6.9632, lng=79.8837)
     outlet = Outlet(
         outlet_id="OUT004",
