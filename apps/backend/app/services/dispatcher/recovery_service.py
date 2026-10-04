@@ -115,16 +115,15 @@ def build_recovery_proposal(db: Session, depot_id: str, user_id: str, incident_i
         
     optimizer_fleet = [_ensure_live_fleet_state(v) for v in optimizer_fleet]
 
-    # Authoritative orders using canonical eligibility (includes deferred carry-overs)
-    from app.adapters.optimizer_adapter import _get_depot_outlet_ids, _get_eligible_orders_for_date
-    ref_outlet_ids = _get_depot_outlet_ids(depot_id, ref_data, db)
-    db_orders = _get_eligible_orders_for_date(db, trip.trip_date, ref_outlet_ids)
-    from app.adapters.optimizer_adapter import get_approved_urgent_order_ids
-    approved_urgent_ids = get_approved_urgent_order_ids(db, [o.order_id for o in db_orders])
-    optimizer_orders = [
-        convert_db_order_to_optimizer(o, ref_data, db, is_urgent=(o.order_id in approved_urgent_ids))
-        for o in db_orders
-    ]
+    # Authoritative orders for recovery (supports planned/loaded/out_for_delivery orders)
+    from app.adapters.optimizer_adapter import get_recovery_authoritative_orders
+    optimizer_orders = get_recovery_authoritative_orders(
+        db=db,
+        active_plan=draft_record.plan_data,
+        undelivered_quantities=undelivered_quantities,
+        depot_id=depot_id,
+        ref_data=ref_data,
+    )
 
     context = OperationalContext(
         planning_date=trip.trip_date.isoformat(),

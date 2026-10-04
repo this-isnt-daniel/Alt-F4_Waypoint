@@ -428,6 +428,96 @@ def _get_eligible_orders_for_date(
     return eligible
 
 
+def get_recovery_authoritative_orders(
+    db: Session,
+    active_plan: dict,
+    undelivered_quantities: Optional[Sequence[Any]] = None,
+    depot_id: Optional[str] = None,
+    ref_data: Optional[ReferenceData] = None,
+) -> list[OptimizerOrder]:
+    """
+    Load authoritative optimizer Order objects specifically for vehicle breakdown recovery.
+
+    Unlike planning/draft-editing eligibility (which queries confirmed/deferred orders for a date),
+    recovery operates on an active/approved execution plan where orders are planned, loaded,
+    or out_for_delivery.
+
+    This helper:
+      1. Collects all order_id / order_ref values referenced in active_plan trips, stops,
+         unassigned/deferred lists, and undelivered_quantities.
+      2. Queries those DbOrder rows directly by ID without filtering by status or single date.
+      3. Scopes orders by depot/outlets if depot_id is provided.
+      4. Batch-queries approved UrgencyRequest statuses to derive is_urgent.
+      5. Converts DbOrder models to optimizer Order domain objects.
+    """
+    if ref_data is None:
+        ref_data = get_reference_data()
+
+    order_ids: set[str] = set()
+
+    def _extract_ref(val: Any) -> None:
+        if isinstance(val, str) and val.strip():
+            order_ids.add(val.strip())
+        elif isinstance(val, dict):
+            for k in ("order_ref", "order_id"):
+                v = val.get(k)
+                if isinstance(v, str) and v.strip():
+                    order_ids.add(v.strip())
+        elif hasattr(val, "order_ref"):
+            v = getattr(val, "order_ref", None)
+            if isinstance(v, str) and v.strip():
+                order_ids.add(v.strip())
+        elif hasattr(val, "order_id"):
+            v = getattr(val, "order_id", None)
+            if isinstance(v, str) and v.strip():
+                order_ids.add(v.strip())
+
+    if isinstance(active_plan, dict):
+        for trip in active_plan.get("trips", []):
+            if isinstance(trip, dict):
+                for oref in trip.get("order_refs", []):
+                    _extract_ref(oref)
+                for oref in trip.get("order_ids", []):
+                    _extract_ref(oref)
+                stops = trip.get("driver_itinerary") or trip.get("stops", [])
+                for stop in stops:
+                    if isinstance(stop, dict):
+                        for oref in stop.get("order_refs", []):
+                            _extract_ref(oref)
+                        _extract_ref(stop.get("order_id"))
+                        for itm in stop.get("line_items_delivered", []):
+                            _extract_ref(itm)
+        for entry in active_plan.get("deferred_orders", []):
+            _extract_ref(entry)
+        for entry in active_plan.get("unassigned_orders", []):
+            _extract_ref(entry)
+        for entry in active_plan.get("orders", []):
+            _extract_ref(entry)
+
+    if undelivered_quantities:
+        for itm in undelivered_quantities:
+            _extract_ref(itm)
+
+    if not order_ids:
+        return []
+
+    depot_outlet_ids = _get_depot_outlet_ids(depot_id, ref_data, db) if depot_id else None
+
+    query = db.query(DbOrder).filter(DbOrder.order_id.in_(order_ids))
+    if depot_outlet_ids is not None:
+        query = query.filter(DbOrder.outlet_id.in_(depot_outlet_ids))
+    db_orders = query.all()
+
+    found_order_ids = [o.order_id for o in db_orders]
+    approved_urgent_ids = get_approved_urgent_order_ids(db, found_order_ids)
+
+    optimizer_orders = [
+        convert_db_order_to_optimizer(o, ref_data, db, is_urgent=(o.order_id in approved_urgent_ids))
+        for o in db_orders
+    ]
+    return optimizer_orders
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 3. Core Optimization Operations
 # ──────────────────────────────────────────────────────────────────────────────
@@ -665,6 +755,37 @@ def approve_draft_plan_operation(
     if depot_id and draft_record.depot_id != depot_id:
         raise HTTPException(status_code=403, detail="Plan not in your depot scope")
 
+    # Idempotent retry: if already approved, safely return existing result without re-executing writes
+    if draft_record.status == "approved":
+        existing_trip_ids = [
+            t.get("trip_id")
+            for t in (draft_record.plan_data or {}).get("trips", [])
+            if t.get("trip_id")
+        ]
+        if not existing_trip_ids:
+            existing_trips = db.query(DbTrip.trip_id).filter(
+                DbTrip.depot_id == (draft_record.depot_id or "DEP1"),
+                DbTrip.trip_date == draft_record.target_date,
+            ).all()
+            existing_trip_ids = [t[0] for t in existing_trips]
+
+        approved_at_str = (
+            draft_record.approved_at.isoformat()
+            if draft_record.approved_at
+            else (
+                draft_record.updated_at.isoformat()
+                if draft_record.updated_at
+                else datetime.now(timezone.utc).isoformat()
+            )
+        )
+        return {
+            "status": "approved",
+            "plan_id": plan_id,
+            "trips_created": len(existing_trip_ids),
+            "trips": existing_trip_ids,
+            "approved_at": approved_at_str,
+        }
+
     plan_data = draft_record.plan_data
     val = plan_data.get("validation", {})
     if not val.get("valid", False):
@@ -775,6 +896,12 @@ def approve_draft_plan_operation(
         db_order.defer_count = (db_order.defer_count or 0) + 1
         db_order.deferred_prev = True
 
+        deferral_client_op_id = (
+            f"{client_op_id}:deferral:{db_order.order_id}"
+            if client_op_id
+            else None
+        )
+
         deferral = Deferral(
             deferral_id=str(uuid.uuid4()),
             order_id=db_order.order_id,
@@ -784,7 +911,7 @@ def approve_draft_plan_operation(
             reason=deferred.get("reason", "OPTIMIZER_CAPACITY_CONSTRAINT"),
             created_at=now,
             created_by=user_id,
-            client_op_id=client_op_id,
+            client_op_id=deferral_client_op_id,
         )
         db.add(deferral)
 
@@ -883,14 +1010,14 @@ def reallocate_broken_vehicle_operation(
 
     optimizer_fleet = [_ensure_live_fleet_state(v) for v in optimizer_fleet]
 
-    # Authoritative orders using canonical eligibility (includes deferred carry-overs)
-    depot_outlet_ids = _get_depot_outlet_ids(draft_record.depot_id, ref_data, db)
-    db_orders = _get_eligible_orders_for_date(db, draft_record.target_date, depot_outlet_ids)
-    approved_urgent_ids = get_approved_urgent_order_ids(db, [o.order_id for o in db_orders])
-    optimizer_orders = [
-        convert_db_order_to_optimizer(o, ref_data, db, is_urgent=(o.order_id in approved_urgent_ids))
-        for o in db_orders
-    ]
+    # Authoritative orders for recovery (supports planned/loaded/out_for_delivery orders)
+    optimizer_orders = get_recovery_authoritative_orders(
+        db=db,
+        active_plan=active_plan,
+        undelivered_quantities=undelivered_quantities,
+        depot_id=draft_record.depot_id,
+        ref_data=ref_data,
+    )
 
     context = OperationalContext(
         planning_date=draft_record.target_date.isoformat(),
