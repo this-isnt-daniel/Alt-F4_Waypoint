@@ -1,0 +1,9 @@
+# Raw data files
+data/raw/
+*.csvhrc_*
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/

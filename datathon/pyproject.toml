@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "waypoint-datathon"
+version = "0.1.0"
+description = "Datathon prediction and optimization suite for Alt-F4 Waypoint"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.2.0",
+    "joblib>=1.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "gdown>=5.0.0",
+]
+
+[project.scripts]
+waypoint-datathon = "waypoint_datathon.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
